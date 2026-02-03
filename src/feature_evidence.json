@@ -1,0 +1,87 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-update-the-frontend-habit-creation-edit-ui-to-require-select-a-per-habit-unit-at-minimum-reps-and-time-duration-and-display-the-unit-consistently-wherever-numeric-amounts-are-entered-or-shown",
+      "featureTitle": "Update the frontend habit creation/edit UI to require/select a per-habit unit (at minimum: reps and time/duration) and display the unit consistently wherever numeric amounts are entered or shown.",
+      "files": [
+        "frontend/src/components/HabitManager.tsx",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/utils/habitUnit.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-12"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-monthly-habit-grid-interaction-so-users-can-keep-using-the-completion-toggle-and-can-optionally-enter-a-numeric-amount-for-the-day-when-marked-done-e-g-done-amount-amount-entry-must-be-optional-and-not-required-to-mark-a-day-as-done",
+      "featureTitle": "Update the monthly habit grid interaction so users can keep using the completion toggle and can optionally enter a numeric amount for the day when marked done (e.g., done + amount). Amount entry must be optional and not required to mark a day as done.",
+      "files": [
+        "frontend/src/components/HabitGrid.tsx",
+        "frontend/src/hooks/useQueries.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-13"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-extend-progress-visualization-to-support-both-frequency-and-volume-keep-existing-frequency-based-progress-weekly-target-times-week-and-add-volume-over-time-visualization-s-that-show-per-habit-numeric-totals-trends-using-the-habit-s-unit",
+      "featureTitle": "Extend progress visualization to support both frequency and volume: keep existing frequency-based progress (weekly target times/week) and add volume-over-time visualization(s) that show per-habit numeric totals/trends using the habit’s unit.",
+      "files": [
+        "frontend/src/components/ProgressCharts.tsx",
+        "frontend/src/utils/habitUnit.ts",
+        "frontend/src/utils/reportStats.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-14"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-csv-pdf-export-outputs-to-include-the-optional-numeric-amounts-and-units-so-users-can-analyze-volume-changes-over-time-in-exported-files",
+      "featureTitle": "Update CSV/PDF export outputs to include the optional numeric amounts and units so users can analyze volume changes over time in exported files.",
+      "files": [
+        "frontend/src/components/ReportExportDialog.tsx",
+        "frontend/src/utils/reportCsv.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-15"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

@@ -1,0 +1,350 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 19,
+  "summary": "Consistency Tracker is a full-stack Internet Computer (ICP) habit tracking web app. Users authenticate via Internet Identity, set up a simple profile (name), create habits with a weekly target (1–7 times/week), and track daily completion in a monthly grid. The app fetches per-month completion records and visualizes progress with an overall monthly progress ring, per-habit progress bars, and a daily completion trend line. The Motoko backend enforces role-based access control (admin/user/guest) initialized via a secret token compared to a canister environment variable. User data (roles, profiles, habits, and completion records) is now persisted on-chain in stable storage with upgrade migration support, and the app includes an authenticated report export flow (CSV/PDF) for custom date ranges and selected/all habits, including PDF visual summaries.",
+  "existing_features": [
+    {
+      "id": "IF-1",
+      "title": "Internet Identity authentication (login, logout, session restore)",
+      "synonyms": [
+        "II login",
+        "AuthClient integration",
+        "InternetIdentityProvider"
+      ],
+      "description": "Provides a React context that initializes an AuthClient, restores stored delegations on load, supports login via Internet Identity, and supports logout/identity clearing with status flags for UI flow control.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-2",
+      "title": "Backend actor creation tied to identity with automatic query invalidation",
+      "synonyms": [
+        "useActor",
+        "actor recreation on identity change"
+      ],
+      "description": "Creates an anonymous actor when not authenticated and an authenticated actor when an identity exists. Recreates the actor when identity changes and invalidates/refetches all non-actor React Query caches to keep data consistent with the active principal.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-3",
+      "title": "Secure admin token intake from URL hash with session persistence",
+      "synonyms": [
+        "caffeineAdminToken parsing",
+        "secret URL param handling"
+      ],
+      "description": "Extracts secrets from the URL hash fragment (preferred over query string), stores them in sessionStorage for persistence, and removes the secret from the URL to reduce history leakage.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-4",
+      "title": "Role-based access control with admin bootstrap",
+      "synonyms": [
+        "AccessControl",
+        "admin/user/guest roles",
+        "CAFFEINE_ADMIN_TOKEN bootstrap"
+      ],
+      "description": "Implements user roles (#admin/#user/#guest). The first authenticated caller who provides the correct secret becomes admin; other authenticated callers become users. Anonymous principals are treated as guests. Backend methods gate access via hasPermission and trap on unauthorized calls.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-5",
+      "title": "Admin endpoints for role inspection and assignment",
+      "synonyms": [
+        "getCallerUserRole",
+        "assignCallerUserRole",
+        "isCallerAdmin"
+      ],
+      "description": "Exposes authorization-related canister methods to read the caller role, check admin status, and allow admins to assign roles to principals.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-6",
+      "title": "User profile management (caller profile read/write)",
+      "synonyms": [
+        "Profile setup",
+        "saveCallerUserProfile",
+        "getCallerUserProfile"
+      ],
+      "description": "Allows authenticated users to store and retrieve a simple profile containing a name. Includes frontend profile setup screen shown when a logged-in user has no saved profile.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-7",
+      "title": "Habit creation with weekly targets",
+      "synonyms": [
+        "createHabit",
+        "weeklyTarget"
+      ],
+      "description": "Users can create habits with a name and a weekly target (1–7). Frontend validates inputs and displays toast feedback. Backend stores habits and associates habit IDs with the caller.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-8",
+      "title": "Habit deletion with confirmation and data cleanup",
+      "synonyms": [
+        "deleteHabit",
+        "remove habit records"
+      ],
+      "description": "Users can delete habits via a confirmation dialog; backend removes the habit from the user's set and deletes the habit and its associated records. Frontend invalidates habits and monthly record queries after deletion.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-9",
+      "title": "Inline editing of habit weekly target",
+      "synonyms": [
+        "updateHabitWeeklyTarget",
+        "weekly target editor"
+      ],
+      "description": "Users can edit a habit's weekly target (1–7) inline in the habit manager. Backend validates range and enforces ownership. Frontend invalidates habits and monthly records upon success to keep UI and charts accurate.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-10",
+      "title": "Monthly habit record retrieval",
+      "synonyms": [
+        "getMonthlyRecords",
+        "month/year filtering"
+      ],
+      "description": "Fetches completion records for the selected month/year for all of the caller's habits. Backend aggregates records per habit and filters by month and year.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-11",
+      "title": "Daily completion tracking (toggle per habit/day)",
+      "synonyms": [
+        "toggleHabitCompletion",
+        "checkbox grid"
+      ],
+      "description": "Provides a per-day checkbox UI for each habit. Toggling calls the backend to add/remove a completion record for that day. Frontend invalidates the selected month’s record query after mutation for near real-time updates.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-12",
+      "title": "Tracker dashboard with month selection",
+      "synonyms": [
+        "TrackerDashboard",
+        "MonthTabs"
+      ],
+      "description": "Authenticated users see a dashboard with a habit manager, a horizontally scrollable month selector (January–December), the daily tracking grid for the selected month, and a progress visualization sidebar.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-13",
+      "title": "Progress visualization (overall, per-habit, daily trends)",
+      "synonyms": [
+        "ProgressCharts",
+        "recharts dashboard"
+      ],
+      "description": "Computes progress based on weekly targets and completion records and renders: an overall monthly pie/ring progress indicator, per-habit progress bars with completed/expected counts, and a daily percentage trend line chart.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-14",
+      "title": "Theme toggling (light/dark/system) with design tokens",
+      "synonyms": [
+        "next-themes",
+        "Tailwind OKLCH theme"
+      ],
+      "description": "Supports light/dark theme switching via a header toggle and uses OKLCH CSS variables integrated with Tailwind for consistent theming (including chart colors).",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-15",
+      "title": "User feedback via toast notifications",
+      "synonyms": [
+        "sonner toasts",
+        "Toaster"
+      ],
+      "description": "Displays success/error feedback for profile creation, habit creation, target updates, and deletion operations using sonner toast notifications.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-16",
+      "title": "Logout with client cache reset",
+      "synonyms": [
+        "clear identity",
+        "queryClient.clear"
+      ],
+      "description": "Logs the user out by clearing the Internet Identity session and then clearing the React Query cache to remove principal-scoped data from memory.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-17",
+      "title": "Stable on-chain persistence for roles, profiles, habits, and completion records",
+      "synonyms": [
+        "stable storage",
+        "cross-device persistence",
+        "upgrade-safe data"
+      ],
+      "description": "Backend persists all user data keyed by Internet Identity principal using stable storage so progress survives logout/login, new devices, and canister upgrades.",
+      "reqIds": [
+        "REQ-1",
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-18",
+      "title": "Backend upgrade migration for persisted data",
+      "synonyms": [
+        "migration.mo",
+        "upgrade hooks",
+        "state migration"
+      ],
+      "description": "Implements conditional migration logic to safely move any existing in-memory state into the stable storage layout during canister upgrades.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-19",
+      "title": "Backend report/export APIs for custom date ranges and habit selection",
+      "synonyms": [
+        "export endpoints",
+        "report data API"
+      ],
+      "description": "Adds canister APIs that return caller-scoped report data for a custom date range and either all habits or a selected subset of habit IDs, sufficient for generating CSV and PDF exports.",
+      "reqIds": [
+        "REQ-2",
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-20",
+      "title": "Report export UI with CSV/PDF download (custom date range + habit selection)",
+      "synonyms": [
+        "ReportExportDialog",
+        "CSV export",
+        "PDF export"
+      ],
+      "description": "Adds an authenticated UI flow to choose export format (CSV or PDF), select a custom date range, select all habits or a subset, then generate and download the report; PDF includes tabular data plus visual summaries (progress and trends) using UTC time handling.",
+      "reqIds": [
+        "REQ-3",
+        "REQ-7",
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-frontend-habit-creation-edit-ui-to-require-select-a-per-habit-unit-at-minimum-reps-and-time-duration-and-display-the-unit-consistently-wherever-numeric-amounts-are-entered-or-shown",
+      "title": "Update the frontend habit creation/edit UI to require/select a per-habit unit (at minimum: reps and time/duration) and display the unit consistently wherever numeric amounts are entered or shown.",
+      "reqIds": [
+        "REQ-12"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-monthly-habit-grid-interaction-so-users-can-keep-using-the-completion-toggle-and-can-optionally-enter-a-numeric-amount-for-the-day-when-marked-done-e-g-done-amount-amount-entry-must-be-optional-and-not-required-to-mark-a-day-as-done",
+      "title": "Update the monthly habit grid interaction so users can keep using the completion toggle and can optionally enter a numeric amount for the day when marked done (e.g., done + amount). Amount entry must be optional and not required to mark a day as done.",
+      "reqIds": [
+        "REQ-13"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-extend-progress-visualization-to-support-both-frequency-and-volume-keep-existing-frequency-based-progress-weekly-target-times-week-and-add-volume-over-time-visualization-s-that-show-per-habit-numeric-totals-trends-using-the-habit-s-unit",
+      "title": "Extend progress visualization to support both frequency and volume: keep existing frequency-based progress (weekly target times/week) and add volume-over-time visualization(s) that show per-habit numeric totals/trends using the habit’s unit.",
+      "reqIds": [
+        "REQ-14"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-csv-pdf-export-outputs-to-include-the-optional-numeric-amounts-and-units-so-users-can-analyze-volume-changes-over-time-in-exported-files",
+      "title": "Update CSV/PDF export outputs to include the optional numeric amounts and units so users can analyze volume changes over time in exported files.",
+      "reqIds": [
+        "REQ-15"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Incremental goals: allow numeric logging per habit/day (e.g., \"30 press-ups\") and visualize volume changes over time",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Enhance incremental goals: keep done/not-done toggle but optionally log a numeric amount per habit/day with a per-habit unit (e.g., reps, time) and support tracking both frequency targets (times/week) and volume targets over time with appropriate visualizations",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Extend the backend data model so each habit supports a configured unit (at minimum: reps and time/duration) and each habit/day record supports the existing done/not-done state plus an optional numeric amount for that day.",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Update backend APIs used by the monthly tracker and reporting/export so that returned monthly records and export payloads include the optional numeric amount and the habit unit, while preserving backward compatibility for existing saved data.",
+      "reqIds": [
+        "REQ-10"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Add/adjust canister upgrade migration so existing stable data (habits and records) is safely migrated to the new schema (unit on habits; optional amount on records) with sensible defaults and no data loss.",
+      "reqIds": [
+        "REQ-11"
+      ],
+      "status": "pending"
+    }
+  ],
+  "architectural_notes": [
+    "Frontend is a React SPA using @tanstack/react-query for data fetching, caching, and mutation-driven cache invalidation.",
+    "Authentication is handled via @dfinity/auth-client (Internet Identity) wrapped in a React context provider (InternetIdentityProvider) exposing identity, login, logout, and status flags.",
+    "Backend canister is written in Motoko and uses a mixin pattern (MixinAuthorization) to compose authorization endpoints into the main actor.",
+    "Role-based access control is centralized in an AccessControl module; authorization checks are performed inside backend methods using hasPermission/isAdmin and trap on violations.",
+    "Admin bootstrap uses a shared secret: frontend passes a token via URL hash parameter (caffeineAdminToken), backend compares it to the CAFFEINE_ADMIN_TOKEN environment variable to assign the first admin; subsequent principals default to user.",
+    "App state in the backend is maintained with mo:core collections (Map/Set/List) keyed by Principal and habitId; records are stored per habitId and filtered by month/year on query.",
+    "UI uses Tailwind CSS with OKLCH design tokens (light/dark), shadcn-style UI components, next-themes for theme switching, recharts for charts, and sonner for toast notifications.",
+    "Frontend encapsulates all canister calls into typed React Query hooks (useQueries.ts) and a dedicated actor hook (useActor) that recreates the actor when identity changes and invalidates dependent queries.",
+    "Plan persistent storage for profiles/habits/records so data survives across devices and canister upgrades (e.g., stable variables or stable memory + upgrade hooks).",
+    "Consider adding report-generation/export endpoints (server-side aggregation) and a frontend download flow for CSV/JSON/PDF exports.",
+    "Reporting/export feature requirements clarified: support user-selected export format (CSV or PDF), custom date ranges, and selecting specific habits vs all habits.",
+    "Cross-device persistence requirements clarified: data must persist across logouts, new devices, and canister upgrades; no manual backup/restore flow required.",
+    "Export/reporting requirements clarified: PDF exports should include both a clean tabular report and visual summaries (e.g., overall progress %, per-habit progress bars, charts).",
+    "Export/reporting requirements clarified: UTC time handling is acceptable for exports (no need to group by user local timezone).",
+    "Backend now uses stable storage for roles, profiles, habits, and completion records keyed by Principal, enabling cross-device persistence and upgrade survival.",
+    "Upgrade-safe state evolution is supported via a backend migration module and upgrade hooks that conditionally migrate legacy in-memory state to the stable layout.",
+    "Report/export functionality is implemented end-to-end: backend provides caller-scoped aggregation APIs for arbitrary date ranges and habit selection; frontend generates downloadable CSV and PDF (including visual summaries) with UTC-based date handling.",
+    "Incremental goals UX decision: retain the existing completion toggle and add an optional numeric value per day entry.",
+    "Incremental goals data model decision: numeric logging should be tied to a per-habit unit (e.g., reps, time), and progress should support both frequency (times/week) and volume (amount over time/targets)."
+  ],
+  "known_issues": [
+    "The frontend always runs useGetCallerUserProfile in App.tsx even when unauthenticated; because anonymous callers are #guest, getCallerUserProfile traps with \"Unauthorized: Only users can view profiles\", which may surface as a query error (even if the UI still routes to the login screen).",
+    "Authorization initialization (_initializeAccessControlWithSecret) traps if CAFFEINE_ADMIN_TOKEN is not set in the canister environment, potentially breaking login/actor initialization for all authenticated users.",
+    "Habit IDs are generated as name.concat(Time.now().toText()); while usually unique, they are not guaranteed collision-free and also embed user-provided text.",
+    "toggleHabitCompletion represents completion by adding/removing the record (completedAt is always set when present); there is no explicit persistence of an \"incomplete\" state or audit trail once toggled off.",
+    "Progress calculations use weeksInMonth = ceil(daysInMonth/7) and expected = weeklyTarget * weeksInMonth, which can overestimate expectations for months with partial weeks; percentages are clamped to 100% which may hide over-target behavior."
+  ],
+  "isFixRequest": false,
+  "generatedImages": [],
+  "gameProjectType": "none",
+  "projectName": "Consistency Tracker",
+  "clarification_mode": "thinking",
+  "clarification_rounds": 0
+}

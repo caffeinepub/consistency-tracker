@@ -1,0 +1,148 @@
+{
+  "kind": "build_request",
+  "title": "Incremental goals: optional numeric amounts with per-habit units and volume analytics",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-9",
+      "text": "Extend the backend data model so each habit supports a configured unit (at minimum: reps and time/duration) and each habit/day record supports the existing done/not-done state plus an optional numeric amount for that day.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-10"
+        ],
+        "quotes": [
+          "Or keep the toggle, and optionally add a numeric value (e.g. done + amount)",
+          "Tied to a unit. Include reps and time and both units to track"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A habit can be created with a unit value, and that unit is returned in habit read/list APIs.",
+        "A daily record can store completion (toggle) and optionally store a numeric amount for that date.",
+        "If no amount is provided, the system behaves exactly like the current toggle-only tracking."
+      ]
+    },
+    {
+      "id": "REQ-10",
+      "text": "Update backend APIs used by the monthly tracker and reporting/export so that returned monthly records and export payloads include the optional numeric amount and the habit unit, while preserving backward compatibility for existing saved data.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-10"
+        ],
+        "quotes": [
+          "Do both concepts (frequency and volume)"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Monthly record retrieval includes amount data (when present) without breaking existing callers.",
+        "Export APIs return sufficient data to produce volume-aware CSV/PDF outputs (amount + unit per habit, per day).",
+        "Existing users with pre-feature data can still load their habits and monthly records without traps."
+      ]
+    },
+    {
+      "id": "REQ-11",
+      "text": "Add/adjust canister upgrade migration so existing stable data (habits and records) is safely migrated to the new schema (unit on habits; optional amount on records) with sensible defaults and no data loss.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-10"
+        ],
+        "quotes": [
+          "Tied to a unit. Include reps and time and both units to track"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Upgrading a canister that already has habits/records succeeds and preserves all existing completion history.",
+        "Existing habits receive a default unit value during migration (documented in code and consistent across the app).",
+        "Existing records remain valid and have no amount unless explicitly added later."
+      ]
+    },
+    {
+      "id": "REQ-12",
+      "text": "Update the frontend habit creation/edit UI to require/select a per-habit unit (at minimum: reps and time/duration) and display the unit consistently wherever numeric amounts are entered or shown.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-10"
+        ],
+        "quotes": [
+          "Tied to a unit. Include reps and time and both units to track"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Creating a habit includes selecting a unit (reps or time/duration).",
+        "The selected unit is shown in the UI near any amount input/display for that habit.",
+        "Existing habits created before this change still render, with the default unit shown."
+      ]
+    },
+    {
+      "id": "REQ-13",
+      "text": "Update the monthly habit grid interaction so users can keep using the completion toggle and can optionally enter a numeric amount for the day when marked done (e.g., done + amount). Amount entry must be optional and not required to mark a day as done.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-10"
+        ],
+        "quotes": [
+          "Or keep the toggle, and optionally add a numeric value (e.g. done + amount)"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A user can toggle a day to done without entering an amount.",
+        "A user can enter/update an amount for a done day and the value persists after refresh.",
+        "If a day is toggled from done to not-done, the app behavior around any previously entered amount is defined and consistent (either cleared or retained but not counted) and is implemented consistently across frontend and backend."
+      ]
+    },
+    {
+      "id": "REQ-14",
+      "text": "Extend progress visualization to support both frequency and volume: keep existing frequency-based progress (weekly target times/week) and add volume-over-time visualization(s) that show per-habit numeric totals/trends using the habit’s unit.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-10"
+        ],
+        "quotes": [
+          "Do both concepts (frequency and volume)"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Existing frequency visuals remain available and accurate for toggle-based completion.",
+        "At least one new volume visualization is visible in the dashboard that reflects summed amounts over time (e.g., per day trend and/or per habit monthly total), labeled with the habit unit.",
+        "Volume visuals correctly handle days with done but no amount (treated as zero amount unless otherwise specified in the UI)."
+      ]
+    },
+    {
+      "id": "REQ-15",
+      "text": "Update CSV/PDF export outputs to include the optional numeric amounts and units so users can analyze volume changes over time in exported files.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-10"
+        ],
+        "quotes": [
+          "Let users log \"30 press-ups\" so they can see their volume increase over time."
+        ]
+      },
+      "acceptanceCriteria": [
+        "CSV export includes columns/fields for amount and unit (or unit per habit) in addition to completion.",
+        "PDF export (if implemented) includes volume-aware summaries or tables consistent with the app’s volume tracking.",
+        "Exports remain usable when amounts are missing (empty/zero as appropriate) and when habits are toggle-only legacy data."
+      ]
+    }
+  ],
+  "constraints": [
+    "Backend must remain a single Motoko actor with all logic in backend/main.mo.",
+    "Only add/modify backend/migration.mo if required to preserve or migrate existing stable state.",
+    "Do not edit frontend files in immutablePaths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui."
+  ],
+  "nonGoals": [
+    "Do not remove or replace the existing done/not-done toggle completion model.",
+    "Do not introduce third-party authentication providers or any external databases.",
+    "Do not add real-time syncing (e.g., websockets) or push notifications."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}
