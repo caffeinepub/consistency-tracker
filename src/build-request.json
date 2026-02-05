@@ -1,133 +1,107 @@
 {
   "kind": "build_request",
-  "title": "Monthly-adjustable habit targets with auto-progression plan and lifetime totals",
+  "title": "Fix monthly targets: press-ups & squats steady-climb defaults; disable targets for fasting/run/squash; clean up targets UI",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-10",
-      "text": "Add backend support for per-habit, per-month targets (month + year) that can be retrieved and updated by the authenticated caller, while preserving the existing habit CRUD and daily record tracking behavior.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "Can you make it so each month the habits can be amended to match that specific month?",
-          "Simply an editor"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Backend defines a new data structure to store monthly targets keyed by (caller, habitId, month, year).",
-        "Backend exposes a query method to fetch monthly targets for a given (month, year) for the caller.",
-        "Backend exposes an update/upsert method to set or clear a monthly target value for a given (habitId, month, year) for the caller.",
-        "All new methods enforce ownership/authorization consistent with existing habit ownership checks (caller must own the habit).",
-        "Existing APIs (getHabits, getMonthlyRecords, toggleHabitCompletion, etc.) continue to function unchanged."
-      ]
-    },
-    {
-      "id": "REQ-11",
-      "text": "Implement backend auto-target defaults based on the uploaded \"Steady Climb\" year plan when no manual monthly override exists, using calendar month number as plan month index (Jan=1 ... Dec=12) for these habits: Push-ups, Squats, Plank.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "See image attached - if you can automatically increase based on this (Jan month 1, February month 2 etc)."
-        ]
-      },
-      "acceptanceCriteria": [
-        "If a monthly target override is not set for a habit for (month, year), the backend returns a computed default for that month for the habit when the habit matches the plan.",
-        "Plan values match the uploaded image: Push-ups targets: [20,25,30,35,40,45,50,55,60,65,70,75]; Squats targets: [20,25,30,35,40,45,50,55,60,65,70,75]; Plank targets in seconds: [60,75,90,105,120,135,150,165,180,195,210,240].",
-        "Plank targets are represented as Nat seconds in the backend, consistent with existing time habit amount handling.",
-        "If a habit does not match the plan (by name), the backend returns no auto-target default unless a manual override exists."
-      ]
-    },
-    {
-      "id": "REQ-12",
-      "text": "Add backend support for lifetime (all-time) totals per habit so the frontend can display both monthly and total progress without exporting all data.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "Allow for both monthly and total"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Backend exposes a query method that returns, for each caller habit, lifetime totals including: total completion count (number of completed records) and total volume (sum of record.amount where present; treat null amounts as 0).",
-        "Lifetime totals computation is filtered to caller-owned habits only.",
-        "Returned totals include unit information sufficient for the frontend to format values (e.g., time seconds vs reps)."
-      ]
-    },
-    {
-      "id": "REQ-13",
-      "text": "Add a simple monthly targets editor UI that lets the user select a month/year and view/edit the target for each habit for that specific month, with defaults auto-filled from the \"Steady Climb\" plan when applicable.",
+      "id": "REQ-1",
+      "text": "Update the Monthly Targets auto-plan defaults so that both “Press-ups” and “Squats” receive monthly-increasing targets that climb by +5 each month according to the Steady Climb plan shown in the uploaded image.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-8"
         ],
         "quotes": [
-          "Simply an editor"
+          "As per the image attached, can you add target for press-ups and squats (increasing by 5 every month based on steady climb plan image."
         ]
       },
       "acceptanceCriteria": [
-        "UI provides controls to select the active month (1-12) and year, reusing the existing month-tab UX pattern where appropriate.",
-        "For each habit, UI shows the current month’s target value: (a) manual override value if set; otherwise (b) auto-plan default if available; otherwise blank/none.",
-        "User can set/update/clear a manual override for a habit’s monthly target.",
-        "For time-based targets (e.g., Plank), the editor accepts and displays durations in a human-friendly format consistent with existing duration utilities (e.g., \"1 min 15 sec\", \"1:15\").",
-        "Saving changes shows success/error feedback using the existing toast pattern."
+        "In the Monthly Targets list, a habit named “Press-ups” displays an auto-plan target (not “—”) for any selected month in the year.",
+        "In the Monthly Targets list, a habit named “Squats” displays an auto-plan target (not “—”) for any selected month in the year.",
+        "The Press-ups and Squats auto-plan values increase by 5 month-over-month across the 12 months (e.g., Jan 20, Feb 25, Mar 30 ...).",
+        "Auto-plan matching is robust to common naming variants such as “Press-ups” vs “Push-ups” (i.e., press-ups no longer fails to match due to name normalization)."
       ]
     },
     {
-      "id": "REQ-14",
-      "text": "Update the progress UI to display both monthly progress and lifetime totals (frequency and volume where applicable), and clearly label which scope is being shown (This month vs All time).",
-      "target": "frontend",
+      "id": "REQ-2",
+      "text": "Fix Monthly Targets to correctly show and edit persisted monthly target overrides from the backend (instead of always showing only the auto-plan default and ignoring saved values).",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-6",
+          "msg-8"
         ],
         "quotes": [
-          "Allow for both monthly and total"
+          "Press-ups and squash habits didn’t update.",
+          "can you add target for press-ups and squats"
         ]
       },
       "acceptanceCriteria": [
-        "Progress UI includes an All time section (or toggle) that displays lifetime totals per habit using the new backend lifetime totals query.",
-        "Monthly views continue to use existing monthly records fetching and calculations for month-scoped progress.",
-        "Time-based lifetime volumes are formatted as durations; rep-based lifetime volumes are shown as numbers.",
-        "UI copy is in English and clearly distinguishes month-scoped vs lifetime totals."
+        "If a user saves a monthly target for a habit/month/year, returning to that same month/year shows the saved value in the targets list.",
+        "When tapping Edit for a habit, the input is prefilled with the saved monthly target if one exists for the selected month/year; otherwise it is prefilled with the auto-plan default (if available) or blank.",
+        "Saving a new target value updates the backend and the UI reflects the updated value without a full page refresh.",
+        "Time-based habits (e.g., Plank) still support duration parsing/formatting when displaying saved overrides and when prefilling the edit input."
       ]
     },
     {
-      "id": "REQ-15",
-      "text": "Add React Query hooks for the new monthly-target and lifetime-total backend APIs, following existing hook patterns and ensuring appropriate cache invalidation so the editor and dashboards stay in sync.",
+      "id": "REQ-3",
+      "text": "Remove monthly target functionality from “16/8 fasting”, “Run”, and “Squash” so targets are not shown as applicable and cannot be edited for these habits.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-8"
+        ],
+        "quotes": [
+          "Can you remove target for 16/8 fasting, run and squash as this is not applicable to these?"
         ]
       },
       "acceptanceCriteria": [
-        "New hooks exist for: fetching monthly targets for (month, year), updating a monthly target override, and fetching lifetime totals.",
-        "Mutations invalidate the correct queries (monthly targets for the affected month/year, and any UI relying on targets/totals).",
-        "Hooks follow the conventions used in frontend/src/hooks/useQueries.ts (actor availability checks, enabled gating with identity/actor state)."
+        "For habits named “16/8 fasting”, “Run”, or “Squash”, the Monthly Targets list does not show an editable target value (no target number/duration) and does not show an Edit button.",
+        "These habits do not display auto-plan default targets even if a default would otherwise be inferred.",
+        "Other habits (e.g., Plank, Press-ups, Squats) continue to show targets and remain editable."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Clean up the Monthly Targets section layout to look less messy (consistent spacing/alignment and clearer separation between habit name, target display, and edit controls), matching the structure shown in the uploaded image.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-6"
+        ],
+        "quotes": [
+          "If you can also make the target section more clean - it looks a bit messy currently with the way it’s laid out"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Each habit row has consistent alignment for name, target text, and action buttons across all rows.",
+        "When a row is in edit mode, Save/Cancel and the input do not cause the row height to jump excessively or misalign adjacent content.",
+        "The list remains readable on mobile widths similar to the screenshot (no overlapping text/buttons)."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
-    "Do not edit any frontend files under frontend/src/components/ui or any paths listed in frontend.immutablePaths (compose them instead).",
-    "Use English for all user-facing text."
+    "Do not modify files under frontend/src/components/ui (read-only shadcn components).",
+    "Do not modify any frontend paths listed as immutable in SYSTEM_CONTEXT.",
+    "Backend must remain a single Motoko actor in backend/main.mo; add migration only if state schema changes are required."
   ],
   "nonGoals": [
-    "Do not add or change Investments feature behavior.",
-    "Do not introduce third-party authentication providers beyond Internet Identity.",
-    "Do not add real-time features (WebSockets/push)."
+    "Adding new habits or changing existing habit units beyond monthly-target display/edit behavior.",
+    "Adding third-party integrations, notifications, or real-time syncing.",
+    "Redesigning other dashboard sections outside the Monthly Targets area."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

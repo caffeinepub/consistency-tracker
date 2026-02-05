@@ -2,48 +2,29 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-a-simple-monthly-targets-editor-ui-that-lets-the-user-select-a-month-year-and-view-edit-the-target-for-each-habit-for-that-specific-month-with-defaults-auto-filled-from-the-steady-climb-plan-when-applicable",
-      "featureTitle": "Add a simple monthly targets editor UI that lets the user select a month/year and view/edit the target for each habit for that specific month, with defaults auto-filled from the \"Steady Climb\" plan when applicable.",
+      "featureId": "feature-update-the-monthly-targets-auto-plan-defaults-so-that-both-press-ups-and-squats-receive-monthly-increasing-targets-that-climb-by-5-each-month-according-to-the-steady-climb-plan-shown-in-the-uploaded-image",
+      "featureTitle": "Update the Monthly Targets auto-plan defaults so that both “Press-ups” and “Squats” receive monthly-increasing targets that climb by +5 each month according to the Steady Climb plan shown in the uploaded image.",
+      "files": [
+        "frontend/src/components/MonthlyTargetsEditor.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-fix-monthly-targets-to-correctly-show-and-edit-persisted-monthly-target-overrides-from-the-backend-instead-of-always-showing-only-the-auto-plan-default-and-ignoring-saved-values",
+      "featureTitle": "Fix Monthly Targets to correctly show and edit persisted monthly target overrides from the backend (instead of always showing only the auto-plan default and ignoring saved values).",
       "files": [
         "frontend/src/components/MonthlyTargetsEditor.tsx",
-        "frontend/src/components/TrackerDashboard.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-13"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-the-progress-ui-to-display-both-monthly-progress-and-lifetime-totals-frequency-and-volume-where-applicable-and-clearly-label-which-scope-is-being-shown-this-month-vs-all-time",
-      "featureTitle": "Update the progress UI to display both monthly progress and lifetime totals (frequency and volume where applicable), and clearly label which scope is being shown (This month vs All time).",
-      "files": [
-        "frontend/src/components/ProgressCharts.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-14"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-react-query-hooks-for-the-new-monthly-target-and-lifetime-total-backend-apis-following-existing-hook-patterns-and-ensuring-appropriate-cache-invalidation-so-the-editor-and-dashboards-stay-in-sync",
-      "featureTitle": "Add React Query hooks for the new monthly-target and lifetime-total backend APIs, following existing hook patterns and ensuring appropriate cache invalidation so the editor and dashboards stay in sync.",
-      "files": [
         "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
@@ -55,7 +36,45 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-15"
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-remove-monthly-target-functionality-from-16-8-fasting-run-and-squash-so-targets-are-not-shown-as-applicable-and-cannot-be-edited-for-these-habits",
+      "featureTitle": "Remove monthly target functionality from “16/8 fasting”, “Run”, and “Squash” so targets are not shown as applicable and cannot be edited for these habits.",
+      "files": [
+        "frontend/src/components/MonthlyTargetsEditor.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-clean-up-the-monthly-targets-section-layout-to-look-less-messy-consistent-spacing-alignment-and-clearer-separation-between-habit-name-target-display-and-edit-controls-matching-the-structure-shown-in-the-uploaded-image",
+      "featureTitle": "Clean up the Monthly Targets section layout to look less messy (consistent spacing/alignment and clearer separation between habit name, target display, and edit controls), matching the structure shown in the uploaded image.",
+      "files": [
+        "frontend/src/components/MonthlyTargetsEditor.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
       ],
       "confidence": "high"
     }

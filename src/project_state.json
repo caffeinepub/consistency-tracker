@@ -1,34 +1,44 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Habit tracking app with monthly-adjustable targets (auto-increase per a progression plan), a simple monthly editor, and tracking for both monthly progress and lifetime totals.",
+  "summary": "Habit tracker with monthly-adjustable targets: add monthly increasing (+5/month) targets for press-ups and squats, and remove target functionality for 16/8 fasting, run, and squash where not applicable.",
   "architectural_notes": [
-    "Store per-habit targets by month (history) and also maintain a lifetime total aggregation for completions."
+    "Targets can be habit-specific: some habits use monthly-increasing numeric targets (+5/month), while others have no target section when not applicable."
   ],
-  "known_issues": [],
-  "isFixRequest": false,
+  "known_issues": [
+    "Press-ups and squash habits/targets did not update as expected (user reported)."
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-add-a-simple-monthly-targets-editor-ui-that-lets-the-user-select-a-month-year-and-view-edit-the-target-for-each-habit-for-that-specific-month-with-defaults-auto-filled-from-the-steady-climb-plan-when-applicable",
-      "title": "Add a simple monthly targets editor UI that lets the user select a month/year and view/edit the target for each habit for that specific month, with defaults auto-filled from the \"Steady Climb\" plan when applicable.",
+      "id": "feature-update-the-monthly-targets-auto-plan-defaults-so-that-both-press-ups-and-squats-receive-monthly-increasing-targets-that-climb-by-5-each-month-according-to-the-steady-climb-plan-shown-in-the-uploaded-image",
+      "title": "Update the Monthly Targets auto-plan defaults so that both “Press-ups” and “Squats” receive monthly-increasing targets that climb by +5 each month according to the Steady Climb plan shown in the uploaded image.",
       "reqIds": [
-        "REQ-13"
+        "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-update-the-progress-ui-to-display-both-monthly-progress-and-lifetime-totals-frequency-and-volume-where-applicable-and-clearly-label-which-scope-is-being-shown-this-month-vs-all-time",
-      "title": "Update the progress UI to display both monthly progress and lifetime totals (frequency and volume where applicable), and clearly label which scope is being shown (This month vs All time).",
+      "id": "feature-fix-monthly-targets-to-correctly-show-and-edit-persisted-monthly-target-overrides-from-the-backend-instead-of-always-showing-only-the-auto-plan-default-and-ignoring-saved-values",
+      "title": "Fix Monthly Targets to correctly show and edit persisted monthly target overrides from the backend (instead of always showing only the auto-plan default and ignoring saved values).",
       "reqIds": [
-        "REQ-14"
+        "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-react-query-hooks-for-the-new-monthly-target-and-lifetime-total-backend-apis-following-existing-hook-patterns-and-ensuring-appropriate-cache-invalidation-so-the-editor-and-dashboards-stay-in-sync",
-      "title": "Add React Query hooks for the new monthly-target and lifetime-total backend APIs, following existing hook patterns and ensuring appropriate cache invalidation so the editor and dashboards stay in sync.",
+      "id": "feature-remove-monthly-target-functionality-from-16-8-fasting-run-and-squash-so-targets-are-not-shown-as-applicable-and-cannot-be-edited-for-these-habits",
+      "title": "Remove monthly target functionality from “16/8 fasting”, “Run”, and “Squash” so targets are not shown as applicable and cannot be edited for these habits.",
       "reqIds": [
-        "REQ-15"
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-clean-up-the-monthly-targets-section-layout-to-look-less-messy-consistent-spacing-alignment-and-clearer-separation-between-habit-name-target-display-and-edit-controls-matching-the-structure-shown-in-the-uploaded-image",
+      "title": "Clean up the Monthly Targets section layout to look less messy (consistent spacing/alignment and clearer separation between habit name, target display, and edit controls), matching the structure shown in the uploaded image.",
+      "reqIds": [
+        "REQ-4"
       ],
       "version": 1
     }
@@ -36,37 +46,36 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Add monthly-adjustable habit targets that auto-increase by month based on an uploaded progression plan image; provide a simple editor; track both monthly progress and lifetime totals.",
+      "summary": "Add monthly increasing targets for press-ups (+5 each month) based on steady climb plan",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Add backend support for per-habit, per-month targets (month + year) that can be retrieved and updated by the authenticated caller, while preserving the existing habit CRUD and daily record tracking behavior.",
-      "reqIds": [
-        "REQ-10"
-      ],
+      "summary": "Add monthly increasing targets for squats (+5 each month) based on steady climb plan",
+      "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-3",
-      "summary": "Implement backend auto-target defaults based on the uploaded \"Steady Climb\" year plan when no manual monthly override exists, using calendar month number as plan month index (Jan=1 ... Dec=12) for these habits: Push-ups, Squats, Plank.",
-      "reqIds": [
-        "REQ-11"
-      ],
+      "summary": "Remove targets for 16/8 fasting (targets not applicable)",
+      "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-4",
-      "summary": "Add backend support for lifetime (all-time) totals per habit so the frontend can display both monthly and total progress without exporting all data.",
-      "reqIds": [
-        "REQ-12"
-      ],
+      "summary": "Remove targets for run (targets not applicable)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Remove targets for squash (targets not applicable)",
+      "reqIds": [],
       "status": "pending"
     }
   ],
-  "gameProjectType": "none",
-  "projectName": "Monthly-adjustable habit targets with auto-progression plan and lifetime totals",
+  "projectName": "Fix monthly targets: press-ups & squats steady-climb defaults; disable targets for fasting/run/squash; clean up targets UI",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

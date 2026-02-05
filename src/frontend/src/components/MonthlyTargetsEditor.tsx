@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useGetHabits, useGetMonthlyTargets, useUpdateMonthlyTarget } from '../hooks/useQueries';
+import { useGetHabits, useGetMultipleMonthlyTargets, useUpdateMonthlyTarget } from '../hooks/useQueries';
 import { isTimeUnit } from '../utils/habitUnit';
 import { parseDuration, formatDuration } from '../utils/duration';
 import { toast } from 'sonner';
@@ -27,17 +27,36 @@ const MONTHS = [
 
 // Auto-plan defaults based on "The Steady Climb" plan
 const AUTO_PLAN_DEFAULTS: Record<string, number[]> = {
+  'press-ups': [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75],
   'push-ups': [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75],
   'squats': [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75],
   'plank': [60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 240], // in seconds
 };
 
+// Habits that should not show targets
+const NON_APPLICABLE_HABITS = ['16/8 fasting', 'run', 'squash'];
+
+function normalizeHabitName(name: string): string {
+  return name.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+}
+
+function isHabitApplicable(habitName: string): boolean {
+  const normalized = normalizeHabitName(habitName);
+  return !NON_APPLICABLE_HABITS.some((na) => normalizeHabitName(na) === normalized);
+}
+
 function getAutoPlanDefault(habitName: string, month: number): number | null {
-  const normalizedName = habitName.toLowerCase().trim();
-  const plan = AUTO_PLAN_DEFAULTS[normalizedName];
-  if (plan && month >= 1 && month <= 12) {
-    return plan[month - 1];
+  const normalized = normalizeHabitName(habitName);
+  
+  // Check all plan keys for a match
+  for (const [planKey, values] of Object.entries(AUTO_PLAN_DEFAULTS)) {
+    if (normalizeHabitName(planKey) === normalized) {
+      if (month >= 1 && month <= 12) {
+        return values[month - 1];
+      }
+    }
   }
+  
   return null;
 }
 
@@ -49,31 +68,45 @@ export function MonthlyTargetsEditor() {
   const [editValue, setEditValue] = useState('');
 
   const { data: habits = [] } = useGetHabits();
+  const habitIds = habits.map((h) => h.id);
+  const { targetsMap, isLoading: targetsLoading } = useGetMultipleMonthlyTargets(habitIds);
   const updateMonthlyTarget = useUpdateMonthlyTarget();
 
   // Generate year options (current year ± 2)
   const yearOptions = Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - 2 + i);
 
+  const getPersistedTarget = (habitId: string): number | null => {
+    const key = `${habitId}_${selectedMonth}_${selectedYear}`;
+    const target = targetsMap.get(key);
+    return target ? Number(target.amount) : null;
+  };
+
   const startEditing = (habit: Habit) => {
     setEditingHabitId(habit.id);
     
-    // Fetch existing targets for this habit
-    const existingTargets = habit.id ? [] : []; // We'll use the query below
+    // Check for persisted override first
+    const persisted = getPersistedTarget(habit.id);
     
-    // Check if there's a manual override for this month/year
-    const targetKey = `${habit.id}_${selectedMonth}_${selectedYear}`;
-    
-    // For now, we'll compute the default or show blank
-    const autoPlan = getAutoPlanDefault(habit.name, selectedMonth);
-    
-    if (autoPlan !== null) {
+    if (persisted !== null) {
+      // Use persisted value
       if (isTimeUnit(habit.unit)) {
-        setEditValue(formatDuration(autoPlan));
+        setEditValue(formatDuration(persisted));
       } else {
-        setEditValue(String(autoPlan));
+        setEditValue(String(persisted));
       }
     } else {
-      setEditValue('');
+      // Fall back to auto-plan default
+      const autoPlan = getAutoPlanDefault(habit.name, selectedMonth);
+      
+      if (autoPlan !== null) {
+        if (isTimeUnit(habit.unit)) {
+          setEditValue(formatDuration(autoPlan));
+        } else {
+          setEditValue(String(autoPlan));
+        }
+      } else {
+        setEditValue('');
+      }
     }
   };
 
@@ -124,7 +157,18 @@ export function MonthlyTargetsEditor() {
   };
 
   const getDisplayTarget = (habit: Habit): string => {
-    // Check for auto-plan default
+    // Check for persisted override first
+    const persisted = getPersistedTarget(habit.id);
+    
+    if (persisted !== null) {
+      if (isTimeUnit(habit.unit)) {
+        return formatDuration(persisted);
+      } else {
+        return String(persisted);
+      }
+    }
+    
+    // Fall back to auto-plan default
     const autoPlan = getAutoPlanDefault(habit.name, selectedMonth);
     
     if (autoPlan !== null) {
@@ -137,6 +181,9 @@ export function MonthlyTargetsEditor() {
     
     return '—';
   };
+
+  // Filter habits to only show applicable ones
+  const applicableHabits = habits.filter((h) => isHabitApplicable(h.name));
 
   return (
     <Card>
@@ -186,9 +233,9 @@ export function MonthlyTargetsEditor() {
           </div>
         </div>
 
-        {habits.length === 0 ? (
+        {applicableHabits.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            No habits yet. Create a habit to set monthly targets.
+            No habits with targets. Create a habit to set monthly targets.
           </div>
         ) : (
           <div className="space-y-3">
@@ -196,20 +243,20 @@ export function MonthlyTargetsEditor() {
               Targets for {MONTHS[selectedMonth - 1]} {selectedYear}
             </p>
             <div className="space-y-2">
-              {habits.map((habit) => (
+              {applicableHabits.map((habit) => (
                 <div
                   key={habit.id}
-                  className="flex items-center justify-between p-3 rounded-lg border bg-card"
+                  className="grid grid-cols-[1fr_auto] sm:grid-cols-[minmax(0,1fr)_auto_auto] gap-2 items-center p-3 rounded-lg border bg-card min-h-[3.5rem]"
                 >
-                  <div className="flex-1">
-                    <span className="font-medium">{habit.name}</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 min-w-0">
+                    <span className="font-medium truncate">{habit.name}</span>
                     {editingHabitId !== habit.id && (
-                      <span className="text-sm text-muted-foreground ml-2">
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">
                         Target: {getDisplayTarget(habit)}
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 col-span-2 sm:col-span-1 justify-end">
                     {editingHabitId === habit.id ? (
                       <>
                         <Input
@@ -217,13 +264,14 @@ export function MonthlyTargetsEditor() {
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
                           placeholder={isTimeUnit(habit.unit) ? 'e.g., 1:15' : 'e.g., 20'}
-                          className="h-8 w-32"
+                          className="h-9 w-28 sm:w-32"
                           autoFocus
                         />
                         <Button
                           size="sm"
                           onClick={() => handleSave(habit)}
                           disabled={updateMonthlyTarget.isPending}
+                          className="h-9 px-3"
                         >
                           Save
                         </Button>
@@ -232,12 +280,18 @@ export function MonthlyTargetsEditor() {
                           variant="ghost"
                           onClick={cancelEditing}
                           disabled={updateMonthlyTarget.isPending}
+                          className="h-9 px-3"
                         >
                           Cancel
                         </Button>
                       </>
                     ) : (
-                      <Button size="sm" variant="outline" onClick={() => startEditing(habit)}>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => startEditing(habit)}
+                        className="h-9 px-4"
+                      >
                         Edit
                       </Button>
                     )}

@@ -1,6 +1,6 @@
 {
   "frontend/src/App.tsx": "Main application component wrapped in ErrorBoundary that handles authentication flow with deterministic profile loading, ensuring TrackerDashboard never renders until the user profile query has resolved to a valid UserProfile object with proper TypeScript type narrowing.",
-  "frontend/src/hooks/useQueries.ts": "React Query hooks for all backend operations including habits, user profiles, investment goals, monthly targets, and lifetime totals with authentication-gated queries and proper cache invalidation.",
+  "frontend/src/hooks/useQueries.ts": "React Query hooks for all backend operations including habits, user profiles, investment goals, monthly targets (with new useGetMultipleMonthlyTargets hook for fetching targets for multiple habits), and lifetime totals with authentication-gated queries and proper cache invalidation.",
   "frontend/src/components/LoginScreen.tsx": "Landing page with login button and branding for unauthenticated users.",
   "frontend/src/components/ProfileSetup.tsx": "Profile creation form shown to new users on first login to capture their name.",
   "frontend/src/components/TrackerDashboard.tsx": "Main dashboard layout with view mode switching between Habits and Investments, orchestrating header, habit manager, monthly targets editor, month tabs, habit grid, progress charts, and investments page.",
@@ -25,6 +25,6 @@
   "frontend/src/components/FatalErrorFallback.tsx": "Fatal error fallback screen UI with error message display and reload/retry controls for when the application encounters an unexpected error.",
   "frontend/src/components/InvestmentsPage.tsx": "Investment goals dashboard with create goal form, empty state, and grid display of investment goal cards with validation for non-negative numeric inputs.",
   "frontend/src/components/InvestmentGoalCard.tsx": "Investment goal card component displaying name, ticker, progress bar, current balance, target shares, with edit, delete (with confirmation modal), and log contribution functionality.",
-  "frontend/src/components/MonthlyTargetsEditor.tsx": "Monthly targets editor card that displays auto-plan defaults from \"The Steady Climb\" plan (Push-ups, Squats, Plank) and allows users to view/edit/save month-specific target overrides with month/year selection and duration formatting for time habits.",
+  "frontend/src/components/MonthlyTargetsEditor.tsx": "Monthly targets editor card that displays auto-plan defaults from \"The Steady Climb\" plan (Press-ups, Push-ups, Squats, Plank) with robust name normalization, fetches and displays persisted monthly target overrides with proper prefilling, disables targets for 16/8 fasting, Run, and Squash, and features a cleaned-up responsive layout with consistent alignment and mobile readability.",
   "frontend/src/backend.d.ts": "TypeScript interface definitions for the backend canister including all types (Habit, HabitRecord, MonthlyTarget, UserProfile, InvestmentGoal) and methods for habits, records, monthly targets, lifetime totals, investments, and user profiles."
 }

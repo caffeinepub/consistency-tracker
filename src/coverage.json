@@ -1,71 +1,59 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-05T19:44:36.663Z",
+  "generatedAt": "2026-02-05T20:10:35.328Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 6,
-    "implemented": 3,
+    "total": 4,
+    "implemented": 4,
     "items": [
       {
-        "id": "REQ-10",
-        "summary": "Add backend support for per-habit, per-month targets (month + year) that can be retrieved and updated by the authenticated caller, while preserving the existing habit CRUD and daily record tracking behavior.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-11",
-        "summary": "Implement backend auto-target defaults based on the uploaded \"Steady Climb\" year plan when no manual monthly override exists, using calendar month number as plan month index (Jan=1 ... Dec=12) for these habits: Push-ups, Squats, Plank.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-12",
-        "summary": "Add backend support for lifetime (all-time) totals per habit so the frontend can display both monthly and total progress without exporting all data.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-13",
-        "summary": "Add a simple monthly targets editor UI that lets the user select a month/year and view/edit the target for each habit for that specific month, with defaults auto-filled from the \"Steady Climb\" plan when applicable.",
+        "id": "REQ-1",
+        "summary": "Update the Monthly Targets auto-plan defaults so that both “Press-ups” and “Squats” receive monthly-increasing targets that climb by +5 each month according to the Steady Climb plan shown in the uploaded image.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/MonthlyTargetsEditor.tsx",
-          "frontend/src/components/TrackerDashboard.tsx"
+          "frontend/src/components/MonthlyTargetsEditor.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/MonthlyTargetsEditor.tsx",
-          "frontend/src/components/TrackerDashboard.tsx"
+          "frontend/src/components/MonthlyTargetsEditor.tsx"
         ]
       },
       {
-        "id": "REQ-14",
-        "summary": "Update the progress UI to display both monthly progress and lifetime totals (frequency and volume where applicable), and clearly label which scope is being shown (This month vs All time).",
+        "id": "REQ-2",
+        "summary": "Fix Monthly Targets to correctly show and edit persisted monthly target overrides from the backend (instead of always showing only the auto-plan default and ignoring saved values).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/ProgressCharts.tsx"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/MonthlyTargetsEditor.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/ProgressCharts.tsx"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/MonthlyTargetsEditor.tsx"
         ]
       },
       {
-        "id": "REQ-15",
-        "summary": "Add React Query hooks for the new monthly-target and lifetime-total backend APIs, following existing hook patterns and ensuring appropriate cache invalidation so the editor and dashboards stay in sync.",
+        "id": "REQ-3",
+        "summary": "Remove monthly target functionality from “16/8 fasting”, “Run”, and “Squash” so targets are not shown as applicable and cannot be edited for these habits.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/backend.d.ts"
+          "frontend/src/components/MonthlyTargetsEditor.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/backend.d.ts"
+          "frontend/src/components/MonthlyTargetsEditor.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Clean up the Monthly Targets section layout to look less messy (consistent spacing/alignment and clearer separation between habit name, target display, and edit controls), matching the structure shown in the uploaded image.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/MonthlyTargetsEditor.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/MonthlyTargetsEditor.tsx"
         ]
       }
     ]
@@ -77,13 +65,7 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
     "frontend/src/components/MonthlyTargetsEditor.tsx",
-    "frontend/src/components/ProgressCharts.tsx",
-    "frontend/src/components/TrackerDashboard.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
     "frontend/src/hooks/useQueries.ts",
     "project_state.json",
     "scratch/component-selection.json",

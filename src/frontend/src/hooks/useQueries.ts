@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import { useInternetIdentity } from './useInternetIdentity';
 import type { Habit, HabitRecord, UserProfile, ExportData, HabitUnit, DefaultAmount, InvestmentGoal, MonthlyTarget } from '../backend';
@@ -209,6 +209,42 @@ export function useGetMonthlyTargets(habitId: string) {
     },
     enabled: !!actor && !!identity && !actorFetching && !!habitId,
   });
+}
+
+export function useGetMultipleMonthlyTargets(habitIds: string[]) {
+  const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
+
+  const queries = useQueries({
+    queries: habitIds.map((habitId) => ({
+      queryKey: ['monthlyTargets', habitId],
+      queryFn: async () => {
+        if (!actor) return [];
+        return actor.getMonthlyTargets(habitId);
+      },
+      enabled: !!actor && !!identity && !actorFetching && !!habitId,
+    })),
+  });
+
+  // Combine all targets into a single lookup map
+  const targetsMap = new Map<string, MonthlyTarget>();
+  queries.forEach((query) => {
+    if (query.data) {
+      query.data.forEach((target) => {
+        const key = `${target.habitId}_${target.month}_${target.year}`;
+        targetsMap.set(key, target);
+      });
+    }
+  });
+
+  const isLoading = queries.some((q) => q.isLoading);
+  const isFetching = queries.some((q) => q.isFetching);
+
+  return {
+    targetsMap,
+    isLoading,
+    isFetching,
+  };
 }
 
 export function useUpdateMonthlyTarget() {

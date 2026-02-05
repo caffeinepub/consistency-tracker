@@ -1,102 +1,58 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-05T19:44:36.661Z",
-  "summary": "Diff adds new storage fields for monthly targets and a lifetimeTotal map, plus a new MonthlyTargetsEditor component and some progress UI wiring for a \"lifetime\" view. However, key backend APIs (monthly targets query/upsert, auto-default computation, and lifetime totals query with required shape) are not evidenced in the provided diff summary, and the monthly target editor appears incomplete (not actually reading manual overrides and cannot clear targets). Several unrelated frontend changes are also present (e.g., report/export utilities, \"km\" unit behavior, PDF libs), which are not requested.",
+  "generatedAt": "2026-02-05T20:10:35.325Z",
+  "summary": "Diff adds auto-plan defaults (including press-ups/squats +5/month) and introduces hooks/logic intended to fetch and edit persisted monthly targets, plus a non-applicable habits list. However, due to truncation, it is not fully evidenced that the UI actually hides targets/editing for fasting/run/squash, that persisted overrides are displayed in the list and saved without refresh, or that the Monthly Targets layout cleanup was implemented. Diff also adds an apparently no-op backend migration and adds auto-plan defaults for Plank which were not requested.",
   "missing_requirements": [
     {
-      "id": "REQ-10",
-      "requirement": "Backend exposes a query method to fetch monthly targets for a given (month, year) for the caller, and an update/upsert method to set or clear a monthly target for a given (habitId, month, year), enforcing caller ownership/authorization; existing APIs remain unchanged.",
-      "reason": "The diff shows new types/storage (`MonthlyTarget`, `monthlyTargets`) but does not show any new backend public methods for fetching/upserting/clearing monthly targets or enforcing habit ownership checks for those operations. Existing API non-regression also cannot be verified from truncated backend diff.",
-      "evidence": [
-        "backend/main.mo",
-        "backend/migration.mo"
-      ]
-    },
-    {
-      "id": "REQ-11",
-      "requirement": "Backend returns auto-target defaults from the Steady Climb plan for Push-ups, Squats, Plank when no manual override exists (Jan=1..Dec=12), and returns no default for non-matching habit names.",
-      "reason": "The Steady Climb plan defaults are implemented client-side in `MonthlyTargetsEditor` via `AUTO_PLAN_DEFAULTS`, but there is no evidence the backend computes/returns these defaults when overrides are absent.",
+      "id": "REQ-2",
+      "requirement": "Fix Monthly Targets to correctly show and edit persisted monthly target overrides from the backend (display saved values in list, prefill edit, save updates backend and updates UI without full refresh; preserve duration parsing/formatting for time habits).",
+      "reason": "The component shows logic to prefill the edit input from a fetched targetsMap, but the diff snippet is truncated before confirming (a) the list display prefers persisted values over auto-plan defaults, and (b) the save flow updates backend and updates UI state/caches without a full refresh. Duration formatting is shown for prefilling, but display of saved overrides is not evidenced.",
       "evidence": [
         "frontend/src/components/MonthlyTargetsEditor.tsx",
-        "backend/main.mo"
+        "frontend/src/hooks/useQueries.ts (truncated; mentions new useGetMultipleMonthlyTargets and monthly targets support but not fully shown)"
       ]
     },
     {
-      "id": "REQ-12",
-      "requirement": "Backend exposes a query returning, for each caller habit, lifetime totals including total completion count and total volume (sum of amounts, null treated as 0), filtered to caller-owned habits, including unit info for formatting.",
-      "reason": "Backend adds `lifetimeTotal : Map.Map<Text, Nat>` (a single Nat per key) but there is no evidence of a query method that returns per-habit totals with both completion count and volume plus unit information. Frontend uses `useGetLifetimeTotal(selectedHabitForVolume)` suggesting a single numeric value, not the required structured per-habit totals.",
+      "id": "REQ-3",
+      "requirement": "Remove monthly target functionality from “16/8 fasting”, “Run”, and “Squash” so targets are not shown as applicable and cannot be edited for these habits (no target display and no Edit button).",
+      "reason": "A NON_APPLICABLE_HABITS list and applicability helpers are added, but the provided snippet is truncated before showing they are actually applied to suppress target display and hide edit controls for those habits.",
       "evidence": [
-        "backend/main.mo",
-        "backend/migration.mo",
-        "frontend/src/components/ProgressCharts.tsx"
+        "frontend/src/components/MonthlyTargetsEditor.tsx (NON_APPLICABLE_HABITS/isHabitApplicable added but usage not shown due to truncation)"
       ]
     },
     {
-      "id": "REQ-13",
-      "requirement": "Monthly targets editor shows, per habit for selected month/year: manual override if set; else backend auto-plan default if available; else blank. User can set/update/clear overrides; saving uses existing toast pattern; time targets use duration utilities.",
-      "reason": "Editor includes month/year selection and duration parsing/formatting and toasts, but the shown code does not actually read/display existing manual overrides (it even contains placeholder comments like `existingTargets = habit.id ? [] : []`) and constructs a `targetKey` without using fetched targets. Also, clearing a target is not supported: empty input triggers an error ('Please enter a target value') rather than calling an API to clear the override.",
+      "id": "REQ-4",
+      "requirement": "Clean up the Monthly Targets section layout (consistent spacing/alignment; stable row height in edit mode; mobile readability) matching the screenshot structure.",
+      "reason": "MonthlyTargetsEditor.tsx is truncated and does not show any specific structural/layout changes (e.g., row/grid structure, consistent alignment, edit-mode layout constraints). No other diff evidence shows layout adjustments.",
       "evidence": [
-        "frontend/src/components/MonthlyTargetsEditor.tsx"
-      ]
-    },
-    {
-      "id": "REQ-14",
-      "requirement": "Progress UI displays both monthly progress and lifetime totals, clearly labeled (This month vs All time), using the new backend lifetime totals query; time volumes formatted as durations.",
-      "reason": "ProgressCharts introduces a `volumeView` state with `'monthly' | 'lifetime'` and calls `useGetLifetimeTotal`, but the diff does not show an \"All time\" section/labeling or a full per-habit lifetime totals display (frequency and volume) as required. Additionally, the backend lifetime totals API required by REQ-12 is not evidenced.",
-      "evidence": [
-        "frontend/src/components/ProgressCharts.tsx"
-      ]
-    },
-    {
-      "id": "REQ-15",
-      "requirement": "Add React Query hooks for fetching monthly targets by (month, year), updating/clearing a monthly target override, and fetching lifetime totals; mutations invalidate correct queries; hooks follow existing `useQueries.ts` conventions.",
-      "reason": "`MonthlyTargetsEditor` imports `useGetMonthlyTargets` and `useUpdateMonthlyTarget`, and `ProgressCharts` imports `useGetLifetimeTotal`, but the provided `useQueries.ts` diff excerpt is truncated before any new hook implementations are shown. Cache invalidation behavior for these new hooks cannot be verified from the excerpt.",
-      "evidence": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/components/MonthlyTargetsEditor.tsx",
-        "frontend/src/components/ProgressCharts.tsx"
+        "frontend/src/components/MonthlyTargetsEditor.tsx (truncated)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Changed report stats behavior to count no-unit habit completions as volume=1 per completion.",
-      "reason": "Not requested by REQ-10..REQ-15; this alters reporting calculations beyond monthly targets/lifetime totals scope.",
+      "description": "Added backend migration scaffolding and enabled migration in the main actor even though the migration appears to be a no-op (OldActor and NewActor types are identical and run returns old unchanged).",
+      "reason": "BuildRequest says to add a migration only if state schema changes are required; the diff’s migration module does not evidence any schema change or transformation.",
       "evidence": [
-        "frontend-file-summaries.txt"
+        "backend/migration.mo",
+        "backend/main.mo (with migration = Migration.run)"
       ]
     },
     {
-      "description": "Added/modified PDF export implementation details using dynamically imported jsPDF and jspdf-autotable with @vite-ignore.",
-      "reason": "Not requested; export/PDF behavior changes are outside the specified requirements and non-goals.",
+      "description": "Introduced/expanded auto-plan defaults for “plank” (seconds-based) beyond the requested press-ups and squats changes.",
+      "reason": "REQ-1 only requests steady-climb defaults for Press-ups and Squats (plus robust matching variants); adding plank-specific monthly defaults is not requested in the BuildRequest.",
       "evidence": [
-        "frontend-file-summaries.txt"
-      ]
-    },
-    {
-      "description": "Introduced/expanded a built-in \"km\" unit option and related UI/CSV formatting behavior.",
-      "reason": "Not requested by the build; the request focuses on monthly targets, auto-progression defaults, and lifetime totals.",
-      "evidence": [
-        "frontend-file-summaries.txt"
-      ]
-    },
-    {
-      "description": "Added new footer copy: \"© 2026. Built with love using caffeine.ai\".",
-      "reason": "Not requested UI change; introduces new user-facing text unrelated to the requested features.",
-      "evidence": [
-        "frontend/src/components/TrackerDashboard.tsx"
+        "frontend/src/components/MonthlyTargetsEditor.tsx (AUTO_PLAN_DEFAULTS includes 'plank')"
       ]
     }
   ],
-  "confidence": 0.74,
+  "confidence": 0.64,
   "changed_files": [
     "backend/main.mo",
     "backend/migration.mo",
     "frontend-file-summaries.txt",
     "frontend/src/components/MonthlyTargetsEditor.tsx",
-    "frontend/src/components/ProgressCharts.tsx",
-    "frontend/src/components/TrackerDashboard.tsx",
     "frontend/src/hooks/useQueries.ts",
     "project_state.json"
   ]

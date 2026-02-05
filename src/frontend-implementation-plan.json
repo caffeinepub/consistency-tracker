@@ -1,66 +1,76 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Monthly habit target overrides editor + lifetime totals in progress UI",
+  "title": "Monthly Targets: steady-climb defaults, persisted overrides, disable non-applicable habits, and UI cleanup",
   "requirements": [
     {
-      "id": "REQ-13",
-      "summary": "Add monthly targets editor UI with month/year selection, per-habit override editing/clearing, and duration-friendly inputs for time habits",
+      "id": "REQ-1",
+      "summary": "Update Monthly Targets auto-plan defaults so Press-ups and Squats always get Steady Climb monthly-increasing (+5) targets with robust name matching.",
       "acceptanceCriteria": [
-        "UI provides controls to select the active month (1-12) and year, reusing the existing month-tab UX pattern where appropriate.",
-        "For each habit, UI shows the current month’s target value: (a) manual override value if set; otherwise (b) auto-plan default if available; otherwise blank/none.",
-        "User can set/update/clear a manual override for a habit’s monthly target.",
-        "For time-based targets (e.g., Plank), the editor accepts and displays durations in a human-friendly format consistent with existing duration utilities (e.g., \"1 min 15 sec\", \"1:15\").",
-        "Saving changes shows success/error feedback using the existing toast pattern."
+        "In the Monthly Targets list, a habit named “Press-ups” displays an auto-plan target (not “—”) for any selected month in the year.",
+        "In the Monthly Targets list, a habit named “Squats” displays an auto-plan target (not “—”) for any selected month in the year.",
+        "The Press-ups and Squats auto-plan values increase by 5 month-over-month across the 12 months (e.g., Jan 20, Feb 25, Mar 30 ...).",
+        "Auto-plan matching is robust to common naming variants such as “Press-ups” vs “Push-ups” (i.e., press-ups no longer fails to match due to name normalization)."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/MonthlyTargetsEditor.tsx",
-          "operation": "create",
-          "description": "Create a monthly targets editor card that lists habits and lets the user view/edit/clear month-specific target overrides; use existing duration utilities for time habits and the existing toast pattern for success/error feedback."
-        },
-        {
-          "path": "frontend/src/components/TrackerDashboard.tsx",
           "operation": "modify",
-          "description": "Wire the MonthlyTargetsEditor into the Habits view (no new top-level routes), and update state to allow selecting both month and year (month uses existing MonthTabs; add a year control alongside)."
+          "description": "Implement robust habit-name normalization and aliasing so Press-ups/Push-ups variants map to the same Steady Climb plan; ensure Press-ups and Squats resolve to the +5/month sequence for months 1–12."
         }
       ]
     },
     {
-      "id": "REQ-14",
-      "summary": "Update progress UI to show both this-month progress and all-time totals with clear labeling and correct formatting by unit",
+      "id": "REQ-2",
+      "summary": "Show and edit persisted monthly target overrides (saved values take precedence over auto-plan defaults) with correct prefilling and time-duration handling.",
       "acceptanceCriteria": [
-        "Progress UI includes an All time section (or toggle) that displays lifetime totals per habit using the new backend lifetime totals query.",
-        "Monthly views continue to use existing monthly records fetching and calculations for month-scoped progress.",
-        "Time-based lifetime volumes are formatted as durations; rep-based lifetime volumes are shown as numbers.",
-        "UI copy is in English and clearly distinguishes month-scoped vs lifetime totals."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/ProgressCharts.tsx",
-          "operation": "modify",
-          "description": "Add an \"All time\" section (or toggle) that renders per-habit lifetime totals (frequency + volume where applicable), while keeping existing monthly charts unchanged; format time volumes with existing duration formatting and label scopes clearly in English."
-        }
-      ]
-    },
-    {
-      "id": "REQ-15",
-      "summary": "Add React Query hooks for monthly targets (by month/year) and lifetime totals with cache invalidation aligned to existing patterns",
-      "acceptanceCriteria": [
-        "New hooks exist for: fetching monthly targets for (month, year), updating a monthly target override, and fetching lifetime totals.",
-        "Mutations invalidate the correct queries (monthly targets for the affected month/year, and any UI relying on targets/totals).",
-        "Hooks follow the conventions used in frontend/src/hooks/useQueries.ts (actor availability checks, enabled gating with identity/actor state)."
+        "If a user saves a monthly target for a habit/month/year, returning to that same month/year shows the saved value in the targets list.",
+        "When tapping Edit for a habit, the input is prefilled with the saved monthly target if one exists for the selected month/year; otherwise it is prefilled with the auto-plan default (if available) or blank.",
+        "Saving a new target value updates the backend and the UI reflects the updated value without a full page refresh.",
+        "Time-based habits (e.g., Plank) still support duration parsing/formatting when displaying saved overrides and when prefilling the edit input."
       ],
       "file_operations": [
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Add React Query hooks for (a) fetching monthly targets for a selected month/year, (b) upserting/clearing a monthly target override with proper invalidation, and (c) fetching lifetime totals; follow existing actor/identity enabled gating and queryKey conventions."
+          "description": "Add a React Query hook that can fetch monthly targets for multiple habits (e.g., via TanStack useQueries) and provide a combined, cache-friendly lookup for MonthlyTargetsEditor."
         },
         {
-          "path": "frontend/src/backend.d.ts",
+          "path": "frontend/src/components/MonthlyTargetsEditor.tsx",
           "operation": "modify",
-          "description": "Update the frontend backend type declarations to include the new monthly-targets-by-(month,year) query capability and the lifetime-totals query return types consumed by the new hooks/components."
+          "description": "Use persisted monthly targets (via the multi-habit targets hook) to: (1) display saved overrides for the selected month/year when present, otherwise fall back to auto-plan; (2) prefill the edit input with saved override, otherwise auto-plan or blank; (3) keep duration parse/format behavior for time-based units; and (4) refresh UI after save by leveraging existing query invalidation."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Disable monthly targets for 16/8 fasting, Run, and Squash so targets are not shown as applicable and cannot be edited for these habits.",
+      "acceptanceCriteria": [
+        "For habits named “16/8 fasting”, “Run”, or “Squash”, the Monthly Targets list does not show an editable target value (no target number/duration) and does not show an Edit button.",
+        "These habits do not display auto-plan default targets even if a default would otherwise be inferred.",
+        "Other habits (e.g., Plank, Press-ups, Squats) continue to show targets and remain editable."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/MonthlyTargetsEditor.tsx",
+          "operation": "modify",
+          "description": "Add an applicability check (using normalized habit-name matching) to hide target display and remove/disable Edit controls for 16/8 fasting, Run, and Squash; ensure auto-plan and saved overrides are both suppressed for these habits while leaving other habits unaffected."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Clean up Monthly Targets section layout with consistent row spacing/alignment and a clearer separation between habit name, target display, and edit controls, including mobile readability.",
+      "acceptanceCriteria": [
+        "Each habit row has consistent alignment for name, target text, and action buttons across all rows.",
+        "When a row is in edit mode, Save/Cancel and the input do not cause the row height to jump excessively or misalign adjacent content.",
+        "The list remains readable on mobile widths similar to the screenshot (no overlapping text/buttons)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/MonthlyTargetsEditor.tsx",
+          "operation": "modify",
+          "description": "Refactor the Monthly Targets rows into a consistent responsive layout (e.g., grid/flex with stable columns, controlled wrapping on mobile, and a predictable minimum row height) so target text and edit controls align cleanly and editing does not cause excessive row-height jumps."
         }
       ]
     }
