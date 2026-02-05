@@ -6,14 +6,15 @@ import Time "mo:core/Time";
 import Array "mo:core/Array";
 import Order "mo:core/Order";
 import Iter "mo:core/Iter";
+import Nat "mo:core/Nat";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
-
 
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
 
-
+import Migration "migration";
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -29,6 +30,13 @@ actor {
     #time;
     #custom : Text;
     #none;
+  };
+
+  public type MonthlyTarget = {
+    habitId : Text;
+    amount : Nat;
+    month : Nat;
+    year : Nat;
   };
 
   module Habit {
@@ -57,16 +65,29 @@ actor {
     unit : HabitUnit;
   };
 
+  public type InvestmentGoal = {
+    id : Text;
+    name : Text;
+    ticker : Text;
+    targetShares : Nat;
+    currentBalance : Nat;
+  };
+
   public type ExportData = {
     profile : ?UserProfile;
     habits : [Habit];
     records : [HabitRecord];
+    monthlyTargets : [MonthlyTarget];
   };
 
   let userProfiles = Map.empty<Principal, UserProfile>();
   let userHabits = Map.empty<Principal, Set.Set<Text>>();
   let habits = Map.empty<Text, Habit>();
   let habitRecords = Map.empty<Text, List.List<HabitRecord>>();
+  let userInvestmentGoals = Map.empty<Principal, Set.Set<Text>>();
+  let investmentGoals = Map.empty<Text, InvestmentGoal>();
+  let monthlyTargets = Map.empty<Text, MonthlyTarget>();
+  let lifetimeTotal = Map.empty<Text, Nat>();
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
@@ -231,6 +252,17 @@ actor {
         };
         records.add(record);
         habitRecords.add(habitId, records);
+
+        // Update lifetime total for new record
+        let completedAmount = switch (finalAmount) {
+          case (null) { 1 };
+          case (?amt) { amt };
+        };
+        let newLifetimeTotal = switch (lifetimeTotal.get(habitId)) {
+          case (null) { completedAmount };
+          case (?currentTotal) { currentTotal + completedAmount };
+        };
+        lifetimeTotal.add(habitId, newLifetimeTotal);
       };
       case (?records) {
         let existingRecord = records.find(
@@ -238,6 +270,7 @@ actor {
         );
 
         if (existingRecord.isNull()) {
+          // Adding new record
           let newRecord : HabitRecord = {
             habitId;
             habitName = habit.name;
@@ -249,7 +282,40 @@ actor {
             unit = habitUnit;
           };
           records.add(newRecord);
+
+          // Update lifetime total for new record
+          let completedAmount = switch (finalAmount) {
+            case (null) { 1 };
+            case (?amt) { amt };
+          };
+          let newLifetimeTotal = switch (lifetimeTotal.get(habitId)) {
+            case (null) { completedAmount };
+            case (?currentTotal) { currentTotal + completedAmount };
+          };
+          lifetimeTotal.add(habitId, newLifetimeTotal);
         } else {
+          // Removing existing record - subtract from lifetime total
+          switch (existingRecord) {
+            case (?existing) {
+              let removedAmount = switch (existing.amount) {
+                case (null) { 1 };
+                case (?amt) { amt };
+              };
+              let newLifetimeTotal = switch (lifetimeTotal.get(habitId)) {
+                case (null) { 0 };
+                case (?currentTotal) {
+                  if (currentTotal >= removedAmount) {
+                    currentTotal - removedAmount;
+                  } else {
+                    0;
+                  };
+                };
+              };
+              lifetimeTotal.add(habitId, newLifetimeTotal);
+            };
+            case (null) { () };
+          };
+
           let filteredRecords = records.filter(func(r) { not (r.day == day and r.month == month and r.year == year) });
           records.clear();
           records.addAll(filteredRecords.values());
@@ -374,6 +440,95 @@ actor {
     };
   };
 
+  public shared ({ caller }) func updateMonthlyTarget(habitId : Text, amount : Nat, month : Nat, year : Nat) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can update monthly targets");
+    };
+
+    // Verify habit exists
+    let habitExists = switch (habits.get(habitId)) {
+      case (null) { false };
+      case (?_) { true };
+    };
+
+    if (not habitExists) {
+      Runtime.trap("Habit does not exist for provided habit ID");
+    };
+
+    // Verify habit belongs to caller
+    switch (userHabits.get(caller)) {
+      case (null) { Runtime.trap("Unauthorized: Habit does not belong to user") };
+      case (?habitSet) {
+        if (not habitSet.contains(habitId)) {
+          Runtime.trap("Unauthorized: Habit does not belong to user");
+        };
+      };
+    };
+
+    let targetId = habitId.concat("_").concat(month.toText()).concat("_").concat(year.toText());
+    let newMonthlyTarget : MonthlyTarget = {
+      habitId;
+      amount;
+      month;
+      year;
+    };
+
+    monthlyTargets.add(targetId, newMonthlyTarget);
+  };
+
+  public query ({ caller }) func getMonthlyTargets(habitId : Text) : async [MonthlyTarget] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view monthly targets");
+    };
+
+    // Verify habit exists
+    let exists = switch (habits.get(habitId)) {
+      case (null) { false };
+      case (?_) { true };
+    };
+
+    if (not exists) {
+      Runtime.trap("Habit not found");
+    };
+
+    // Verify habit belongs to caller
+    switch (userHabits.get(caller)) {
+      case (null) { Runtime.trap("Unauthorized: Habit does not belong to user") };
+      case (?habitSet) {
+        if (not habitSet.contains(habitId)) {
+          Runtime.trap("Unauthorized: Habit does not belong to user");
+        };
+      };
+    };
+
+    monthlyTargets.toArray().filter(
+      func((k, target)) { target.habitId == habitId }
+    ).map<(?Text, MonthlyTarget), MonthlyTarget>(
+      func(entry) { switch (entry) { case ((_, target)) { target } } }
+    );
+  };
+
+  public query ({ caller }) func getLifetimeTotal(habitId : Text) : async Nat {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view lifetime totals");
+    };
+
+    // Verify habit belongs to caller
+    switch (userHabits.get(caller)) {
+      case (null) { Runtime.trap("Unauthorized: Habit does not belong to user") };
+      case (?habitSet) {
+        if (not habitSet.contains(habitId)) {
+          Runtime.trap("Unauthorized: Habit does not belong to user");
+        };
+      };
+    };
+
+    switch (lifetimeTotal.get(habitId)) {
+      case (null) { 0 };
+      case (?total) { total };
+    };
+  };
+
   public query ({ caller }) func exportAllData(
     startDay : Nat,
     startMonth : Nat,
@@ -431,6 +586,7 @@ actor {
       profile;
       habits = userHabitsList;
       records = filteredRecords;
+      monthlyTargets = [];
     };
   };
 
@@ -491,6 +647,142 @@ actor {
       profile;
       habits = selectedHabits;
       records = filteredRecords;
+      monthlyTargets = [];
     };
+  };
+
+  public shared ({ caller }) func createInvestmentGoal(
+    name : Text,
+    ticker : Text,
+    targetShares : Nat,
+    currentBalance : Nat,
+  ) : async Text {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can create investment goals");
+    };
+
+    let goalId = name.concat(ticker).concat(Time.now().toText());
+    let investmentGoal : InvestmentGoal = {
+      id = goalId;
+      name;
+      ticker;
+      targetShares;
+      currentBalance;
+    };
+
+    if (investmentGoals.containsKey(goalId)) {
+      Runtime.trap("Investment goal already exists");
+    };
+
+    switch (userInvestmentGoals.get(caller)) {
+      case (null) {
+        let goalSet = Set.empty<Text>();
+        goalSet.add(goalId);
+        userInvestmentGoals.add(caller, goalSet);
+      };
+      case (?goalSet) {
+        if (goalSet.contains(goalId)) {
+          Runtime.trap("Investment goal already exists for user");
+        };
+        goalSet.add(goalId);
+      };
+    };
+
+    investmentGoals.add(goalId, investmentGoal);
+    goalId;
+  };
+
+  public shared ({ caller }) func updateInvestmentGoal(
+    goalId : Text,
+    newName : Text,
+    newTicker : Text,
+    newTargetShares : Nat,
+    newCurrentBalance : Nat,
+  ) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can update investment goals");
+    };
+
+    switch (userInvestmentGoals.get(caller)) {
+      case (null) { Runtime.trap("Unauthorized: Investment goal does not belong to user") };
+      case (?goalSet) {
+        if (not goalSet.contains(goalId)) {
+          Runtime.trap("Unauthorized: Investment goal does not belong to user");
+        };
+      };
+    };
+
+    switch (investmentGoals.get(goalId)) {
+      case (null) { Runtime.trap("Investment goal not found") };
+      case (?goal) {
+        let updatedGoal : InvestmentGoal = {
+          id = goalId;
+          name = newName;
+          ticker = newTicker;
+          targetShares = newTargetShares;
+          currentBalance = newCurrentBalance;
+        };
+        investmentGoals.add(goalId, updatedGoal);
+      };
+    };
+  };
+
+  public shared ({ caller }) func deleteInvestmentGoal(goalId : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can delete investment goals");
+    };
+
+    switch (userInvestmentGoals.get(caller)) {
+      case (null) { Runtime.trap("Unauthorized: Investment goal does not belong to user") };
+      case (?goalSet) {
+        if (not goalSet.contains(goalId)) {
+          Runtime.trap("Unauthorized: Investment goal does not belong to user");
+        };
+        goalSet.remove(goalId);
+        investmentGoals.remove(goalId);
+      };
+    };
+  };
+
+  public query ({ caller }) func getInvestmentGoals() : async [InvestmentGoal] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view investment goals");
+    };
+
+    switch (userInvestmentGoals.get(caller)) {
+      case (null) { [] };
+      case (?goalSet) {
+        let goalIds = goalSet.toArray();
+        goalIds.map<Text, InvestmentGoal>(
+          func(id) {
+            switch (investmentGoals.get(id)) {
+              case (null) { Runtime.trap("Investment goal not found") };
+              case (?goal) { goal };
+            };
+          }
+        );
+      };
+    };
+  };
+
+  public query ({ caller }) func getInvestmentGoal(goalId : Text) : async ?InvestmentGoal {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view investment goals");
+    };
+
+    if (goalId == "") {
+      Runtime.trap("Goal id required");
+    };
+
+    switch (userInvestmentGoals.get(caller)) {
+      case (null) { Runtime.trap("Unauthorized: Investment goal does not belong to user") };
+      case (?goalSet) {
+        if (not goalSet.contains(goalId)) {
+          Runtime.trap("Unauthorized: Investment goal does not belong to user");
+        };
+      };
+    };
+
+    investmentGoals.get(goalId);
   };
 };

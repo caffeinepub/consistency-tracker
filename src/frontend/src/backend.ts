@@ -91,6 +91,7 @@ export class ExternalBlob {
 }
 export interface ExportData {
     records: Array<HabitRecord>;
+    monthlyTargets: Array<MonthlyTarget>;
     habits: Array<Habit>;
     profile?: UserProfile;
 }
@@ -108,6 +109,13 @@ export type HabitUnit = {
     __kind__: "time";
     time: null;
 };
+export interface InvestmentGoal {
+    id: string;
+    ticker: string;
+    currentBalance: bigint;
+    name: string;
+    targetShares: bigint;
+}
 export interface HabitRecord {
     day: bigint;
     completedAt?: Time;
@@ -117,6 +125,12 @@ export interface HabitRecord {
     year: bigint;
     habitId: string;
     amount?: bigint;
+}
+export interface MonthlyTarget {
+    month: bigint;
+    year: bigint;
+    habitId: string;
+    amount: bigint;
 }
 export interface Habit {
     id: string;
@@ -139,13 +153,19 @@ export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createHabit(name: string, weeklyTarget: bigint, unit: HabitUnit, defaultAmount: DefaultAmount): Promise<string>;
+    createInvestmentGoal(name: string, ticker: string, targetShares: bigint, currentBalance: bigint): Promise<string>;
     deleteHabit(habitId: string): Promise<void>;
+    deleteInvestmentGoal(goalId: string): Promise<void>;
     exportAllData(startDay: bigint, startMonth: bigint, startYear: bigint, endDay: bigint, endMonth: bigint, endYear: bigint): Promise<ExportData>;
     exportSelectedHabitsData(habitIds: Array<string>, startDay: bigint, startMonth: bigint, startYear: bigint, endDay: bigint, endMonth: bigint, endYear: bigint): Promise<ExportData>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getHabits(): Promise<Array<Habit>>;
+    getInvestmentGoal(goalId: string): Promise<InvestmentGoal | null>;
+    getInvestmentGoals(): Promise<Array<InvestmentGoal>>;
+    getLifetimeTotal(habitId: string): Promise<bigint>;
     getMonthlyRecords(month: bigint, year: bigint): Promise<Array<HabitRecord>>;
+    getMonthlyTargets(habitId: string): Promise<Array<MonthlyTarget>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
@@ -154,8 +174,10 @@ export interface backendInterface {
     updateHabitName(habitId: string, newName: string): Promise<void>;
     updateHabitUnit(habitId: string, newUnit: HabitUnit): Promise<void>;
     updateHabitWeeklyTarget(habitId: string, newWeeklyTarget: bigint): Promise<void>;
+    updateInvestmentGoal(goalId: string, newName: string, newTicker: string, newTargetShares: bigint, newCurrentBalance: bigint): Promise<void>;
+    updateMonthlyTarget(habitId: string, amount: bigint, month: bigint, year: bigint): Promise<void>;
 }
-import type { DefaultAmount as _DefaultAmount, ExportData as _ExportData, Habit as _Habit, HabitRecord as _HabitRecord, HabitUnit as _HabitUnit, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
+import type { DefaultAmount as _DefaultAmount, ExportData as _ExportData, Habit as _Habit, HabitRecord as _HabitRecord, HabitUnit as _HabitUnit, InvestmentGoal as _InvestmentGoal, MonthlyTarget as _MonthlyTarget, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
@@ -200,6 +222,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async createInvestmentGoal(arg0: string, arg1: string, arg2: bigint, arg3: bigint): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createInvestmentGoal(arg0, arg1, arg2, arg3);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createInvestmentGoal(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
     async deleteHabit(arg0: string): Promise<void> {
         if (this.processError) {
             try {
@@ -211,6 +247,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.deleteHabit(arg0);
+            return result;
+        }
+    }
+    async deleteInvestmentGoal(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteInvestmentGoal(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteInvestmentGoal(arg0);
             return result;
         }
     }
@@ -284,6 +334,48 @@ export class Backend implements backendInterface {
             return from_candid_vec_n16(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getInvestmentGoal(arg0: string): Promise<InvestmentGoal | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getInvestmentGoal(arg0);
+                return from_candid_opt_n23(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getInvestmentGoal(arg0);
+            return from_candid_opt_n23(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getInvestmentGoals(): Promise<Array<InvestmentGoal>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getInvestmentGoals();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getInvestmentGoals();
+            return result;
+        }
+    }
+    async getLifetimeTotal(arg0: string): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getLifetimeTotal(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getLifetimeTotal(arg0);
+            return result;
+        }
+    }
     async getMonthlyRecords(arg0: bigint, arg1: bigint): Promise<Array<HabitRecord>> {
         if (this.processError) {
             try {
@@ -296,6 +388,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getMonthlyRecords(arg0, arg1);
             return from_candid_vec_n9(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getMonthlyTargets(arg0: string): Promise<Array<MonthlyTarget>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getMonthlyTargets(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getMonthlyTargets(arg0);
+            return result;
         }
     }
     async getUserProfile(arg0: Principal): Promise<UserProfile | null> {
@@ -410,6 +516,34 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async updateInvestmentGoal(arg0: string, arg1: string, arg2: string, arg3: bigint, arg4: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateInvestmentGoal(arg0, arg1, arg2, arg3, arg4);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateInvestmentGoal(arg0, arg1, arg2, arg3, arg4);
+            return result;
+        }
+    }
+    async updateMonthlyTarget(arg0: string, arg1: bigint, arg2: bigint, arg3: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateMonthlyTarget(arg0, arg1, arg2, arg3);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateMonthlyTarget(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
 }
 function from_candid_DefaultAmount_n19(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _DefaultAmount): DefaultAmount {
     return from_candid_opt_n15(_uploadFile, _downloadFile, value);
@@ -436,6 +570,9 @@ function from_candid_opt_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
     return value.length === 0 ? null : value[0];
 }
 function from_candid_opt_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n23(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_InvestmentGoal]): InvestmentGoal | null {
     return value.length === 0 ? null : value[0];
 }
 function from_candid_record_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
@@ -494,15 +631,18 @@ function from_candid_record_n18(_uploadFile: (file: ExternalBlob) => Promise<Uin
 }
 function from_candid_record_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     records: Array<_HabitRecord>;
+    monthlyTargets: Array<_MonthlyTarget>;
     habits: Array<_Habit>;
     profile: [] | [_UserProfile];
 }): {
     records: Array<HabitRecord>;
+    monthlyTargets: Array<MonthlyTarget>;
     habits: Array<Habit>;
     profile?: UserProfile;
 } {
     return {
         records: from_candid_vec_n9(_uploadFile, _downloadFile, value.records),
+        monthlyTargets: value.monthlyTargets,
         habits: from_candid_vec_n16(_uploadFile, _downloadFile, value.habits),
         profile: record_opt_to_undefined(from_candid_opt_n20(_uploadFile, _downloadFile, value.profile))
     };

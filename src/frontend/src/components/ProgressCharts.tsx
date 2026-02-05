@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ChartContainer,
   ChartTooltip,
@@ -13,6 +14,7 @@ import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, ResponsiveContainer
 import { calculateReportStats } from '../utils/reportStats';
 import { formatDuration } from '../utils/duration';
 import { isTimeUnit } from '../utils/habitUnit';
+import { useGetLifetimeTotal } from '../hooks/useQueries';
 
 interface ProgressChartsProps {
   habits: Habit[];
@@ -28,6 +30,7 @@ export function ProgressCharts({
   selectedYear,
 }: ProgressChartsProps) {
   const [selectedHabitForVolume, setSelectedHabitForVolume] = useState<string>('');
+  const [volumeView, setVolumeView] = useState<'monthly' | 'lifetime'>('monthly');
 
   const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
 
@@ -87,6 +90,10 @@ export function ProgressCharts({
   // Check if selected habit is a Time habit
   const selectedHabit = habits.find((h) => h.id === selectedHabitForVolume);
   const isTimeHabit = selectedHabit ? isTimeUnit(selectedHabit.unit) : false;
+
+  // Fetch lifetime total for selected habit
+  const { data: lifetimeTotal } = useGetLifetimeTotal(selectedHabitForVolume);
+  const lifetimeTotalNumber = lifetimeTotal ? Number(lifetimeTotal) : 0;
 
   const pieData = [
     { name: 'Completed', value: stats.overallPercentage },
@@ -213,9 +220,13 @@ export function ProgressCharts({
           <CardTitle>Volume Tracking</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {totalVolumeAllHabits === 0 ? (
+          {totalVolumeAllHabits === 0 && volumeView === 'monthly' ? (
             <div className="text-center py-8 text-muted-foreground">
               No volume recorded this month
+            </div>
+          ) : habits.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No habits yet
             </div>
           ) : (
             <>
@@ -223,10 +234,10 @@ export function ProgressCharts({
                 <Label htmlFor="habit-select">Select Habit</Label>
                 <Select value={selectedHabitForVolume} onValueChange={setSelectedHabitForVolume}>
                   <SelectTrigger id="habit-select">
-                    <SelectValue />
+                    <SelectValue placeholder="Choose a habit" />
                   </SelectTrigger>
                   <SelectContent>
-                    {habitsWithCompletions.map((habit) => (
+                    {habits.map((habit) => (
                       <SelectItem key={habit.id} value={habit.id}>
                         {habit.name}
                       </SelectItem>
@@ -235,17 +246,45 @@ export function ProgressCharts({
                 </Select>
               </div>
 
-              {selectedVolumeStats && (
-                <div className="p-4 bg-muted/30 rounded-lg">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold">
-                      {isTimeHabit ? formatDuration(selectedVolumeStats.totalVolume) : selectedVolumeStats.totalVolume}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Total {selectedVolumeStats.unit} this month
-                    </div>
-                  </div>
-                </div>
+              {selectedHabitForVolume && (
+                <>
+                  <Tabs value={volumeView} onValueChange={(v) => setVolumeView(v as 'monthly' | 'lifetime')}>
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="monthly">This Month</TabsTrigger>
+                      <TabsTrigger value="lifetime">All Time</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="monthly" className="mt-4">
+                      {selectedVolumeStats && selectedVolumeStats.totalVolume > 0 ? (
+                        <div className="p-4 bg-muted/30 rounded-lg">
+                          <div className="text-center">
+                            <div className="text-3xl font-bold">
+                              {isTimeHabit ? formatDuration(selectedVolumeStats.totalVolume) : selectedVolumeStats.totalVolume}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              Total {selectedVolumeStats.unit} this month
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                          No volume recorded this month for this habit
+                        </div>
+                      )}
+                    </TabsContent>
+                    <TabsContent value="lifetime" className="mt-4">
+                      <div className="p-4 bg-muted/30 rounded-lg">
+                        <div className="text-center">
+                          <div className="text-3xl font-bold">
+                            {isTimeHabit ? formatDuration(lifetimeTotalNumber) : lifetimeTotalNumber}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Total {selectedHabit ? (isTimeHabit ? 'time' : 'volume') : ''} all time
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </>
               )}
             </>
           )}

@@ -1,6 +1,6 @@
 import type { UserProfile } from '../backend';
 import { Button } from '@/components/ui/button';
-import { CheckSquare, LogOut, Moon, Sun } from 'lucide-react';
+import { CheckSquare, LogOut, Moon, Sun, TrendingUp } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import {
   DropdownMenu,
@@ -15,9 +15,11 @@ interface HeaderProps {
   userProfile: UserProfile;
   onLogout: () => void;
   habits: Habit[];
+  viewMode: 'habits' | 'investments';
+  onViewModeChange: (mode: 'habits' | 'investments') => void;
 }
 
-export function Header({ userProfile, onLogout, habits }: HeaderProps) {
+export function Header({ userProfile, onLogout, habits, viewMode, onViewModeChange }: HeaderProps) {
   const { theme, setTheme } = useTheme();
 
   // Safe fallback for profile name
@@ -39,7 +41,28 @@ export function Header({ userProfile, onLogout, habits }: HeaderProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <ReportExportDialog habits={habits} />
+            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+              <Button
+                variant={viewMode === 'habits' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => onViewModeChange('habits')}
+                className="gap-2"
+              >
+                <CheckSquare className="h-4 w-4" />
+                Habits
+              </Button>
+              <Button
+                variant={viewMode === 'investments' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => onViewModeChange('investments')}
+                className="gap-2"
+              >
+                <TrendingUp className="h-4 w-4" />
+                Investments
+              </Button>
+            </div>
+
+            {viewMode === 'habits' && <ReportExportDialog habits={habits} />}
 
             <Button
               variant="ghost"

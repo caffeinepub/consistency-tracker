@@ -1,53 +1,130 @@
 {
   "kind": "build_request",
-  "title": "Fix immediate startup crash: userProfile.name undefined",
-  "priority": "high",
+  "title": "Monthly-adjustable habit targets with auto-progression plan and lifetime totals",
+  "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-4",
-      "text": "Prevent the app from rendering the authenticated dashboard until the caller user profile query has deterministically resolved (either a real profile object or an explicit null), so that no code path can access `userProfile.name` while `userProfile` is undefined on initial load.",
-      "target": "frontend",
+      "id": "REQ-10",
+      "text": "Add backend support for per-habit, per-month targets (month + year) that can be retrieved and updated by the authenticated caller, while preserving the existing habit CRUD and daily record tracking behavior.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-1"
         ],
         "quotes": [
-          "1. Yes \n2. Yes, immediately \n3. Yes just to load"
+          "Can you make it so each month the habits can be amended to match that specific month?",
+          "Simply an editor"
         ]
       },
       "acceptanceCriteria": [
-        "On an authenticated session, the app does not render `TrackerDashboard` until `useGetCallerUserProfile()` has resolved to either `UserProfile` or `null` (never `undefined`).",
-        "The fatal error screen shown in the screenshot (\"undefined is not an object (evaluating 'userProfile.name')\") no longer appears on initial page load.",
-        "If the caller has no profile, the app shows the Profile Setup screen instead of crashing.",
-        "If the caller has a profile, the app shows the dashboard and the header renders the welcome message without errors."
+        "Backend defines a new data structure to store monthly targets keyed by (caller, habitId, month, year).",
+        "Backend exposes a query method to fetch monthly targets for a given (month, year) for the caller.",
+        "Backend exposes an update/upsert method to set or clear a monthly target value for a given (habitId, month, year) for the caller.",
+        "All new methods enforce ownership/authorization consistent with existing habit ownership checks (caller must own the habit).",
+        "Existing APIs (getHabits, getMonthlyRecords, toggleHabitCompletion, etc.) continue to function unchanged."
       ]
     },
     {
-      "id": "REQ-5",
-      "text": "Add a defensive UI safeguard so that the header/user badge rendering never throws if a profile object is unexpectedly missing or has an empty name (e.g., render a safe fallback initial and omit the welcome name) to avoid taking down the whole app due to a single missing field.",
-      "target": "frontend",
+      "id": "REQ-11",
+      "text": "Implement backend auto-target defaults based on the uploaded \"Steady Climb\" year plan when no manual monthly override exists, using calendar month number as plan month index (Jan=1 ... Dec=12) for these habits: Push-ups, Squats, Plank.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-1"
         ],
         "quotes": [
-          "Yes, immediately"
+          "See image attached - if you can automatically increase based on this (Jan month 1, February month 2 etc)."
         ]
       },
       "acceptanceCriteria": [
-        "No part of the header crashes when `userProfile.name` is empty or missing; the UI renders with a safe fallback instead.",
-        "The app remains usable (no ErrorBoundary fatal fallback) even if the profile data is malformed, and the user can still log out."
+        "If a monthly target override is not set for a habit for (month, year), the backend returns a computed default for that month for the habit when the habit matches the plan.",
+        "Plan values match the uploaded image: Push-ups targets: [20,25,30,35,40,45,50,55,60,65,70,75]; Squats targets: [20,25,30,35,40,45,50,55,60,65,70,75]; Plank targets in seconds: [60,75,90,105,120,135,150,165,180,195,210,240].",
+        "Plank targets are represented as Nat seconds in the backend, consistent with existing time habit amount handling.",
+        "If a habit does not match the plan (by name), the backend returns no auto-target default unless a manual override exists."
+      ]
+    },
+    {
+      "id": "REQ-12",
+      "text": "Add backend support for lifetime (all-time) totals per habit so the frontend can display both monthly and total progress without exporting all data.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Allow for both monthly and total"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend exposes a query method that returns, for each caller habit, lifetime totals including: total completion count (number of completed records) and total volume (sum of record.amount where present; treat null amounts as 0).",
+        "Lifetime totals computation is filtered to caller-owned habits only.",
+        "Returned totals include unit information sufficient for the frontend to format values (e.g., time seconds vs reps)."
+      ]
+    },
+    {
+      "id": "REQ-13",
+      "text": "Add a simple monthly targets editor UI that lets the user select a month/year and view/edit the target for each habit for that specific month, with defaults auto-filled from the \"Steady Climb\" plan when applicable.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Simply an editor"
+        ]
+      },
+      "acceptanceCriteria": [
+        "UI provides controls to select the active month (1-12) and year, reusing the existing month-tab UX pattern where appropriate.",
+        "For each habit, UI shows the current month’s target value: (a) manual override value if set; otherwise (b) auto-plan default if available; otherwise blank/none.",
+        "User can set/update/clear a manual override for a habit’s monthly target.",
+        "For time-based targets (e.g., Plank), the editor accepts and displays durations in a human-friendly format consistent with existing duration utilities (e.g., \"1 min 15 sec\", \"1:15\").",
+        "Saving changes shows success/error feedback using the existing toast pattern."
+      ]
+    },
+    {
+      "id": "REQ-14",
+      "text": "Update the progress UI to display both monthly progress and lifetime totals (frequency and volume where applicable), and clearly label which scope is being shown (This month vs All time).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Allow for both monthly and total"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Progress UI includes an All time section (or toggle) that displays lifetime totals per habit using the new backend lifetime totals query.",
+        "Monthly views continue to use existing monthly records fetching and calculations for month-scoped progress.",
+        "Time-based lifetime volumes are formatted as durations; rep-based lifetime volumes are shown as numbers.",
+        "UI copy is in English and clearly distinguishes month-scoped vs lifetime totals."
+      ]
+    },
+    {
+      "id": "REQ-15",
+      "text": "Add React Query hooks for the new monthly-target and lifetime-total backend APIs, following existing hook patterns and ensuring appropriate cache invalidation so the editor and dashboards stay in sync.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ]
+      },
+      "acceptanceCriteria": [
+        "New hooks exist for: fetching monthly targets for (month, year), updating a monthly target override, and fetching lifetime totals.",
+        "Mutations invalidate the correct queries (monthly targets for the affected month/year, and any UI relying on targets/totals).",
+        "Hooks follow the conventions used in frontend/src/hooks/useQueries.ts (actor availability checks, enabled gating with identity/actor state)."
       ]
     }
   ],
   "constraints": [
-    "Do not edit any files under frontend.immutablePaths (including frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, and frontend/src/components/ui/*).",
-    "Respect the existing single-page flow: unauthenticated => LoginScreen, authenticated without profile => ProfileSetup, authenticated with profile => TrackerDashboard."
+    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
+    "Do not edit any frontend files under frontend/src/components/ui or any paths listed in frontend.immutablePaths (compose them instead).",
+    "Use English for all user-facing text."
   ],
   "nonGoals": [
-    "Do not implement PDF export (frontend/src/utils/reportPdf.ts placeholder).",
-    "Do not change backend data models, RBAC, or stable storage behavior as part of this fix.",
-    "Do not address other known issues (e.g., toggleHabitCompletion amount upsert behavior, habit ID generation, reportStats month-length handling, CSV quote escaping) unless required to fix the startup crash."
+    "Do not add or change Investments feature behavior.",
+    "Do not introduce third-party authentication providers beyond Internet Identity.",
+    "Do not add real-time features (WebSockets/push)."
   ],
   "imageRequirements": {
     "required": [],

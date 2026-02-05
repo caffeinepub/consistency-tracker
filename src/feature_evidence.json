@@ -2,10 +2,48 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-prevent-the-app-from-rendering-the-authenticated-dashboard-until-the-caller-user-profile-query-has-deterministically-resolved-either-a-real-profile-object-or-an-explicit-null-so-that-no-code-path-can-access-userprofile-name-while-userprofile-is-undefined-on-initial-load",
-      "featureTitle": "Prevent the app from rendering the authenticated dashboard until the caller user profile query has deterministically resolved (either a real profile object or an explicit null), so that no code path can access `userProfile.name` while `userProfile` is undefined on initial load.",
+      "featureId": "feature-add-a-simple-monthly-targets-editor-ui-that-lets-the-user-select-a-month-year-and-view-edit-the-target-for-each-habit-for-that-specific-month-with-defaults-auto-filled-from-the-steady-climb-plan-when-applicable",
+      "featureTitle": "Add a simple monthly targets editor UI that lets the user select a month/year and view/edit the target for each habit for that specific month, with defaults auto-filled from the \"Steady Climb\" plan when applicable.",
       "files": [
-        "frontend/src/App.tsx",
+        "frontend/src/components/MonthlyTargetsEditor.tsx",
+        "frontend/src/components/TrackerDashboard.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-13"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-progress-ui-to-display-both-monthly-progress-and-lifetime-totals-frequency-and-volume-where-applicable-and-clearly-label-which-scope-is-being-shown-this-month-vs-all-time",
+      "featureTitle": "Update the progress UI to display both monthly progress and lifetime totals (frequency and volume where applicable), and clearly label which scope is being shown (This month vs All time).",
+      "files": [
+        "frontend/src/components/ProgressCharts.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-14"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-react-query-hooks-for-the-new-monthly-target-and-lifetime-total-backend-apis-following-existing-hook-patterns-and-ensuring-appropriate-cache-invalidation-so-the-editor-and-dashboards-stay-in-sync",
+      "featureTitle": "Add React Query hooks for the new monthly-target and lifetime-total backend APIs, following existing hook patterns and ensuring appropriate cache invalidation so the editor and dashboards stay in sync.",
+      "files": [
         "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
@@ -17,26 +55,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-4"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-a-defensive-ui-safeguard-so-that-the-header-user-badge-rendering-never-throws-if-a-profile-object-is-unexpectedly-missing-or-has-an-empty-name-e-g-render-a-safe-fallback-initial-and-omit-the-welcome-name-to-avoid-taking-down-the-whole-app-due-to-a-single-missing-field",
-      "featureTitle": "Add a defensive UI safeguard so that the header/user badge rendering never throws if a profile object is unexpectedly missing or has an empty name (e.g., render a safe fallback initial and omit the welcome name) to avoid taking down the whole app due to a single missing field.",
-      "files": [
-        "frontend/src/components/Header.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-5"
+        "REQ-15"
       ],
       "confidence": "high"
     }

@@ -1,42 +1,66 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix startup crash by gating dashboard render until user profile query resolves",
+  "title": "Monthly habit target overrides editor + lifetime totals in progress UI",
   "requirements": [
     {
-      "id": "REQ-4",
-      "summary": "Gate authenticated flow so TrackerDashboard never renders until the caller profile query has deterministically resolved to UserProfile or null.",
+      "id": "REQ-13",
+      "summary": "Add monthly targets editor UI with month/year selection, per-habit override editing/clearing, and duration-friendly inputs for time habits",
       "acceptanceCriteria": [
-        "On an authenticated session, the app does not render `TrackerDashboard` until `useGetCallerUserProfile()` has resolved to either `UserProfile` or `null` (never `undefined`).",
-        "The fatal error screen shown in the screenshot (\"undefined is not an object (evaluating 'userProfile.name')\") no longer appears on initial page load.",
-        "If the caller has no profile, the app shows the Profile Setup screen instead of crashing.",
-        "If the caller has a profile, the app shows the dashboard and the header renders the welcome message without errors."
+        "UI provides controls to select the active month (1-12) and year, reusing the existing month-tab UX pattern where appropriate.",
+        "For each habit, UI shows the current month’s target value: (a) manual override value if set; otherwise (b) auto-plan default if available; otherwise blank/none.",
+        "User can set/update/clear a manual override for a habit’s monthly target.",
+        "For time-based targets (e.g., Plank), the editor accepts and displays durations in a human-friendly format consistent with existing duration utilities (e.g., \"1 min 15 sec\", \"1:15\").",
+        "Saving changes shows success/error feedback using the existing toast pattern."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Update the authenticated render gating to treat the profile as 'unresolved' until the profile query is fetched, showing the existing loading UI during that period and only rendering ProfileSetup when fetched and the result is explicitly null, and only rendering TrackerDashboard when fetched and a real profile object exists (never passing an undefined profile)."
+          "path": "frontend/src/components/MonthlyTargetsEditor.tsx",
+          "operation": "create",
+          "description": "Create a monthly targets editor card that lists habits and lets the user view/edit/clear month-specific target overrides; use existing duration utilities for time habits and the existing toast pattern for success/error feedback."
         },
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/components/TrackerDashboard.tsx",
           "operation": "modify",
-          "description": "Harden `useGetCallerUserProfile()` to expose a deterministic 'resolved' signal for the caller profile query (e.g., via `isFetched`/`isLoading` semantics already present) so consuming components can reliably block rendering until the actor dependency and query have completed."
+          "description": "Wire the MonthlyTargetsEditor into the Habits view (no new top-level routes), and update state to allow selecting both month and year (month uses existing MonthTabs; add a year control alongside)."
         }
       ]
     },
     {
-      "id": "REQ-5",
-      "summary": "Make header/user badge rendering resilient to missing or empty profile name with safe fallbacks so the app remains usable.",
+      "id": "REQ-14",
+      "summary": "Update progress UI to show both this-month progress and all-time totals with clear labeling and correct formatting by unit",
       "acceptanceCriteria": [
-        "No part of the header crashes when `userProfile.name` is empty or missing; the UI renders with a safe fallback instead.",
-        "The app remains usable (no ErrorBoundary fatal fallback) even if the profile data is malformed, and the user can still log out."
+        "Progress UI includes an All time section (or toggle) that displays lifetime totals per habit using the new backend lifetime totals query.",
+        "Monthly views continue to use existing monthly records fetching and calculations for month-scoped progress.",
+        "Time-based lifetime volumes are formatted as durations; rep-based lifetime volumes are shown as numbers.",
+        "UI copy is in English and clearly distinguishes month-scoped vs lifetime totals."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/Header.tsx",
+          "path": "frontend/src/components/ProgressCharts.tsx",
           "operation": "modify",
-          "description": "Add defensive rendering for the welcome message and avatar initial so they never call string methods on missing/empty `name` (e.g., conditionally render the welcome name only when non-empty, and render a safe fallback initial when absent), while keeping the logout menu accessible."
+          "description": "Add an \"All time\" section (or toggle) that renders per-habit lifetime totals (frequency + volume where applicable), while keeping existing monthly charts unchanged; format time volumes with existing duration formatting and label scopes clearly in English."
+        }
+      ]
+    },
+    {
+      "id": "REQ-15",
+      "summary": "Add React Query hooks for monthly targets (by month/year) and lifetime totals with cache invalidation aligned to existing patterns",
+      "acceptanceCriteria": [
+        "New hooks exist for: fetching monthly targets for (month, year), updating a monthly target override, and fetching lifetime totals.",
+        "Mutations invalidate the correct queries (monthly targets for the affected month/year, and any UI relying on targets/totals).",
+        "Hooks follow the conventions used in frontend/src/hooks/useQueries.ts (actor availability checks, enabled gating with identity/actor state)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add React Query hooks for (a) fetching monthly targets for a selected month/year, (b) upserting/clearing a monthly target override with proper invalidation, and (c) fetching lifetime totals; follow existing actor/identity enabled gating and queryKey conventions."
+        },
+        {
+          "path": "frontend/src/backend.d.ts",
+          "operation": "modify",
+          "description": "Update the frontend backend type declarations to include the new monthly-targets-by-(month,year) query capability and the lifetime-totals query return types consumed by the new hooks/components."
         }
       ]
     }

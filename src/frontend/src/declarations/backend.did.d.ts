@@ -13,6 +13,7 @@ import type { Principal } from '@icp-sdk/core/principal';
 export type DefaultAmount = [] | [bigint];
 export interface ExportData {
   'records' : Array<HabitRecord>,
+  'monthlyTargets' : Array<MonthlyTarget>,
   'habits' : Array<Habit>,
   'profile' : [] | [UserProfile],
 }
@@ -38,6 +39,19 @@ export type HabitUnit = { 'custom' : string } |
   { 'none' : null } |
   { 'reps' : null } |
   { 'time' : null };
+export interface InvestmentGoal {
+  'id' : string,
+  'ticker' : string,
+  'currentBalance' : bigint,
+  'name' : string,
+  'targetShares' : bigint,
+}
+export interface MonthlyTarget {
+  'month' : bigint,
+  'year' : bigint,
+  'habitId' : string,
+  'amount' : bigint,
+}
 export type Time = bigint;
 export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |
@@ -50,7 +64,12 @@ export interface _SERVICE {
     [string, bigint, HabitUnit, DefaultAmount],
     string
   >,
+  'createInvestmentGoal' : ActorMethod<
+    [string, string, bigint, bigint],
+    string
+  >,
   'deleteHabit' : ActorMethod<[string], undefined>,
+  'deleteInvestmentGoal' : ActorMethod<[string], undefined>,
   'exportAllData' : ActorMethod<
     [bigint, bigint, bigint, bigint, bigint, bigint],
     ExportData
@@ -62,7 +81,11 @@ export interface _SERVICE {
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getHabits' : ActorMethod<[], Array<Habit>>,
+  'getInvestmentGoal' : ActorMethod<[string], [] | [InvestmentGoal]>,
+  'getInvestmentGoals' : ActorMethod<[], Array<InvestmentGoal>>,
+  'getLifetimeTotal' : ActorMethod<[string], bigint>,
   'getMonthlyRecords' : ActorMethod<[bigint, bigint], Array<HabitRecord>>,
+  'getMonthlyTargets' : ActorMethod<[string], Array<MonthlyTarget>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
@@ -74,6 +97,14 @@ export interface _SERVICE {
   'updateHabitName' : ActorMethod<[string, string], undefined>,
   'updateHabitUnit' : ActorMethod<[string, HabitUnit], undefined>,
   'updateHabitWeeklyTarget' : ActorMethod<[string, bigint], undefined>,
+  'updateInvestmentGoal' : ActorMethod<
+    [string, string, string, bigint, bigint],
+    undefined
+  >,
+  'updateMonthlyTarget' : ActorMethod<
+    [string, bigint, bigint, bigint],
+    undefined
+  >,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

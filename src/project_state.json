@@ -1,291 +1,72 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 16,
-  "summary": "Consistency Tracker is a full-stack Internet Computer (ICP) habit-tracking web app. Users authenticate via Internet Identity, create a basic user profile, define habits with weekly frequency targets and units (reps, time, no-unit, plus custom units like \"km\"), optionally set a default amount, and track daily completions in a monthly grid with optional per-day amounts. The React frontend uses TanStack React Query and a typed canister actor to manage profiles, habits, monthly records, and inclusive date-range exports. The app computes client-side monthly analytics (overall progress, per-habit frequency progress, daily trends, and unit-aware volume totals) and visualizes them with charts. The Motoko backend enforces role-based access control with an admin bootstrap flow driven by an environment token and a caller-provided secret token passed from the frontend.",
+  "projectStateVersion": 3,
+  "summary": "Habit tracking app with monthly-adjustable targets (auto-increase per a progression plan), a simple monthly editor, and tracking for both monthly progress and lifetime totals.",
+  "architectural_notes": [
+    "Store per-habit targets by month (history) and also maintain a lifetime total aggregation for completions."
+  ],
+  "known_issues": [],
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "IF-1",
-      "title": "Internet Identity authentication (login, logout, session restore)",
-      "synonyms": [
-        "InternetIdentityProvider",
-        "AuthClient integration",
-        "II login/logout"
-      ],
-      "description": "Provides an authentication context using Dfinity AuthClient, supports login via an identity provider URL, restores an authenticated delegation on page load, and supports logout by clearing identity state.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-2",
-      "title": "Identity-bound canister actor creation with access-control initialization",
-      "synonyms": [
-        "useActor",
-        "typed canister actor",
-        "_initializeAccessControlWithSecret"
-      ],
-      "description": "Creates an anonymous actor when logged out and an authenticated actor when logged in, passing the user identity to the agent. On authenticated actor creation it calls a backend initialization method to register the caller and potentially bootstrap admin based on a secret token.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-3",
-      "title": "Secret token extraction from URL hash with session persistence",
-      "synonyms": [
-        "getSecretParameter",
-        "getSecretFromHash",
-        "sessionStorage token"
-      ],
-      "description": "Extracts sensitive parameters (e.g., caffeineAdminToken) from the URL hash fragment, persists them in sessionStorage for the session, and removes them from the URL to reduce accidental leakage via history/referrers.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-4",
-      "title": "Role-based access control (RBAC) with admin bootstrap and role assignment APIs",
-      "synonyms": [
-        "AccessControl",
-        "MixinAuthorization",
-        "getCallerUserRole",
-        "assignCallerUserRole"
-      ],
-      "description": "Motoko backend enforces RBAC (#admin/#user/#guest). The first principal can become admin if they provide the correct secret matching a canister environment token; otherwise principals are registered as users. Admins can assign roles to other principals.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-5",
-      "title": "User profile management and first-login setup UI",
-      "synonyms": [
-        "getCallerUserProfile",
-        "saveCallerUserProfile",
-        "ProfileSetup"
-      ],
-      "description": "Allows an authenticated user to save and retrieve a basic profile (name). The app shows a dedicated profile setup screen when the caller has no saved profile after login.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-6",
-      "title": "Habit model with units and optional default amount",
-      "synonyms": [
-        "HabitUnit",
-        "defaultAmount",
-        "reps/time/none/custom"
-      ],
-      "description": "Habits include name, createdAt, weeklyTarget, unit (reps, time, none, or custom), and an optional defaultAmount used when marking a completion without specifying an amount.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-7",
-      "title": "Habit CRUD backend APIs (create/list/update/delete) with ownership validation",
-      "synonyms": [
-        "createHabit",
-        "getHabits",
-        "deleteHabit",
-        "updateHabitName",
-        "updateHabitWeeklyTarget",
-        "updateHabitUnit",
-        "updateHabitDefaultAmount"
-      ],
-      "description": "Backend supports creating, listing, updating (name/weekly target/unit/default amount), and deleting habits. All operations enforce that the habit belongs to the caller; name updates also update stored habitName snapshots in existing records.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-8",
-      "title": "Habit management UI with inline editing, validation, and km unit support",
-      "synonyms": [
-        "HabitManager",
-        "unit selector",
-        "default amount validation"
-      ],
-      "description": "UI for creating habits (weekly target 1–7, unit selection, optional default amount), editing habits inline (name/target/unit/default amount), and deleting habits with confirmation. Time defaults accept flexible duration input; non-time defaults (reps/km) require non-negative integers. Includes a built-in \"km\" unit option implemented as backend custom unit \"km\".",
+      "id": "feature-add-a-simple-monthly-targets-editor-ui-that-lets-the-user-select-a-month-year-and-view-edit-the-target-for-each-habit-for-that-specific-month-with-defaults-auto-filled-from-the-steady-climb-plan-when-applicable",
+      "title": "Add a simple monthly targets editor UI that lets the user select a month/year and view/edit the target for each habit for that specific month, with defaults auto-filled from the \"Steady Climb\" plan when applicable.",
       "reqIds": [
-        "REQ-1",
-        "REQ-2"
+        "REQ-13"
       ],
       "version": 1
     },
     {
-      "id": "IF-9",
-      "title": "Daily month grid tracking with completion toggles and per-day amount popovers",
-      "synonyms": [
-        "HabitGrid",
-        "monthly tracker",
-        "amount editor"
-      ],
-      "description": "Renders a month-view grid (habits x days). Users can toggle completion per day. For habits with units, completed cells offer a popover editor to enter an optional amount (time durations parsed to seconds; non-time units accept non-negative integers). No-unit habits act as done/not-done only.",
+      "id": "feature-update-the-progress-ui-to-display-both-monthly-progress-and-lifetime-totals-frequency-and-volume-where-applicable-and-clearly-label-which-scope-is-being-shown-this-month-vs-all-time",
+      "title": "Update the progress UI to display both monthly progress and lifetime totals (frequency and volume where applicable), and clearly label which scope is being shown (This month vs All time).",
       "reqIds": [
-        "REQ-2"
+        "REQ-14"
       ],
       "version": 1
     },
     {
-      "id": "IF-10",
-      "title": "Habit completion record storage and monthly record retrieval",
-      "synonyms": [
-        "HabitRecord",
-        "toggleHabitCompletion",
-        "getMonthlyRecords"
-      ],
-      "description": "Backend stores completion records per habit and exposes a query to retrieve all records for the caller’s habits filtered by month/year. Frontend fetches these records per selected month and caches them via React Query.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-11",
-      "title": "Time duration parsing and formatting utilities",
-      "synonyms": [
-        "parseDuration",
-        "formatDuration"
-      ],
-      "description": "Parses free-text duration inputs (e.g., \"1 min 15 sec\", \"75 sec\", \"1:15\") into whole seconds for storage and formats seconds back into compact strings (e.g., \"1:15\", \"1:01:05\").",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-12",
-      "title": "Client-side report statistics (frequency + volume)",
-      "synonyms": [
-        "calculateReportStats",
-        "reportStats",
-        "volume tracking"
-      ],
-      "description": "Computes overall completion percentage, per-habit completed vs expected based on weekly targets over a date range, daily trend percentages, and per-habit volume totals/daily volumes. No-unit completions are treated as volume=1 per completion; unit-based habits use recorded amounts.",
+      "id": "feature-add-react-query-hooks-for-the-new-monthly-target-and-lifetime-total-backend-apis-following-existing-hook-patterns-and-ensuring-appropriate-cache-invalidation-so-the-editor-and-dashboards-stay-in-sync",
+      "title": "Add React Query hooks for the new monthly-target and lifetime-total backend APIs, following existing hook patterns and ensuring appropriate cache invalidation so the editor and dashboards stay in sync.",
       "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "IF-13",
-      "title": "Monthly progress visualization dashboard",
-      "synonyms": [
-        "ProgressCharts",
-        "recharts analytics",
-        "volume selector"
-      ],
-      "description": "Displays monthly analytics including an overall progress pie, per-habit frequency progress bars, a daily trend line chart, and a volume tracking card with a habit selector filtered to habits with completions. Time-based volume is displayed as formatted duration; other units (including km) display numeric totals.",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "IF-14",
-      "title": "Inclusive date-range export APIs (all habits or selected habits)",
-      "synonyms": [
-        "exportAllData",
-        "exportSelectedHabitsData",
-        "ExportData"
-      ],
-      "description": "Backend query endpoints export profile/habits/records filtered to an inclusive date range. Selected-habits export validates that all requested habit IDs belong to the caller. Frontend provides React Query mutations to invoke these exports.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-15",
-      "title": "CSV export dialog, CSV generation, and browser download",
-      "synonyms": [
-        "ReportExportDialog",
-        "generateCSV",
-        "downloadCSV"
-      ],
-      "description": "UI dialog to choose a date range and export either all habits or a selected subset. Calls export endpoints, generates a CSV including Amount/Unit columns (blank for no-unit records), and triggers a browser download with a date-range-based filename. Custom units like \"km\" are preserved via record-level unit snapshots.",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "IF-16",
-      "title": "Dashboard shell with month navigation, theme toggle, and cache-clearing logout",
-      "synonyms": [
-        "TrackerDashboard",
-        "MonthTabs",
-        "Header",
-        "next-themes"
-      ],
-      "description": "Authenticated layout includes a sticky header (user greeting, theme toggle, export dialog, logout), month tabs for selecting the active month, a responsive two-column layout (grid + charts), and a logout flow that clears identity and React Query cache.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-17",
-      "title": "Collapsible habit management panel",
-      "synonyms": [
-        "CollapsibleHabitManagerPanel",
-        "Add/ Manage habits toggle"
-      ],
-      "description": "Wraps the habit management UI in a collapsible panel that is closed by default and toggled via a button labeled “Add/ Manage habits”, hiding the HabitManager when collapsed.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-18",
-      "title": "Global error boundary and fatal startup fallback UI (prevents blank white screen)",
-      "synonyms": [
-        "ErrorBoundary",
-        "FatalErrorFallback",
-        "startup crash guard"
-      ],
-      "description": "App is wrapped in a React error boundary that catches unexpected render/runtime failures and displays a dedicated fatal error fallback UI instead of a blank white screen. This provides a visible recovery path and preserves basic navigation/login access when a component crashes.",
-      "reqIds": [
-        "AR-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-prevent-the-app-from-rendering-the-authenticated-dashboard-until-the-caller-user-profile-query-has-deterministically-resolved-either-a-real-profile-object-or-an-explicit-null-so-that-no-code-path-can-access-userprofile-name-while-userprofile-is-undefined-on-initial-load",
-      "title": "Prevent the app from rendering the authenticated dashboard until the caller user profile query has deterministically resolved (either a real profile object or an explicit null), so that no code path can access `userProfile.name` while `userProfile` is undefined on initial load.",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-a-defensive-ui-safeguard-so-that-the-header-user-badge-rendering-never-throws-if-a-profile-object-is-unexpectedly-missing-or-has-an-empty-name-e-g-render-a-safe-fallback-initial-and-omit-the-welcome-name-to-avoid-taking-down-the-whole-app-due-to-a-single-missing-field",
-      "title": "Add a defensive UI safeguard so that the header/user badge rendering never throws if a profile object is unexpectedly missing or has an empty name (e.g., render a safe fallback initial and omit the welcome name) to avoid taking down the whole app due to a single missing field.",
-      "reqIds": [
-        "REQ-5"
+        "REQ-15"
       ],
       "version": 1
     }
   ],
   "new_feature_requests": [
     {
-      "id": "AR-2",
-      "summary": "Fix immediate startup crash/blank screen caused by userProfile.name being undefined so app loads normally",
+      "id": "AR-1",
+      "summary": "Add monthly-adjustable habit targets that auto-increase by month based on an uploaded progression plan image; provide a simple editor; track both monthly progress and lifetime totals.",
       "reqIds": [],
-      "status": "in_progress"
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Add backend support for per-habit, per-month targets (month + year) that can be retrieved and updated by the authenticated caller, while preserving the existing habit CRUD and daily record tracking behavior.",
+      "reqIds": [
+        "REQ-10"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Implement backend auto-target defaults based on the uploaded \"Steady Climb\" year plan when no manual monthly override exists, using calendar month number as plan month index (Jan=1 ... Dec=12) for these habits: Push-ups, Squats, Plank.",
+      "reqIds": [
+        "REQ-11"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Add backend support for lifetime (all-time) totals per habit so the frontend can display both monthly and total progress without exporting all data.",
+      "reqIds": [
+        "REQ-12"
+      ],
+      "status": "pending"
     }
   ],
-  "architectural_notes": [
-    "Frontend is a React SPA using @tanstack/react-query for server-state management, with dedicated query/mutation hooks and explicit cache invalidation.",
-    "Authentication is handled via @dfinity/auth-client (Internet Identity) exposed through a React context provider that restores persisted delegations on mount.",
-    "Backend integration is via a typed canister actor created by a hook (useActor) that re-creates the actor when the user principal changes and forces downstream React Query refetches.",
-    "Frontend bridges Motoko Nat/?Nat values using BigInt conversions at the API boundary (e.g., weeklyTarget, dates, amounts).",
-    "Motoko backend uses an authorization mixin pattern (include MixinAuthorization) delegating RBAC concerns to a separate AccessControl module.",
-    "Backend application state is stored in in-memory Map/Set/List collections keyed by Principal and habitId; records are stored as per-habit lists and filtered by month/date-range queries.",
-    "Sensitive admin bootstrap token is sourced from the URL hash, persisted in sessionStorage, and removed from the URL after extraction to reduce leakage.",
-    "UI is built with Tailwind CSS + shadcn-ui/Radix primitives; charts are rendered with recharts and theming uses next-themes.",
-    "Analytics (frequency/volume stats) are computed client-side from fetched habits and records rather than on the backend.",
-    "Export is implemented as backend date-range queries returning structured data; client generates a downloadable CSV via Blob/object URLs."
-  ],
-  "known_issues": [
-    "Per-day amount editing in HabitGrid uses toggleHabitCompletion; because the backend method is a true toggle (add/remove record) rather than an upsert, attempting to “save amount” for an already-completed day can delete the record instead of updating its amount.",
-    "Backend state (profiles, habits, records, roles) is not stored in stable variables; canister upgrades would wipe all data and role assignments.",
-    "Habit IDs are generated by concatenating the habit name with Time.now().toText(), producing user-input-dependent IDs and risking awkward identifiers and potential collisions.",
-    "reportStats volumeStats builds daily volume arrays for days 1..31 regardless of the actual month length, which can misrepresent shorter months.",
-    "dateRangeToComponents uses getUTC* on Date objects typically created at local midnight; this can produce off-by-one day components depending on timezone/DST behavior.",
-    "CSV generation wraps habit names in quotes but does not escape internal quotes within names, which can corrupt CSV formatting for names containing \".",
-    "frontend/src/utils/reportPdf.ts and frontend/src/types/jspdf.d.ts are empty placeholders in the current code snapshot; PDF export appears unimplemented/incomplete.",
-    "App shows an error dialog immediately on load due to `userProfile.name` being undefined (startup crash)."
-  ],
-  "isFixRequest": true,
   "gameProjectType": "none",
-  "projectName": "Consistency Tracker",
-  "clarification_mode": "thinking",
+  "projectName": "Monthly-adjustable habit targets with auto-progression plan and lifetime totals",
+  "clarification_mode": "instant",
   "clarification_rounds": 0
 }
