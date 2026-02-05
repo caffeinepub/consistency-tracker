@@ -10,6 +10,7 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export type DefaultAmount = [] | [bigint];
 export interface ExportData {
   'records' : Array<HabitRecord>,
   'habits' : Array<Habit>,
@@ -20,6 +21,7 @@ export interface Habit {
   'name' : string,
   'createdAt' : Time,
   'unit' : HabitUnit,
+  'defaultAmount' : DefaultAmount,
   'weeklyTarget' : bigint,
 }
 export interface HabitRecord {
@@ -27,11 +29,13 @@ export interface HabitRecord {
   'completedAt' : [] | [Time],
   'month' : bigint,
   'habitName' : string,
+  'unit' : HabitUnit,
   'year' : bigint,
   'habitId' : string,
   'amount' : [] | [bigint],
 }
 export type HabitUnit = { 'custom' : string } |
+  { 'none' : null } |
   { 'reps' : null } |
   { 'time' : null };
 export type Time = bigint;
@@ -42,7 +46,10 @@ export type UserRole = { 'admin' : null } |
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
-  'createHabit' : ActorMethod<[string, bigint, HabitUnit], string>,
+  'createHabit' : ActorMethod<
+    [string, bigint, HabitUnit, DefaultAmount],
+    string
+  >,
   'deleteHabit' : ActorMethod<[string], undefined>,
   'exportAllData' : ActorMethod<
     [bigint, bigint, bigint, bigint, bigint, bigint],
@@ -60,9 +67,11 @@ export interface _SERVICE {
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'toggleHabitCompletion' : ActorMethod<
-    [string, bigint, bigint, bigint, [] | [bigint]],
+    [string, bigint, bigint, bigint, DefaultAmount],
     undefined
   >,
+  'updateHabitDefaultAmount' : ActorMethod<[string, DefaultAmount], undefined>,
+  'updateHabitName' : ActorMethod<[string, string], undefined>,
   'updateHabitUnit' : ActorMethod<[string, HabitUnit], undefined>,
   'updateHabitWeeklyTarget' : ActorMethod<[string, bigint], undefined>,
 }

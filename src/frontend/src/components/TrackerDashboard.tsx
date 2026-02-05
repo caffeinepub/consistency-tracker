@@ -6,7 +6,7 @@ import { Header } from './Header';
 import { MonthTabs } from './MonthTabs';
 import { HabitGrid } from './HabitGrid';
 import { ProgressCharts } from './ProgressCharts';
-import { HabitManager } from './HabitManager';
+import { CollapsibleHabitManagerPanel } from './CollapsibleHabitManagerPanel';
 import { useGetHabits, useGetMonthlyRecords } from '../hooks/useQueries';
 
 interface TrackerDashboardProps {
@@ -54,7 +54,7 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
       <main className="container mx-auto px-4 py-6 space-y-6">
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1 space-y-6">
-            <HabitManager />
+            <CollapsibleHabitManagerPanel />
 
             <div className="space-y-4">
               <MonthTabs

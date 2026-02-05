@@ -20,6 +20,10 @@ interface HeaderProps {
 export function Header({ userProfile, onLogout, habits }: HeaderProps) {
   const { theme, setTheme } = useTheme();
 
+  // Safe fallback for profile name
+  const userName = userProfile?.name?.trim() || 'User';
+  const userInitial = userName.charAt(0).toUpperCase();
+
   return (
     <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
@@ -30,7 +34,7 @@ export function Header({ userProfile, onLogout, habits }: HeaderProps) {
             </div>
             <div>
               <h1 className="text-xl font-bold">Consistency Tracker</h1>
-              <p className="text-sm text-muted-foreground">Welcome back, {userProfile.name}</p>
+              <p className="text-sm text-muted-foreground">Welcome back, {userName}</p>
             </div>
           </div>
 
@@ -51,7 +55,7 @@ export function Header({ userProfile, onLogout, habits }: HeaderProps) {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon">
                   <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-semibold">
-                    {userProfile.name.charAt(0).toUpperCase()}
+                    {userInitial}
                   </div>
                 </Button>
               </DropdownMenuTrigger>

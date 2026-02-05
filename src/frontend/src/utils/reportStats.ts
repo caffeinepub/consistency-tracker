@@ -113,13 +113,18 @@ export function calculateReportStats(
   }
 
   // Calculate volume statistics
+  // For no-unit (done/not-done) habits, each completion counts as volume = 1
+  // For unit-based habits, use the recorded amount (amounts are already in seconds for Time habits)
   const volumeStats: VolumeStats[] = habits.map((habit) => {
     const habitRecords = records.filter((r) => r.habitId === habit.id && r.completedAt);
     const unit = getHabitUnitLabel(habit.unit);
+    const isNoUnitHabit = habit.unit.__kind__ === 'none';
 
     const dailyVolumeMap = new Map<number, number>();
     habitRecords.forEach((record) => {
-      const amount = record.amount ? Number(record.amount) : 0;
+      // For no-unit habits, count each completion as 1
+      // For unit-based habits, use the recorded amount (or 0 if not set)
+      const amount = isNoUnitHabit ? 1 : (record.amount ? Number(record.amount) : 0);
       const day = Number(record.day);
       dailyVolumeMap.set(day, (dailyVolumeMap.get(day) || 0) + amount);
     });

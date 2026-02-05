@@ -1,6 +1,6 @@
 import type { ExportData } from '../backend';
 import { formatUTCDate } from './reportDateRange';
-import { getHabitUnitLabel } from './habitUnit';
+import { getHabitUnitLabel, isNoUnit } from './habitUnit';
 
 export function generateCSV(
   exportData: ExportData,
@@ -22,10 +22,13 @@ export function generateCSV(
     lines.push('');
   }
 
-  // Create a map of habit IDs to units
-  const habitUnits = new Map<string, string>();
+  // Create a map of habit IDs to current habit data for reference
+  const habitMap = new Map<string, { name: string; unit: string }>();
   exportData.habits.forEach((habit) => {
-    habitUnits.set(habit.id, getHabitUnitLabel(habit.unit));
+    habitMap.set(habit.id, {
+      name: habit.name,
+      unit: getHabitUnitLabel(habit.unit),
+    });
   });
 
   lines.push('Habit,Date,Completed,Amount,Unit');
@@ -33,9 +36,18 @@ export function generateCSV(
   exportData.records.forEach((record) => {
     const date = formatUTCDate(Number(record.day), Number(record.month), Number(record.year));
     const completed = record.completedAt ? 'Yes' : 'No';
-    const amount = record.amount !== undefined ? String(Number(record.amount)) : '';
-    const unit = habitUnits.get(record.habitId) || 'reps';
-    lines.push(`"${record.habitName}",${date},${completed},${amount},${unit}`);
+    
+    // Use record-level unit snapshot to determine if this record has a unit
+    const recordHasNoUnit = isNoUnit(record.unit);
+    
+    // For no-unit records, leave amount and unit blank
+    const amount = recordHasNoUnit ? '' : (record.amount !== undefined ? String(Number(record.amount)) : '');
+    const unit = recordHasNoUnit ? '' : getHabitUnitLabel(record.unit);
+    
+    // Use the latest habit name from the habits collection
+    const habitName = habitMap.get(record.habitId)?.name || record.habitName;
+    
+    lines.push(`"${habitName}",${date},${completed},${amount},${unit}`);
   });
 
   return lines.join('\n');

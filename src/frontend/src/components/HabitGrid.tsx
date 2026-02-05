@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { Habit, HabitRecord } from '../backend';
+import type { Habit, HabitRecord, HabitUnit } from '../backend';
 import { useToggleHabitCompletion } from '../hooks/useQueries';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +9,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { getHabitUnitShortLabel } from '../utils/habitUnit';
+import { getHabitUnitShortLabel, isNoUnit, isTimeUnit } from '../utils/habitUnit';
+import { parseDuration, formatDuration } from '../utils/duration';
+import { toast } from 'sonner';
 
 interface HabitGridProps {
   habits: Habit[];
@@ -22,6 +24,7 @@ interface HabitGridProps {
 interface RecordData {
   isCompleted: boolean;
   amount?: number;
+  unit: HabitUnit;
 }
 
 export function HabitGrid({
@@ -45,6 +48,7 @@ export function HabitGrid({
       map.set(key, {
         isCompleted: !!record.completedAt,
         amount: record.amount ? Number(record.amount) : undefined,
+        unit: record.unit,
       });
     });
     return map;
@@ -76,11 +80,28 @@ export function HabitGrid({
     }
   };
 
-  const handleAmountSave = async (habitId: string, day: number) => {
-    const amount = editAmount.trim() === '' ? null : parseInt(editAmount);
-    
-    if (amount !== null && (isNaN(amount) || amount < 0)) {
-      return;
+  const handleAmountSave = async (habitId: string, day: number, isTime: boolean) => {
+    const trimmedInput = editAmount.trim();
+    let amount: number | null = null;
+
+    if (trimmedInput !== '') {
+      if (isTime) {
+        // Parse duration for Time habits
+        const parsedSeconds = parseDuration(trimmedInput);
+        if (parsedSeconds === null || parsedSeconds < 0) {
+          toast.error('Invalid duration format. Try "1 min 15 sec", "75 sec", or "1:15"');
+          return;
+        }
+        amount = parsedSeconds;
+      } else {
+        // Parse as integer for non-Time habits (reps, km)
+        const parsedAmount = parseInt(trimmedInput);
+        if (isNaN(parsedAmount) || parsedAmount < 0) {
+          toast.error('Amount must be a non-negative number');
+          return;
+        }
+        amount = parsedAmount;
+      }
     }
 
     try {
@@ -95,13 +116,19 @@ export function HabitGrid({
       setEditAmount('');
     } catch (error) {
       console.error('Failed to save amount:', error);
+      toast.error('Failed to save amount');
     }
   };
 
-  const openAmountEditor = (habitId: string, day: number, currentAmount?: number) => {
+  const openAmountEditor = (habitId: string, day: number, currentAmount?: number, isTime?: boolean) => {
     const key = `${habitId}-${day}`;
     setEditingCell(key);
-    setEditAmount(currentAmount !== undefined ? String(currentAmount) : '');
+    if (currentAmount !== undefined) {
+      // Format Time amounts as duration, others as plain number
+      setEditAmount(isTime ? formatDuration(currentAmount) : String(currentAmount));
+    } else {
+      setEditAmount('');
+    }
   };
 
   if (isLoading) {
@@ -150,98 +177,121 @@ export function HabitGrid({
               ))}
 
               {/* Habit Rows */}
-              {habits.map((habit) => (
-                <>
-                  <div
-                    key={`${habit.id}-name`}
-                    className="font-medium text-sm sticky left-0 bg-card z-10 p-2 border-r flex flex-col justify-center"
-                  >
-                    <div>{habit.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {Number(habit.weeklyTarget)}x/week · {getHabitUnitShortLabel(habit.unit)}
-                    </div>
-                  </div>
-                  {days.map((day) => {
-                    const key = `${habit.id}-${day}`;
-                    const recordData = recordMap.get(key);
-                    const isCompleted = recordData?.isCompleted || false;
-                    const amount = recordData?.amount;
-                    const isEditing = editingCell === key;
-
-                    return (
-                      <div
-                        key={`${habit.id}-${day}`}
-                        className="flex items-center justify-center p-2 border-l border-b hover:bg-accent/5 transition-colors"
-                      >
-                        {isCompleted ? (
-                          <Popover open={isEditing} onOpenChange={(open) => {
-                            if (!open) {
-                              setEditingCell(null);
-                              setEditAmount('');
-                            }
-                          }}>
-                            <PopoverTrigger asChild>
-                              <button
-                                className="flex flex-col items-center gap-0.5 cursor-pointer"
-                                onClick={() => openAmountEditor(habit.id, day, amount)}
-                              >
-                                <Checkbox
-                                  checked={true}
-                                  onCheckedChange={() => handleToggle(habit.id, day, true)}
-                                  className="h-5 w-5"
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                                {amount !== undefined && (
-                                  <span className="text-[10px] text-muted-foreground font-medium">
-                                    {amount}
-                                  </span>
-                                )}
-                              </button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-48" align="center">
-                              <div className="space-y-3">
-                                <div className="space-y-2">
-                                  <Label htmlFor={`amount-${key}`} className="text-xs">
-                                    Amount ({getHabitUnitShortLabel(habit.unit)})
-                                  </Label>
-                                  <Input
-                                    id={`amount-${key}`}
-                                    type="number"
-                                    min="0"
-                                    placeholder="Optional"
-                                    value={editAmount}
-                                    onChange={(e) => setEditAmount(e.target.value)}
-                                    className="h-8"
-                                    autoFocus
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        handleAmountSave(habit.id, day);
-                                      }
-                                    }}
-                                  />
-                                </div>
-                                <Button
-                                  size="sm"
-                                  className="w-full"
-                                  onClick={() => handleAmountSave(habit.id, day)}
-                                >
-                                  Save
-                                </Button>
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                        ) : (
-                          <Checkbox
-                            checked={false}
-                            onCheckedChange={() => handleToggle(habit.id, day, false)}
-                            className="h-5 w-5"
-                          />
-                        )}
+              {habits.map((habit) => {
+                const habitHasNoUnit = isNoUnit(habit.unit);
+                const habitIsTime = isTimeUnit(habit.unit);
+                
+                return (
+                  <>
+                    <div
+                      key={`${habit.id}-name`}
+                      className="font-medium text-sm sticky left-0 bg-card z-10 p-2 border-r flex flex-col justify-center"
+                    >
+                      <div>{habit.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {Number(habit.weeklyTarget)}x/week
+                        {!habitHasNoUnit && ` · ${getHabitUnitShortLabel(habit.unit)}`}
                       </div>
-                    );
-                  })}
-                </>
-              ))}
+                    </div>
+                    {days.map((day) => {
+                      const key = `${habit.id}-${day}`;
+                      const recordData = recordMap.get(key);
+                      const isCompleted = recordData?.isCompleted || false;
+                      const amount = recordData?.amount;
+                      const recordUnit = recordData?.unit || habit.unit;
+                      const recordHasNoUnit = isNoUnit(recordUnit);
+                      const recordIsTime = isTimeUnit(recordUnit);
+                      const isEditing = editingCell === key;
+
+                      return (
+                        <div
+                          key={`${habit.id}-${day}`}
+                          className="flex items-center justify-center p-2 border-l border-b hover:bg-accent/5 transition-colors"
+                        >
+                          {isCompleted ? (
+                            recordHasNoUnit ? (
+                              // No-unit habit: just show checkbox, no popover
+                              <Checkbox
+                                checked={true}
+                                onCheckedChange={() => handleToggle(habit.id, day, true)}
+                                className="h-5 w-5"
+                              />
+                            ) : (
+                              // Has unit: show popover for amount editing
+                              <Popover open={isEditing} onOpenChange={(open) => {
+                                if (!open) {
+                                  setEditingCell(null);
+                                  setEditAmount('');
+                                }
+                              }}>
+                                <PopoverTrigger asChild>
+                                  <button
+                                    className="flex flex-col items-center gap-0.5 cursor-pointer"
+                                    onClick={() => openAmountEditor(habit.id, day, amount, recordIsTime)}
+                                  >
+                                    <Checkbox
+                                      checked={true}
+                                      onCheckedChange={() => handleToggle(habit.id, day, true)}
+                                      className="h-5 w-5"
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                    {amount !== undefined && (
+                                      <span className="text-[10px] text-muted-foreground font-medium">
+                                        {recordIsTime ? formatDuration(amount) : amount}
+                                      </span>
+                                    )}
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-48" align="center">
+                                  <div className="space-y-3">
+                                    <div className="space-y-2">
+                                      <Label htmlFor={`amount-${key}`} className="text-xs">
+                                        {recordIsTime ? 'Duration' : `Amount (${getHabitUnitShortLabel(recordUnit)})`}
+                                      </Label>
+                                      <Input
+                                        id={`amount-${key}`}
+                                        type="text"
+                                        placeholder={recordIsTime ? 'e.g., 1:15' : 'Optional'}
+                                        value={editAmount}
+                                        onChange={(e) => setEditAmount(e.target.value)}
+                                        className="h-8"
+                                        autoFocus
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            handleAmountSave(habit.id, day, recordIsTime);
+                                          }
+                                        }}
+                                      />
+                                      {recordIsTime && (
+                                        <p className="text-[10px] text-muted-foreground">
+                                          e.g., "1 min 15 sec", "75 sec", "1:15"
+                                        </p>
+                                      )}
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      className="w-full"
+                                      onClick={() => handleAmountSave(habit.id, day, recordIsTime)}
+                                    >
+                                      Save
+                                    </Button>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            )
+                          ) : (
+                            <Checkbox
+                              checked={false}
+                              onCheckedChange={() => handleToggle(habit.id, day, false)}
+                              className="h-5 w-5"
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </>
+                );
+              })}
             </div>
           </div>
           <ScrollBar orientation="horizontal" />

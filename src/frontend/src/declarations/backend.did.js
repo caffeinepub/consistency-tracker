@@ -15,15 +15,18 @@ export const UserRole = IDL.Variant({
 });
 export const HabitUnit = IDL.Variant({
   'custom' : IDL.Text,
+  'none' : IDL.Null,
   'reps' : IDL.Null,
   'time' : IDL.Null,
 });
+export const DefaultAmount = IDL.Opt(IDL.Nat);
 export const Time = IDL.Int;
 export const HabitRecord = IDL.Record({
   'day' : IDL.Nat,
   'completedAt' : IDL.Opt(Time),
   'month' : IDL.Nat,
   'habitName' : IDL.Text,
+  'unit' : HabitUnit,
   'year' : IDL.Nat,
   'habitId' : IDL.Text,
   'amount' : IDL.Opt(IDL.Nat),
@@ -33,6 +36,7 @@ export const Habit = IDL.Record({
   'name' : IDL.Text,
   'createdAt' : Time,
   'unit' : HabitUnit,
+  'defaultAmount' : DefaultAmount,
   'weeklyTarget' : IDL.Nat,
 });
 export const UserProfile = IDL.Record({ 'name' : IDL.Text });
@@ -45,7 +49,11 @@ export const ExportData = IDL.Record({
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-  'createHabit' : IDL.Func([IDL.Text, IDL.Nat, HabitUnit], [IDL.Text], []),
+  'createHabit' : IDL.Func(
+      [IDL.Text, IDL.Nat, HabitUnit, DefaultAmount],
+      [IDL.Text],
+      [],
+    ),
   'deleteHabit' : IDL.Func([IDL.Text], [], []),
   'exportAllData' : IDL.Func(
       [IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat],
@@ -73,10 +81,12 @@ export const idlService = IDL.Service({
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'toggleHabitCompletion' : IDL.Func(
-      [IDL.Text, IDL.Nat, IDL.Nat, IDL.Nat, IDL.Opt(IDL.Nat)],
+      [IDL.Text, IDL.Nat, IDL.Nat, IDL.Nat, DefaultAmount],
       [],
       [],
     ),
+  'updateHabitDefaultAmount' : IDL.Func([IDL.Text, DefaultAmount], [], []),
+  'updateHabitName' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'updateHabitUnit' : IDL.Func([IDL.Text, HabitUnit], [], []),
   'updateHabitWeeklyTarget' : IDL.Func([IDL.Text, IDL.Nat], [], []),
 });
@@ -91,15 +101,18 @@ export const idlFactory = ({ IDL }) => {
   });
   const HabitUnit = IDL.Variant({
     'custom' : IDL.Text,
+    'none' : IDL.Null,
     'reps' : IDL.Null,
     'time' : IDL.Null,
   });
+  const DefaultAmount = IDL.Opt(IDL.Nat);
   const Time = IDL.Int;
   const HabitRecord = IDL.Record({
     'day' : IDL.Nat,
     'completedAt' : IDL.Opt(Time),
     'month' : IDL.Nat,
     'habitName' : IDL.Text,
+    'unit' : HabitUnit,
     'year' : IDL.Nat,
     'habitId' : IDL.Text,
     'amount' : IDL.Opt(IDL.Nat),
@@ -109,6 +122,7 @@ export const idlFactory = ({ IDL }) => {
     'name' : IDL.Text,
     'createdAt' : Time,
     'unit' : HabitUnit,
+    'defaultAmount' : DefaultAmount,
     'weeklyTarget' : IDL.Nat,
   });
   const UserProfile = IDL.Record({ 'name' : IDL.Text });
@@ -121,7 +135,11 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-    'createHabit' : IDL.Func([IDL.Text, IDL.Nat, HabitUnit], [IDL.Text], []),
+    'createHabit' : IDL.Func(
+        [IDL.Text, IDL.Nat, HabitUnit, DefaultAmount],
+        [IDL.Text],
+        [],
+      ),
     'deleteHabit' : IDL.Func([IDL.Text], [], []),
     'exportAllData' : IDL.Func(
         [IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat],
@@ -157,10 +175,12 @@ export const idlFactory = ({ IDL }) => {
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'toggleHabitCompletion' : IDL.Func(
-        [IDL.Text, IDL.Nat, IDL.Nat, IDL.Nat, IDL.Opt(IDL.Nat)],
+        [IDL.Text, IDL.Nat, IDL.Nat, IDL.Nat, DefaultAmount],
         [],
         [],
       ),
+    'updateHabitDefaultAmount' : IDL.Func([IDL.Text, DefaultAmount], [], []),
+    'updateHabitName' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'updateHabitUnit' : IDL.Func([IDL.Text, HabitUnit], [], []),
     'updateHabitWeeklyTarget' : IDL.Func([IDL.Text, IDL.Nat], [], []),
   });

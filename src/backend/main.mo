@@ -1,22 +1,24 @@
 import Map "mo:core/Map";
-import List "mo:core/List";
 import Set "mo:core/Set";
-import Array "mo:core/Array";
+import List "mo:core/List";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
+import Array "mo:core/Array";
 import Order "mo:core/Order";
 import Iter "mo:core/Iter";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
-import Migration "migration";
-import MixinAuthorization "authorization/MixinAuthorization";
-import AccessControl "authorization/access-control";
 
-// Use migration to transform old into new representation on upgrade
-(with migration = Migration.run)
+
+import AccessControl "authorization/access-control";
+import MixinAuthorization "authorization/MixinAuthorization";
+
+
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
+
+  type DefaultAmount = ?Nat;
 
   public type UserProfile = {
     name : Text;
@@ -26,6 +28,7 @@ actor {
     #reps;
     #time;
     #custom : Text;
+    #none;
   };
 
   module Habit {
@@ -40,6 +43,7 @@ actor {
     createdAt : Time.Time;
     weeklyTarget : Nat;
     unit : HabitUnit;
+    defaultAmount : DefaultAmount;
   };
 
   public type HabitRecord = {
@@ -49,7 +53,8 @@ actor {
     month : Nat;
     year : Nat;
     completedAt : ?Time.Time;
-    amount : ?Nat; // Add optional amount field
+    amount : ?Nat;
+    unit : HabitUnit;
   };
 
   public type ExportData = {
@@ -84,7 +89,12 @@ actor {
     userProfiles.add(caller, profile);
   };
 
-  public shared ({ caller }) func createHabit(name : Text, weeklyTarget : Nat, unit : HabitUnit) : async Text {
+  public shared ({ caller }) func createHabit(
+    name : Text,
+    weeklyTarget : Nat,
+    unit : HabitUnit,
+    defaultAmount : DefaultAmount,
+  ) : async Text {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can create habits");
     };
@@ -96,6 +106,7 @@ actor {
       createdAt = Time.now();
       weeklyTarget;
       unit;
+      defaultAmount;
     };
 
     if (habits.containsKey(habitId)) {
@@ -138,12 +149,48 @@ actor {
     };
   };
 
+  public shared ({ caller }) func updateHabitName(habitId : Text, newName : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can update habit names");
+    };
+
+    switch (userHabits.get(caller)) {
+      case (null) { Runtime.trap("Unauthorized: Habit does not belong to user") };
+      case (?habitSet) {
+        if (not habitSet.contains(habitId)) {
+          Runtime.trap("Unauthorized: Habit does not belong to user");
+        };
+      };
+    };
+
+    switch (habits.get(habitId)) {
+      case (null) {
+        Runtime.trap("Habit not found");
+      };
+      case (?habit) {
+        let updatedHabit : Habit = { habit with name = newName };
+        habits.add(habitId, updatedHabit);
+        switch (habitRecords.get(habitId)) {
+          case (null) { () };
+          case (?records) {
+            let updatedRecords = records.map<HabitRecord, HabitRecord>(
+              func(record) {
+                { record with habitName = newName };
+              }
+            );
+            habitRecords.add(habitId, updatedRecords);
+          };
+        };
+      };
+    };
+  };
+
   public shared ({ caller }) func toggleHabitCompletion(
     habitId : Text,
     day : Nat,
     month : Nat,
     year : Nat,
-    amount : ?Nat,
+    amount : DefaultAmount,
   ) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can toggle habit completion");
@@ -158,8 +205,15 @@ actor {
       };
     };
 
-    if (not habits.containsKey(habitId)) {
-      Runtime.trap("Habit not found");
+    let habit = switch (habits.get(habitId)) {
+      case (null) { Runtime.trap("Habit not found") };
+      case (?h) { h };
+    };
+
+    let habitUnit = habit.unit;
+    let finalAmount = switch (amount) {
+      case (?a) { ?a };
+      case (null) { habit.defaultAmount };
     };
 
     switch (habitRecords.get(habitId)) {
@@ -167,39 +221,38 @@ actor {
         let records = List.empty<HabitRecord>();
         let record : HabitRecord = {
           habitId;
-          habitName = habits.get(habitId).unwrap().name;
+          habitName = habit.name;
           day;
           month;
           year;
           completedAt = ?Time.now();
-          amount;
+          amount = finalAmount;
+          unit = habitUnit;
         };
         records.add(record);
         habitRecords.add(habitId, records);
       };
       case (?records) {
-        let recordOpt = records.find(
+        let existingRecord = records.find(
           func(r) { r.day == day and r.month == month and r.year == year }
         );
 
-        switch (recordOpt) {
-          case (null) {
-            let newRecord : HabitRecord = {
-              habitId;
-              habitName = habits.get(habitId).unwrap().name;
-              day;
-              month;
-              year;
-              completedAt = ?Time.now();
-              amount;
-            };
-            records.add(newRecord);
+        if (existingRecord.isNull()) {
+          let newRecord : HabitRecord = {
+            habitId;
+            habitName = habit.name;
+            day;
+            month;
+            year;
+            completedAt = ?Time.now();
+            amount = finalAmount;
+            unit = habitUnit;
           };
-          case (?existingRecord) {
-            let filteredRecords = records.filter(func(r) { not (r.day == day and r.month == month and r.year == year) });
-            records.clear();
-            records.addAll(filteredRecords.values());
-          };
+          records.add(newRecord);
+        } else {
+          let filteredRecords = records.filter(func(r) { not (r.day == day and r.month == month and r.year == year) });
+          records.clear();
+          records.addAll(filteredRecords.values());
         };
       };
     };
@@ -226,8 +279,7 @@ actor {
     switch (habits.get(habitId)) {
       case (null) { Runtime.trap("Habit not found") };
       case (?habit) {
-        let updatedHabit = { habit with weeklyTarget = newWeeklyTarget };
-        habits.add(habitId, updatedHabit);
+        habits.add(habitId, { habit with weeklyTarget = newWeeklyTarget });
       };
     };
   };
@@ -249,8 +301,29 @@ actor {
     switch (habits.get(habitId)) {
       case (null) { Runtime.trap("Habit not found") };
       case (?habit) {
-        let updatedHabit = { habit with unit = newUnit };
-        habits.add(habitId, updatedHabit);
+        habits.add(habitId, { habit with unit = newUnit });
+      };
+    };
+  };
+
+  public shared ({ caller }) func updateHabitDefaultAmount(habitId : Text, newDefaultAmount : DefaultAmount) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can update habits");
+    };
+
+    switch (userHabits.get(caller)) {
+      case (null) { Runtime.trap("Unauthorized: Habit does not belong to user") };
+      case (?habitSet) {
+        if (not habitSet.contains(habitId)) {
+          Runtime.trap("Unauthorized: Habit does not belong to user");
+        };
+      };
+    };
+
+    switch (habits.get(habitId)) {
+      case (null) { Runtime.trap("Habit not found") };
+      case (?habit) {
+        habits.add(habitId, { habit with defaultAmount = newDefaultAmount });
       };
     };
   };

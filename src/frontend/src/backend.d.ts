@@ -17,6 +17,9 @@ export type HabitUnit = {
     __kind__: "custom";
     custom: string;
 } | {
+    __kind__: "none";
+    none: null;
+} | {
     __kind__: "reps";
     reps: null;
 } | {
@@ -28,6 +31,7 @@ export interface HabitRecord {
     completedAt?: Time;
     month: bigint;
     habitName: string;
+    unit: HabitUnit;
     year: bigint;
     habitId: string;
     amount?: bigint;
@@ -37,8 +41,10 @@ export interface Habit {
     name: string;
     createdAt: Time;
     unit: HabitUnit;
+    defaultAmount: DefaultAmount;
     weeklyTarget: bigint;
 }
+export type DefaultAmount = bigint | null;
 export interface UserProfile {
     name: string;
 }
@@ -49,7 +55,7 @@ export enum UserRole {
 }
 export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
-    createHabit(name: string, weeklyTarget: bigint, unit: HabitUnit): Promise<string>;
+    createHabit(name: string, weeklyTarget: bigint, unit: HabitUnit, defaultAmount: DefaultAmount): Promise<string>;
     deleteHabit(habitId: string): Promise<void>;
     exportAllData(startDay: bigint, startMonth: bigint, startYear: bigint, endDay: bigint, endMonth: bigint, endYear: bigint): Promise<ExportData>;
     exportSelectedHabitsData(habitIds: Array<string>, startDay: bigint, startMonth: bigint, startYear: bigint, endDay: bigint, endMonth: bigint, endYear: bigint): Promise<ExportData>;
@@ -60,7 +66,9 @@ export interface backendInterface {
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
-    toggleHabitCompletion(habitId: string, day: bigint, month: bigint, year: bigint, amount: bigint | null): Promise<void>;
+    toggleHabitCompletion(habitId: string, day: bigint, month: bigint, year: bigint, amount: DefaultAmount): Promise<void>;
+    updateHabitDefaultAmount(habitId: string, newDefaultAmount: DefaultAmount): Promise<void>;
+    updateHabitName(habitId: string, newName: string): Promise<void>;
     updateHabitUnit(habitId: string, newUnit: HabitUnit): Promise<void>;
     updateHabitWeeklyTarget(habitId: string, newWeeklyTarget: bigint): Promise<void>;
 }

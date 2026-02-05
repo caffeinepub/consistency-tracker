@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type { Habit, HabitRecord } from '../backend';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -9,8 +9,10 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { calculateReportStats } from '../utils/reportStats';
+import { formatDuration } from '../utils/duration';
+import { isTimeUnit } from '../utils/habitUnit';
 
 interface ProgressChartsProps {
   habits: Habit[];
@@ -45,16 +47,46 @@ export function ProgressCharts({
     );
   }, [habits, records, selectedMonth, selectedYear, daysInMonth]);
 
-  // Auto-select first habit if none selected
-  useMemo(() => {
-    if (habits.length > 0 && !selectedHabitForVolume) {
-      setSelectedHabitForVolume(habits[0].id);
+  // Filter habits to only those with completions in the selected month
+  const habitsWithCompletions = useMemo(() => {
+    return habits.filter((habit) => {
+      return records.some(
+        (record) =>
+          record.habitId === habit.id &&
+          record.completedAt !== undefined &&
+          record.completedAt !== null
+      );
+    });
+  }, [habits, records]);
+
+  // Calculate total volume across all habits for empty state check
+  const totalVolumeAllHabits = useMemo(() => {
+    return stats.volumeStats.reduce((sum, vs) => sum + vs.totalVolume, 0);
+  }, [stats.volumeStats]);
+
+  // Auto-select first habit with completions, or clear if none available
+  useEffect(() => {
+    if (habitsWithCompletions.length > 0) {
+      // If current selection is not in the filtered list, select the first one
+      const isCurrentSelectionValid = habitsWithCompletions.some(
+        (h) => h.id === selectedHabitForVolume
+      );
+      if (!isCurrentSelectionValid) {
+        setSelectedHabitForVolume(habitsWithCompletions[0].id);
+      }
+    } else {
+      // No habits with completions, clear selection
+      setSelectedHabitForVolume('');
     }
-  }, [habits, selectedHabitForVolume]);
+  }, [habitsWithCompletions, selectedHabitForVolume]);
 
   const selectedVolumeStats = stats.volumeStats.find(
     (vs) => vs.habitId === selectedHabitForVolume
   );
+
+  // Check if selected habit is a Time habit
+  const selectedHabit = habits.find((h) => h.id === selectedHabitForVolume);
+  const isTimeHabit = selectedHabit ? isTimeUnit(selectedHabit.unit) : false;
 
   const pieData = [
     { name: 'Completed', value: stats.overallPercentage },
@@ -175,75 +207,50 @@ export function ProgressCharts({
         </Card>
       )}
 
-      {/* Volume Chart */}
-      {habits.length > 0 && selectedVolumeStats && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Volume Tracking</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="habit-select">Select Habit</Label>
-              <Select value={selectedHabitForVolume} onValueChange={setSelectedHabitForVolume}>
-                <SelectTrigger id="habit-select">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {habits.map((habit) => (
-                    <SelectItem key={habit.id} value={habit.id}>
-                      {habit.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      {/* Volume Tracking */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Volume Tracking</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {totalVolumeAllHabits === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No volume recorded this month
             </div>
-
-            <div className="p-4 bg-muted/30 rounded-lg">
-              <div className="text-center">
-                <div className="text-3xl font-bold">{selectedVolumeStats.totalVolume}</div>
-                <div className="text-sm text-muted-foreground">
-                  Total {selectedVolumeStats.unit} this month
-                </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="habit-select">Select Habit</Label>
+                <Select value={selectedHabitForVolume} onValueChange={setSelectedHabitForVolume}>
+                  <SelectTrigger id="habit-select">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {habitsWithCompletions.map((habit) => (
+                      <SelectItem key={habit.id} value={habit.id}>
+                        {habit.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
 
-            <ChartContainer
-              config={{
-                volume: {
-                  label: `Volume (${selectedVolumeStats.unit})`,
-                  color: 'oklch(var(--chart-2))',
-                },
-              }}
-              className="h-64"
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={selectedVolumeStats.dailyVolumes.filter((d) => d.day <= daysInMonth)}>
-                  <XAxis
-                    dataKey="day"
-                    tick={{ fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <ChartTooltip
-                    content={<ChartTooltipContent />}
-                    labelFormatter={(value) => `Day ${value}`}
-                  />
-                  <Bar
-                    dataKey="volume"
-                    fill="oklch(var(--chart-2))"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-      )}
+              {selectedVolumeStats && (
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold">
+                      {isTimeHabit ? formatDuration(selectedVolumeStats.totalVolume) : selectedVolumeStats.totalVolume}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Total {selectedVolumeStats.unit} this month
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

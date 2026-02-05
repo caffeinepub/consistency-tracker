@@ -1,9 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { Habit, HabitRecord, UserProfile, ExportData, HabitUnit } from '../backend';
+import { useInternetIdentity } from './useInternetIdentity';
+import type { Habit, HabitRecord, UserProfile, ExportData, HabitUnit, DefaultAmount } from '../backend';
 
 export function useGetCallerUserProfile() {
   const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
 
   const query = useQuery<UserProfile | null>({
     queryKey: ['currentUserProfile'],
@@ -11,14 +13,15 @@ export function useGetCallerUserProfile() {
       if (!actor) throw new Error('Actor not available');
       return actor.getCallerUserProfile();
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !!identity && !actorFetching,
     retry: false,
   });
 
+  // Return deterministic loading state that blocks until query has resolved
   return {
     ...query,
-    isLoading: actorFetching || query.isLoading,
-    isFetched: !!actor && query.isFetched,
+    isLoading: actorFetching || query.isLoading || (!!actor && !!identity && !query.isFetched),
+    isFetched: !!actor && !!identity && query.isFetched,
   };
 }
 
@@ -39,6 +42,7 @@ export function useSaveCallerUserProfile() {
 
 export function useGetHabits() {
   const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
 
   return useQuery<Habit[]>({
     queryKey: ['habits'],
@@ -46,7 +50,7 @@ export function useGetHabits() {
       if (!actor) return [];
       return actor.getHabits();
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !!identity && !actorFetching,
   });
 }
 
@@ -55,9 +59,10 @@ export function useCreateHabit() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ name, weeklyTarget, unit }: { name: string; weeklyTarget: number; unit: HabitUnit }) => {
+    mutationFn: async ({ name, weeklyTarget, unit, defaultAmount }: { name: string; weeklyTarget: number; unit: HabitUnit; defaultAmount?: number | null }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.createHabit(name, BigInt(weeklyTarget), unit);
+      const amountValue: DefaultAmount = defaultAmount !== undefined && defaultAmount !== null ? BigInt(defaultAmount) : null;
+      return actor.createHabit(name, BigInt(weeklyTarget), unit, amountValue);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['habits'] });
@@ -73,6 +78,22 @@ export function useDeleteHabit() {
     mutationFn: async (habitId: string) => {
       if (!actor) throw new Error('Actor not available');
       return actor.deleteHabit(habitId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['habits'] });
+      queryClient.invalidateQueries({ queryKey: ['monthlyRecords'] });
+    },
+  });
+}
+
+export function useUpdateHabitName() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ habitId, newName }: { habitId: string; newName: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.updateHabitName(habitId, newName);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['habits'] });
@@ -112,8 +133,26 @@ export function useUpdateHabitUnit() {
   });
 }
 
+export function useUpdateHabitDefaultAmount() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ habitId, newDefaultAmount }: { habitId: string; newDefaultAmount: number | null }) => {
+      if (!actor) throw new Error('Actor not available');
+      const amountValue: DefaultAmount = newDefaultAmount !== null ? BigInt(newDefaultAmount) : null;
+      return actor.updateHabitDefaultAmount(habitId, amountValue);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['habits'] });
+      queryClient.invalidateQueries({ queryKey: ['monthlyRecords'] });
+    },
+  });
+}
+
 export function useGetMonthlyRecords(month: number, year: number) {
   const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
 
   return useQuery<HabitRecord[]>({
     queryKey: ['monthlyRecords', month, year],
@@ -121,7 +160,7 @@ export function useGetMonthlyRecords(month: number, year: number) {
       if (!actor) return [];
       return actor.getMonthlyRecords(BigInt(month), BigInt(year));
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !!identity && !actorFetching,
   });
 }
 

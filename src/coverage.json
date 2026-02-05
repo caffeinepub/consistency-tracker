@@ -1,115 +1,49 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-03T21:49:06.981Z",
+  "generatedAt": "2026-02-04T22:48:34.979Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 7,
-    "implemented": 4,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
-        "id": "REQ-10",
-        "summary": "Update backend APIs used by the monthly tracker and reporting/export so that returned monthly records and export payloads include the optional numeric amount and the habit unit, while preserving backward compatibility for existing saved data.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-11",
-        "summary": "Add/adjust canister upgrade migration so existing stable data (habits and records) is safely migrated to the new schema (unit on habits; optional amount on records) with sensible defaults and no data loss.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-12",
-        "summary": "Update the frontend habit creation/edit UI to require/select a per-habit unit (at minimum: reps and time/duration) and display the unit consistently wherever numeric amounts are entered or shown.",
+        "id": "REQ-4",
+        "summary": "Prevent the app from rendering the authenticated dashboard until the caller user profile query has deterministically resolved (either a real profile object or an explicit null), so that no code path can access `userProfile.name` while `userProfile` is undefined on initial load.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/utils/habitUnit.ts",
-          "frontend/src/components/HabitManager.tsx"
+          "frontend/src/App.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/utils/habitUnit.ts",
-          "frontend/src/components/HabitManager.tsx"
+          "frontend/src/App.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ]
       },
       {
-        "id": "REQ-13",
-        "summary": "Update the monthly habit grid interaction so users can keep using the completion toggle and can optionally enter a numeric amount for the day when marked done (e.g., done + amount). Amount entry must be optional and not required to mark a day as done.",
+        "id": "REQ-5",
+        "summary": "Add a defensive UI safeguard so that the header/user badge rendering never throws if a profile object is unexpectedly missing or has an empty name (e.g., render a safe fallback initial and omit the welcome name) to avoid taking down the whole app due to a single missing field.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/HabitGrid.tsx"
+          "frontend/src/components/Header.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/HabitGrid.tsx"
+          "frontend/src/components/Header.tsx"
         ]
-      },
-      {
-        "id": "REQ-14",
-        "summary": "Extend progress visualization to support both frequency and volume: keep existing frequency-based progress (weekly target times/week) and add volume-over-time visualization(s) that show per-habit numeric totals/trends using the habit’s unit.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/utils/reportStats.ts",
-          "frontend/src/components/ProgressCharts.tsx",
-          "frontend/src/utils/habitUnit.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/utils/reportStats.ts",
-          "frontend/src/components/ProgressCharts.tsx",
-          "frontend/src/utils/habitUnit.ts"
-        ]
-      },
-      {
-        "id": "REQ-15",
-        "summary": "Update CSV/PDF export outputs to include the optional numeric amounts and units so users can analyze volume changes over time in exported files.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/utils/reportCsv.ts",
-          "frontend/src/components/ReportExportDialog.tsx",
-          "frontend/src/utils/reportPdf.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/utils/reportCsv.ts",
-          "frontend/src/components/ReportExportDialog.tsx"
-        ]
-      },
-      {
-        "id": "REQ-9",
-        "summary": "Extend the backend data model so each habit supports a configured unit (at minimum: reps and time/duration) and each habit/day record supports the existing done/not-done state plus an optional numeric amount for that day.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
-    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/components/HabitGrid.tsx",
-    "frontend/src/components/HabitManager.tsx",
-    "frontend/src/components/ProgressCharts.tsx",
-    "frontend/src/components/ReportExportDialog.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
+    "frontend/src/App.tsx",
+    "frontend/src/components/Header.tsx",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/utils/habitUnit.ts",
-    "frontend/src/utils/reportCsv.ts",
-    "frontend/src/utils/reportStats.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

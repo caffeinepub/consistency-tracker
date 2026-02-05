@@ -3,17 +3,19 @@ import { useGetCallerUserProfile } from './hooks/useQueries';
 import { LoginScreen } from './components/LoginScreen';
 import { ProfileSetup } from './components/ProfileSetup';
 import { TrackerDashboard } from './components/TrackerDashboard';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { FatalErrorFallback } from './components/FatalErrorFallback';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from 'next-themes';
 
-export default function App() {
+function AppContent() {
   const { identity, isInitializing } = useInternetIdentity();
   const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
 
   const isAuthenticated = !!identity;
-  const showProfileSetup = isAuthenticated && !profileLoading && isFetched && userProfile === null;
 
-  if (isInitializing || (isAuthenticated && profileLoading)) {
+  // Loading state - wait for identity initialization and profile query to resolve
+  if (isInitializing || (isAuthenticated && !isFetched)) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="text-center">
@@ -24,28 +26,28 @@ export default function App() {
     );
   }
 
+  // Not authenticated - show login
   if (!isAuthenticated) {
-    return (
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <LoginScreen />
-        <Toaster />
-      </ThemeProvider>
-    );
+    return <LoginScreen />;
   }
 
-  if (showProfileSetup) {
-    return (
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <ProfileSetup />
-        <Toaster />
-      </ThemeProvider>
-    );
+  // Authenticated but no profile - show profile setup
+  if (userProfile === null || !userProfile) {
+    return <ProfileSetup />;
   }
 
+  // Authenticated with profile - show dashboard
+  // At this point userProfile is guaranteed to be a UserProfile object
+  return <TrackerDashboard userProfile={userProfile} />;
+}
+
+export default function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <TrackerDashboard userProfile={userProfile!} />
-      <Toaster />
-    </ThemeProvider>
+    <ErrorBoundary fallback={(error, resetError) => <FatalErrorFallback error={error} resetError={resetError} />}>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <AppContent />
+        <Toaster />
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }

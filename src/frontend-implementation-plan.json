@@ -1,104 +1,42 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Optional per-day amounts with per-habit units and volume analytics (frontend)",
+  "title": "Fix startup crash by gating dashboard render until user profile query resolves",
   "requirements": [
     {
-      "id": "REQ-12",
-      "summary": "Require/select a per-habit unit during creation/edit and display the unit consistently near amount inputs/displays.",
+      "id": "REQ-4",
+      "summary": "Gate authenticated flow so TrackerDashboard never renders until the caller profile query has deterministically resolved to UserProfile or null.",
       "acceptanceCriteria": [
-        "Creating a habit includes selecting a unit (reps or time/duration).",
-        "The selected unit is shown in the UI near any amount input/display for that habit.",
-        "Existing habits created before this change still render, with the default unit shown."
+        "On an authenticated session, the app does not render `TrackerDashboard` until `useGetCallerUserProfile()` has resolved to either `UserProfile` or `null` (never `undefined`).",
+        "The fatal error screen shown in the screenshot (\"undefined is not an object (evaluating 'userProfile.name')\") no longer appears on initial page load.",
+        "If the caller has no profile, the app shows the Profile Setup screen instead of crashing.",
+        "If the caller has a profile, the app shows the dashboard and the header renders the welcome message without errors."
       ],
       "file_operations": [
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Update the authenticated render gating to treat the profile as 'unresolved' until the profile query is fetched, showing the existing loading UI during that period and only rendering ProfileSetup when fetched and the result is explicitly null, and only rendering TrackerDashboard when fetched and a real profile object exists (never passing an undefined profile)."
+        },
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Update habit mutations to support units: pass the selected HabitUnit into habit creation, add a mutation hook for updating a habit’s unit, and ensure habit queries continue to provide unit data for display."
-        },
-        {
-          "path": "frontend/src/utils/habitUnit.ts",
-          "operation": "create",
-          "description": "Add small helpers to normalize/format HabitUnit for display (e.g., labels like “reps” and “time”), and to provide a safe fallback label for legacy/default units."
-        },
-        {
-          "path": "frontend/src/components/HabitManager.tsx",
-          "operation": "modify",
-          "description": "Update habit create/edit UI to require/select a unit (minimum: reps and time/duration), call the updated create/update-unit mutations, and display the chosen unit in the habit list. Use shadcn-ui form controls (e.g., Select) to keep styling consistent. Verify the component's usage instructions before implementing."
+          "description": "Harden `useGetCallerUserProfile()` to expose a deterministic 'resolved' signal for the caller profile query (e.g., via `isFetched`/`isLoading` semantics already present) so consuming components can reliably block rendering until the actor dependency and query have completed."
         }
       ]
     },
     {
-      "id": "REQ-13",
-      "summary": "Allow monthly grid to keep the done toggle and optionally capture a numeric amount for done days, persisting it via backend calls.",
+      "id": "REQ-5",
+      "summary": "Make header/user badge rendering resilient to missing or empty profile name with safe fallbacks so the app remains usable.",
       "acceptanceCriteria": [
-        "A user can toggle a day to done without entering an amount.",
-        "A user can enter/update an amount for a done day and the value persists after refresh.",
-        "If a day is toggled from done to not-done, the app behavior around any previously entered amount is defined and consistent (either cleared or retained but not counted) and is implemented consistently across frontend and backend."
+        "No part of the header crashes when `userProfile.name` is empty or missing; the UI renders with a safe fallback instead.",
+        "The app remains usable (no ErrorBoundary fatal fallback) even if the profile data is malformed, and the user can still log out."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/components/Header.tsx",
           "operation": "modify",
-          "description": "Update the completion mutation to support optional amount: allow callers to pass amount as a number (or null) so the backend can store done state plus optional numeric amount, while keeping toggle-only behavior working when amount is omitted."
-        },
-        {
-          "path": "frontend/src/components/HabitGrid.tsx",
-          "operation": "modify",
-          "description": "Enhance the monthly grid cells to support optional amount entry when a day is marked done: show the habit unit near the amount input, keep amount optional, and persist edits via the updated completion mutation. Define and implement consistent behavior when unchecking a day (front-end behavior: clear any locally edited amount and submit null so amount is cleared when toggled to not-done). Use shadcn-ui inputs/popovers where appropriate. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-14",
-      "summary": "Keep existing frequency-based progress visuals and add at least one volume-over-time visualization labeled with the habit unit.",
-      "acceptanceCriteria": [
-        "Existing frequency visuals remain available and accurate for toggle-based completion.",
-        "At least one new volume visualization is visible in the dashboard that reflects summed amounts over time (e.g., per day trend and/or per habit monthly total), labeled with the habit unit.",
-        "Volume visuals correctly handle days with done but no amount (treated as zero amount unless otherwise specified in the UI)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/utils/reportStats.ts",
-          "operation": "modify",
-          "description": "Extend stats calculations to support volume metrics derived from records.amount: compute per-habit daily volume series and monthly volume totals, treating completed records with missing amount as zero for volume visuals."
-        },
-        {
-          "path": "frontend/src/components/ProgressCharts.tsx",
-          "operation": "modify",
-          "description": "Add a new volume-focused visualization card (in addition to existing frequency charts): show a per-habit volume trend over the selected month and a monthly total, clearly labeled with that habit’s unit. Keep existing frequency charts unchanged. Use existing chart primitives and shadcn-ui controls for any habit selection UI. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/utils/habitUnit.ts",
-          "operation": "modify",
-          "description": "Add/adjust unit labeling helpers needed by volume charts so the chart titles/axes/tooltips can consistently display the correct unit."
-        }
-      ]
-    },
-    {
-      "id": "REQ-15",
-      "summary": "Update exports so CSV (and PDF if used) include optional amounts and units for volume-aware analysis over time.",
-      "acceptanceCriteria": [
-        "CSV export includes columns/fields for amount and unit (or unit per habit) in addition to completion.",
-        "PDF export (if implemented) includes volume-aware summaries or tables consistent with the app’s volume tracking.",
-        "Exports remain usable when amounts are missing (empty/zero as appropriate) and when habits are toggle-only legacy data."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/utils/reportCsv.ts",
-          "operation": "modify",
-          "description": "Update CSV generation to include habit unit and per-day amount: add columns for unit and amount alongside completion, leave amount empty when missing, and ensure legacy toggle-only records still export cleanly."
-        },
-        {
-          "path": "frontend/src/components/ReportExportDialog.tsx",
-          "operation": "modify",
-          "description": "Ensure the export UI messaging aligns with the updated CSV (amount + unit included) and that generated files remain usable when amounts are missing."
-        },
-        {
-          "path": "frontend/src/utils/reportPdf.ts",
-          "operation": "modify",
-          "description": "If PDF export is present/used, implement or update PDF report generation to include volume-aware summaries/tables (amount + unit) consistent with CSV and on-screen volume visuals; otherwise keep the utility aligned and ready for future wiring."
+          "description": "Add defensive rendering for the welcome message and avatar initial so they never call string methods on missing/empty `name` (e.g., conditionally render the welcome name only when non-empty, and render a safe fallback initial when absent), while keeping the logout menu accessible."
         }
       ]
     }
