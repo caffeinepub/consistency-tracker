@@ -1,44 +1,36 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Habit tracker with monthly-adjustable targets: add monthly increasing (+5/month) targets for press-ups and squats, and remove target functionality for 16/8 fasting, run, and squash where not applicable.",
+  "summary": "New project",
   "architectural_notes": [
-    "Targets can be habit-specific: some habits use monthly-increasing numeric targets (+5/month), while others have no target section when not applicable."
+    "Persist daily-tracker completion data per month (and year) so each month loads/saves independently when selected."
   ],
   "known_issues": [
-    "Press-ups and squash habits/targets did not update as expected (user reported)."
+    "Daily tracker shows February values even when a different month (e.g., March) is selected after marking tasks completed."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-update-the-monthly-targets-auto-plan-defaults-so-that-both-press-ups-and-squats-receive-monthly-increasing-targets-that-climb-by-5-each-month-according-to-the-steady-climb-plan-shown-in-the-uploaded-image",
-      "title": "Update the Monthly Targets auto-plan defaults so that both “Press-ups” and “Squats” receive monthly-increasing targets that climb by +5 each month according to the Steady Climb plan shown in the uploaded image.",
+      "id": "feature-ensure-the-daily-tracking-grid-displays-completion-state-and-any-saved-values-for-the-currently-selected-month-year-only-so-switching-to-another-month-e-g-march-never-shows-data-from-a-different-month-e-g-february",
+      "title": "Ensure the Daily Tracking grid displays completion state and any saved values for the currently selected month/year only, so switching to another month (e.g., March) never shows data from a different month (e.g., February).",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-fix-monthly-targets-to-correctly-show-and-edit-persisted-monthly-target-overrides-from-the-backend-instead-of-always-showing-only-the-auto-plan-default-and-ignoring-saved-values",
-      "title": "Fix Monthly Targets to correctly show and edit persisted monthly target overrides from the backend (instead of always showing only the auto-plan default and ignoring saved values).",
+      "id": "feature-when-the-user-switches-months-in-the-daily-tracking-view-do-not-render-the-previous-month-s-records-while-the-new-month-s-records-are-being-fetched-instead-show-an-empty-state-for-the-grid-all-unchecked-or-a-loading-skeleton-state-until-the-selected-month-year-records-query-resolves",
+      "title": "When the user switches months in the Daily Tracking view, do not render the previous month’s records while the new month’s records are being fetched; instead, show an empty state for the grid (all unchecked) or a loading/skeleton state until the selected month/year records query resolves.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-remove-monthly-target-functionality-from-16-8-fasting-run-and-squash-so-targets-are-not-shown-as-applicable-and-cannot-be-edited-for-these-habits",
-      "title": "Remove monthly target functionality from “16/8 fasting”, “Run”, and “Squash” so targets are not shown as applicable and cannot be edited for these habits.",
+      "id": "feature-make-record-mapping-in-the-daily-tracking-grid-robustly-month-separated-by-ensuring-any-client-side-keys-maps-used-to-look-up-records-cannot-collide-across-months-years-e-g-include-month-year-in-the-lookup-key-even-if-records-from-multiple-months-were-ever-present-in-memory",
+      "title": "Make record mapping in the Daily Tracking grid robustly month-separated by ensuring any client-side keys/maps used to look up records cannot collide across months/years (e.g., include month/year in the lookup key), even if records from multiple months were ever present in memory.",
       "reqIds": [
         "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-clean-up-the-monthly-targets-section-layout-to-look-less-messy-consistent-spacing-alignment-and-clearer-separation-between-habit-name-target-display-and-edit-controls-matching-the-structure-shown-in-the-uploaded-image",
-      "title": "Clean up the Monthly Targets section layout to look less messy (consistent spacing/alignment and clearer separation between habit name, target display, and edit controls), matching the structure shown in the uploaded image.",
-      "reqIds": [
-        "REQ-4"
       ],
       "version": 1
     }
@@ -46,36 +38,12 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Add monthly increasing targets for press-ups (+5 each month) based on steady climb plan",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Add monthly increasing targets for squats (+5 each month) based on steady climb plan",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Remove targets for 16/8 fasting (targets not applicable)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-4",
-      "summary": "Remove targets for run (targets not applicable)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-5",
-      "summary": "Remove targets for squash (targets not applicable)",
+      "summary": "Daily tracker: store and display completed-task values separately per month; when switching months load that month’s saved values, and persist changes permanently (only show completed values once box is ticked)",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Fix monthly targets: press-ups & squats steady-climb defaults; disable targets for fasting/run/squash; clean up targets UI",
+  "projectName": "Fix Daily Tracking to store and display completed values per month (no February bleed-over)",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

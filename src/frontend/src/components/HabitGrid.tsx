@@ -41,10 +41,19 @@ export function HabitGrid({
   const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
+  // Filter records to only include those matching the selected month/year
+  const filteredRecords = useMemo(() => {
+    return records.filter(
+      (record) =>
+        Number(record.month) === selectedMonth && Number(record.year) === selectedYear
+    );
+  }, [records, selectedMonth, selectedYear]);
+
+  // Build record map with month/year-scoped keys
   const recordMap = useMemo(() => {
     const map = new Map<string, RecordData>();
-    records.forEach((record) => {
-      const key = `${record.habitId}-${record.day}`;
+    filteredRecords.forEach((record) => {
+      const key = `${record.habitId}-${record.day}-${record.month}-${record.year}`;
       map.set(key, {
         isCompleted: !!record.completedAt,
         amount: record.amount ? Number(record.amount) : undefined,
@@ -52,7 +61,7 @@ export function HabitGrid({
       });
     });
     return map;
-  }, [records]);
+  }, [filteredRecords]);
 
   const handleToggle = async (habitId: string, day: number, currentlyCompleted: boolean) => {
     try {
@@ -121,7 +130,7 @@ export function HabitGrid({
   };
 
   const openAmountEditor = (habitId: string, day: number, currentAmount?: number, isTime?: boolean) => {
-    const key = `${habitId}-${day}`;
+    const key = `${habitId}-${day}-${selectedMonth}-${selectedYear}`;
     setEditingCell(key);
     if (currentAmount !== undefined) {
       // Format Time amounts as duration, others as plain number
@@ -194,7 +203,7 @@ export function HabitGrid({
                       </div>
                     </div>
                     {days.map((day) => {
-                      const key = `${habit.id}-${day}`;
+                      const key = `${habit.id}-${day}-${selectedMonth}-${selectedYear}`;
                       const recordData = recordMap.get(key);
                       const isCompleted = recordData?.isCompleted || false;
                       const amount = recordData?.amount;

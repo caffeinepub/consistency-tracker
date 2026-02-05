@@ -39,7 +39,11 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('habits');
 
   const { data: habits = [], isLoading: habitsLoading } = useGetHabits();
-  const { data: records = [], isLoading: recordsLoading } = useGetMonthlyRecords(
+  const { 
+    data: records = [], 
+    isLoading: recordsLoading,
+    isFetching: recordsFetching 
+  } = useGetMonthlyRecords(
     selectedMonth,
     selectedYear
   );
@@ -51,6 +55,12 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
     await clear();
     queryClient.clear();
   };
+
+  // Show loading state while fetching new month data to prevent stale data display
+  const isGridLoading = habitsLoading || recordsLoading || recordsFetching;
+
+  // Only pass records if they're for the current selected month/year
+  const recordsForGrid = isGridLoading ? [] : records;
 
   return (
     <div className="min-h-screen bg-background">
@@ -79,10 +89,10 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
 
                 <HabitGrid
                   habits={habits}
-                  records={records}
+                  records={recordsForGrid}
                   selectedMonth={selectedMonth}
                   selectedYear={selectedYear}
-                  isLoading={habitsLoading || recordsLoading}
+                  isLoading={isGridLoading}
                 />
               </div>
             </div>
@@ -90,7 +100,7 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
             <div className="lg:w-96">
               <ProgressCharts
                 habits={habits}
-                records={records}
+                records={recordsForGrid}
                 selectedMonth={selectedMonth}
                 selectedYear={selectedYear}
               />

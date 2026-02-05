@@ -1,76 +1,76 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Monthly Targets: steady-climb defaults, persisted overrides, disable non-applicable habits, and UI cleanup",
+  "title": "Daily Tracking month-isolated rendering and record lookup",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Update Monthly Targets auto-plan defaults so Press-ups and Squats always get Steady Climb monthly-increasing (+5) targets with robust name matching.",
+      "summary": "Ensure Daily Tracking displays and applies completion/amount values only for the currently selected month/year, with no bleed-over between months and correct reload behavior.",
       "acceptanceCriteria": [
-        "In the Monthly Targets list, a habit named “Press-ups” displays an auto-plan target (not “—”) for any selected month in the year.",
-        "In the Monthly Targets list, a habit named “Squats” displays an auto-plan target (not “—”) for any selected month in the year.",
-        "The Press-ups and Squats auto-plan values increase by 5 month-over-month across the 12 months (e.g., Jan 20, Feb 25, Mar 30 ...).",
-        "Auto-plan matching is robust to common naming variants such as “Press-ups” vs “Push-ups” (i.e., press-ups no longer fails to match due to name normalization)."
+        "After completing a habit day in February, switching to March shows March data only (unchecked/empty unless March has saved completions).",
+        "After completing a habit day in March, switching back to February shows February data only; February and March do not affect each other.",
+        "Reloading the app preserves month-specific completion data (data is persisted in the backend and correctly reloaded per selected month/year)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/MonthlyTargetsEditor.tsx",
+          "path": "frontend/src/components/HabitGrid.tsx",
           "operation": "modify",
-          "description": "Implement robust habit-name normalization and aliasing so Press-ups/Push-ups variants map to the same Steady Climb plan; ensure Press-ups and Squats resolve to the +5/month sequence for months 1–12."
+          "description": "Make the grid defensively month/year-scoped: filter incoming records to the selectedMonth/selectedYear before building any lookup, and ensure displayed completion/amount state is derived only from records matching the currently selected month/year."
+        },
+        {
+          "path": "frontend/src/components/HabitGrid.tsx",
+          "operation": "modify",
+          "description": "Update any in-memory record lookup map keys to include habitId + day + month + year, and update editingCell keys accordingly so switching months cannot reuse/collide with a previous month’s cell state."
+        },
+        {
+          "path": "frontend/src/components/TrackerDashboard.tsx",
+          "operation": "modify",
+          "description": "Ensure HabitGrid/ProgressCharts receive month-isolated records only for the current selection (e.g., pass a cleared array while loading new month data, and otherwise pass the current query’s resolved records for the selected month/year)."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Show and edit persisted monthly target overrides (saved values take precedence over auto-plan defaults) with correct prefilling and time-duration handling.",
+      "summary": "Prevent the previous month’s records from rendering while a newly selected month/year’s records are loading by showing a cleared grid or loading/skeleton state.",
       "acceptanceCriteria": [
-        "If a user saves a monthly target for a habit/month/year, returning to that same month/year shows the saved value in the targets list.",
-        "When tapping Edit for a habit, the input is prefilled with the saved monthly target if one exists for the selected month/year; otherwise it is prefilled with the auto-plan default (if available) or blank.",
-        "Saving a new target value updates the backend and the UI reflects the updated value without a full page refresh.",
-        "Time-based habits (e.g., Plank) still support duration parsing/formatting when displaying saved overrides and when prefilling the edit input."
+        "Switching from February to March does not temporarily or permanently show February checkmarks/amounts under March.",
+        "If the selected month’s data is still loading, the UI indicates loading (or shows a cleared grid) rather than showing the last month’s data."
       ],
       "file_operations": [
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Add a React Query hook that can fetch monthly targets for multiple habits (e.g., via TanStack useQueries) and provide a combined, cache-friendly lookup for MonthlyTargetsEditor."
+          "description": "Adjust the monthly records query behavior to avoid showing stale/previous-month data during month changes (e.g., return an empty placeholder while fetching the new month/year and ensure the query does not keep prior data visible for a different queryKey)."
         },
         {
-          "path": "frontend/src/components/MonthlyTargetsEditor.tsx",
+          "path": "frontend/src/components/TrackerDashboard.tsx",
           "operation": "modify",
-          "description": "Use persisted monthly targets (via the multi-habit targets hook) to: (1) display saved overrides for the selected month/year when present, otherwise fall back to auto-plan; (2) prefill the edit input with saved override, otherwise auto-plan or blank; (3) keep duration parse/format behavior for time-based units; and (4) refresh UI after save by leveraging existing query invalidation."
+          "description": "On month switch, ensure the grid does not render the last resolved month’s records (e.g., derive recordsForUI = recordsLoading/isFetching ? [] : records, and pass isLoading to HabitGrid to show its skeleton/cleared state)."
+        },
+        {
+          "path": "frontend/src/components/HabitGrid.tsx",
+          "operation": "modify",
+          "description": "Ensure the loading/empty rendering path results in an unchecked/empty grid presentation for the selected month (e.g., rely on isLoading skeleton and/or empty records array without residual checked state)."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Disable monthly targets for 16/8 fasting, Run, and Squash so targets are not shown as applicable and cannot be edited for these habits.",
+      "summary": "Make Daily Tracking record mapping robust against month/year collisions by using month/year in client-side lookup keys/maps.",
       "acceptanceCriteria": [
-        "For habits named “16/8 fasting”, “Run”, or “Squash”, the Monthly Targets list does not show an editable target value (no target number/duration) and does not show an Edit button.",
-        "These habits do not display auto-plan default targets even if a default would otherwise be inferred.",
-        "Other habits (e.g., Plank, Press-ups, Squats) continue to show targets and remain editable."
+        "Client-side record lookup keys used by the grid uniquely identify a record by habitId + day + month + year.",
+        "No completion/amount display can be caused by a record from a different month/year due to key collisions."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/MonthlyTargetsEditor.tsx",
+          "path": "frontend/src/components/HabitGrid.tsx",
           "operation": "modify",
-          "description": "Add an applicability check (using normalized habit-name matching) to hide target display and remove/disable Edit controls for 16/8 fasting, Run, and Squash; ensure auto-plan and saved overrides are both suppressed for these habits while leaving other habits unaffected."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Clean up Monthly Targets section layout with consistent row spacing/alignment and a clearer separation between habit name, target display, and edit controls, including mobile readability.",
-      "acceptanceCriteria": [
-        "Each habit row has consistent alignment for name, target text, and action buttons across all rows.",
-        "When a row is in edit mode, Save/Cancel and the input do not cause the row height to jump excessively or misalign adjacent content.",
-        "The list remains readable on mobile widths similar to the screenshot (no overlapping text/buttons)."
-      ],
-      "file_operations": [
+          "description": "Change the recordMap key from habitId-day to habitId-day-month-year and update all reads/writes to that key so records from different months/years cannot collide in memory."
+        },
         {
-          "path": "frontend/src/components/MonthlyTargetsEditor.tsx",
+          "path": "frontend/src/components/HabitGrid.tsx",
           "operation": "modify",
-          "description": "Refactor the Monthly Targets rows into a consistent responsive layout (e.g., grid/flex with stable columns, controlled wrapping on mobile, and a predictable minimum row height) so target text and edit controls align cleanly and editing does not cause excessive row-height jumps."
+          "description": "Update any other per-cell keys derived from habitId/day (e.g., editingCell identifiers and popover input ids) to include month/year to prevent UI state collisions across month switches."
         }
       ]
     }

@@ -1,12 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Fix Monthly Targets so defaults and saved overrides display correctly, remove targets for non-applicable habits, and tidy the Monthly Targets layout.
+**Goal:** Ensure Daily Tracking completion/values are saved, fetched, and displayed strictly per selected month/year, with no bleed-over between months (e.g., February vs March).
 
 **Planned changes:**
-- Update Monthly Targets auto-plan defaults so “Press-ups” and “Squats” use the Steady Climb plan and increase by +5 each month across the year, with robust name matching (e.g., “Press-ups”/“Push-ups”).
-- Fix Monthly Targets to display persisted monthly target overrides (and prefill edit inputs from saved values when present), while preserving correct duration parsing/formatting for time-based habits like Plank.
-- Disable monthly targets for “16/8 fasting”, “Run”, and “Squash” (no target display and no Edit controls for these habits).
-- Clean up Monthly Targets UI layout for consistent alignment/spacing and stable row sizing in and out of edit mode, matching the structure shown in the uploaded screenshot.
+- Update backend persistence and queries so Daily Tracking records are stored and retrieved scoped to the selected month and year.
+- Adjust the Daily Tracking frontend to fetch and render records for the currently selected month/year only.
+- Prevent stale rendering on month switches by clearing the grid (unchecked/empty) and/or showing a loading state until the selected month/year data finishes loading.
+- Make client-side record lookup/mapping keys month-safe by including habitId + day + month + year to avoid collisions across months/years.
 
-**User-visible outcome:** Monthly Targets shows correct steady-climb defaults for Press-ups and Squats, correctly reflects and edits saved monthly overrides, hides target editing for fasting/run/squash, and looks cleaner and more consistent on mobile.
+**User-visible outcome:** Switching months in Daily Tracking shows only that month’s saved completions/values, with no temporary or permanent display of a different month’s data, and month-specific data remains correct after reload.

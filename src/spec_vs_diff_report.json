@@ -1,58 +1,42 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-05T20:10:35.325Z",
-  "summary": "Diff adds auto-plan defaults (including press-ups/squats +5/month) and introduces hooks/logic intended to fetch and edit persisted monthly targets, plus a non-applicable habits list. However, due to truncation, it is not fully evidenced that the UI actually hides targets/editing for fasting/run/squash, that persisted overrides are displayed in the list and saved without refresh, or that the Monthly Targets layout cleanup was implemented. Diff also adds an apparently no-op backend migration and adds auto-plan defaults for Plank which were not requested.",
+  "generatedAt": "2026-02-05T23:23:01.168Z",
+  "summary": "Diff implements frontend-side month/year isolation in the Daily Tracking grid (filtering records by selected month/year and using month/year-scoped lookup keys) and clears records during month switches to avoid showing stale data while fetching. Backend changes relevant to month-specific persistence/querying cannot be verified from the truncated backend diff.",
   "missing_requirements": [
     {
-      "id": "REQ-2",
-      "requirement": "Fix Monthly Targets to correctly show and edit persisted monthly target overrides from the backend (display saved values in list, prefill edit, save updates backend and updates UI without full refresh; preserve duration parsing/formatting for time habits).",
-      "reason": "The component shows logic to prefill the edit input from a fetched targetsMap, but the diff snippet is truncated before confirming (a) the list display prefers persisted values over auto-plan defaults, and (b) the save flow updates backend and updates UI state/caches without a full refresh. Duration formatting is shown for prefilling, but display of saved overrides is not evidenced.",
+      "id": "REQ-1",
+      "requirement": "Persist and reload completion state/amounts per selected month/year in the backend so reloading and switching months shows only that month’s saved data (no cross-month bleed).",
+      "reason": "Frontend now filters records by selected month/year, but the diff summary does not show (due to truncation / missing relevant sections) that backend storage and month/year-scoped querying were updated/verified to ensure persisted separation across months and correct reload behavior.",
       "evidence": [
-        "frontend/src/components/MonthlyTargetsEditor.tsx",
-        "frontend/src/hooks/useQueries.ts (truncated; mentions new useGetMultipleMonthlyTargets and monthly targets support but not fully shown)"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "requirement": "Remove monthly target functionality from “16/8 fasting”, “Run”, and “Squash” so targets are not shown as applicable and cannot be edited for these habits (no target display and no Edit button).",
-      "reason": "A NON_APPLICABLE_HABITS list and applicability helpers are added, but the provided snippet is truncated before showing they are actually applied to suppress target display and hide edit controls for those habits.",
-      "evidence": [
-        "frontend/src/components/MonthlyTargetsEditor.tsx (NON_APPLICABLE_HABITS/isHabitApplicable added but usage not shown due to truncation)"
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "requirement": "Clean up the Monthly Targets section layout (consistent spacing/alignment; stable row height in edit mode; mobile readability) matching the screenshot structure.",
-      "reason": "MonthlyTargetsEditor.tsx is truncated and does not show any specific structural/layout changes (e.g., row/grid structure, consistent alignment, edit-mode layout constraints). No other diff evidence shows layout adjustments.",
-      "evidence": [
-        "frontend/src/components/MonthlyTargetsEditor.tsx (truncated)"
+        "backend/main.mo (truncated)",
+        "frontend/src/hooks/useQueries.ts (truncated)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Added backend migration scaffolding and enabled migration in the main actor even though the migration appears to be a no-op (OldActor and NewActor types are identical and run returns old unchanged).",
-      "reason": "BuildRequest says to add a migration only if state schema changes are required; the diff’s migration module does not evidence any schema change or transformation.",
+      "description": "Footer copy/link change referencing “© 2026. Built with love using caffeine.ai”.",
+      "reason": "Not requested by any REQ; unrelated to month-separated daily tracking behavior.",
       "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo (with migration = Migration.run)"
+        "frontend/src/components/TrackerDashboard.tsx"
       ]
     },
     {
-      "description": "Introduced/expanded auto-plan defaults for “plank” (seconds-based) beyond the requested press-ups and squats changes.",
-      "reason": "REQ-1 only requests steady-climb defaults for Press-ups and Squats (plus robust matching variants); adding plank-specific monthly defaults is not requested in the BuildRequest.",
+      "description": "Deterministic profile loading/isFetched gating behavior described/implemented in the user profile query hook.",
+      "reason": "Not requested by any REQ (scope is daily tracking month separation/loading behavior).",
       "evidence": [
-        "frontend/src/components/MonthlyTargetsEditor.tsx (AUTO_PLAN_DEFAULTS includes 'plank')"
+        "frontend/src/hooks/useQueries.ts (truncated)",
+        "frontend-file-summaries.txt"
       ]
     }
   ],
-  "confidence": 0.64,
+  "confidence": 0.56,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/MonthlyTargetsEditor.tsx",
+    "frontend/src/components/HabitGrid.tsx",
+    "frontend/src/components/TrackerDashboard.tsx",
     "frontend/src/hooks/useQueries.ts",
     "project_state.json"
   ]

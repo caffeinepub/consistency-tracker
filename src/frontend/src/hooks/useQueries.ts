@@ -163,6 +163,7 @@ export function useGetMonthlyRecords(month: number, year: number) {
       return actor.getMonthlyRecords(BigInt(month), BigInt(year));
     },
     enabled: !!actor && !!identity && !actorFetching,
+    placeholderData: [],
   });
 }
 
