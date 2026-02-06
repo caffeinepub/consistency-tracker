@@ -190,38 +190,43 @@ export function useToggleHabitCompletion() {
       return actor.toggleHabitCompletion(habitId, BigInt(day), BigInt(month), BigInt(year), amountBigInt);
     },
     onSuccess: (_, variables) => {
+      // Invalidate the monthly records for the affected month
       queryClient.invalidateQueries({
         queryKey: ['monthlyRecords', variables.month, variables.year],
+      });
+      // Invalidate monthly target for this specific habit+month+year
+      queryClient.invalidateQueries({
+        queryKey: ['monthlyTarget', variables.habitId, variables.month, variables.year],
       });
       queryClient.invalidateQueries({ queryKey: ['lifetimeTotals'] });
     },
   });
 }
 
-export function useGetMonthlyTargets(habitId: string) {
+export function useGetMonthlyTarget(habitId: string, month: number, year: number) {
   const { actor, isFetching: actorFetching } = useActor();
   const { identity } = useInternetIdentity();
 
-  return useQuery<MonthlyTarget[]>({
-    queryKey: ['monthlyTargets', habitId],
+  return useQuery<MonthlyTarget | null>({
+    queryKey: ['monthlyTarget', habitId, month, year],
     queryFn: async () => {
-      if (!actor) return [];
-      return actor.getMonthlyTargets(habitId);
+      if (!actor) return null;
+      return actor.getMonthlyTarget(habitId, BigInt(month), BigInt(year));
     },
     enabled: !!actor && !!identity && !actorFetching && !!habitId,
   });
 }
 
-export function useGetMultipleMonthlyTargets(habitIds: string[]) {
+export function useGetMultipleMonthlyTargets(habitIds: string[], month: number, year: number) {
   const { actor, isFetching: actorFetching } = useActor();
   const { identity } = useInternetIdentity();
 
   const queries = useQueries({
     queries: habitIds.map((habitId) => ({
-      queryKey: ['monthlyTargets', habitId],
+      queryKey: ['monthlyTarget', habitId, month, year],
       queryFn: async () => {
-        if (!actor) return [];
-        return actor.getMonthlyTargets(habitId);
+        if (!actor) return null;
+        return actor.getMonthlyTarget(habitId, BigInt(month), BigInt(year));
       },
       enabled: !!actor && !!identity && !actorFetching && !!habitId,
     })),
@@ -231,10 +236,8 @@ export function useGetMultipleMonthlyTargets(habitIds: string[]) {
   const targetsMap = new Map<string, MonthlyTarget>();
   queries.forEach((query) => {
     if (query.data) {
-      query.data.forEach((target) => {
-        const key = `${target.habitId}_${target.month}_${target.year}`;
-        targetsMap.set(key, target);
-      });
+      const key = `${query.data.habitId}_${query.data.month}_${query.data.year}`;
+      targetsMap.set(key, query.data);
     }
   });
 
@@ -268,7 +271,9 @@ export function useUpdateMonthlyTarget() {
       return actor.updateMonthlyTarget(habitId, BigInt(amount), BigInt(month), BigInt(year));
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['monthlyTargets', variables.habitId] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['monthlyTarget', variables.habitId, variables.month, variables.year] 
+      });
     },
   });
 }

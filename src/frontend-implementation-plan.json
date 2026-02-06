@@ -1,76 +1,62 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Daily Tracking month-isolated rendering and record lookup",
+  "title": "Steady Climb monthly targets as summed daily completions (frontend)",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Ensure Daily Tracking displays and applies completion/amount values only for the currently selected month/year, with no bleed-over between months and correct reload behavior.",
+      "summary": "Make Monthly Targets update immediately to equal the sum of completed daily amounts for applicable habits in the selected month/year (including time formatting and 0 for missing amounts).",
       "acceptanceCriteria": [
-        "After completing a habit day in February, switching to March shows March data only (unchecked/empty unless March has saved completions).",
-        "After completing a habit day in March, switching back to February shows February data only; February and March do not affect each other.",
-        "Reloading the app preserves month-specific completion data (data is persisted in the backend and correctly reloaded per selected month/year)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/HabitGrid.tsx",
-          "operation": "modify",
-          "description": "Make the grid defensively month/year-scoped: filter incoming records to the selectedMonth/selectedYear before building any lookup, and ensure displayed completion/amount state is derived only from records matching the currently selected month/year."
-        },
-        {
-          "path": "frontend/src/components/HabitGrid.tsx",
-          "operation": "modify",
-          "description": "Update any in-memory record lookup map keys to include habitId + day + month + year, and update editingCell keys accordingly so switching months cannot reuse/collide with a previous month’s cell state."
-        },
-        {
-          "path": "frontend/src/components/TrackerDashboard.tsx",
-          "operation": "modify",
-          "description": "Ensure HabitGrid/ProgressCharts receive month-isolated records only for the current selection (e.g., pass a cleared array while loading new month data, and otherwise pass the current query’s resolved records for the selected month/year)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Prevent the previous month’s records from rendering while a newly selected month/year’s records are loading by showing a cleared grid or loading/skeleton state.",
-      "acceptanceCriteria": [
-        "Switching from February to March does not temporarily or permanently show February checkmarks/amounts under March.",
-        "If the selected month’s data is still loading, the UI indicates loading (or shows a cleared grid) rather than showing the last month’s data."
+        "When a user marks a day as completed for an applicable habit in the Daily Tracking grid, the corresponding month’s value shown in Monthly Targets updates without requiring a page refresh.",
+        "When a user unticks a completed day for an applicable habit, the corresponding month’s value shown in Monthly Targets decreases accordingly.",
+        "When a user edits and saves an amount/duration for a completed day, the corresponding month’s value shown in Monthly Targets recalculates accordingly.",
+        "Only records whose (month, year) match the selected month/year are included in the monthly sum.",
+        "For time-based habits (e.g., plank), the monthly sum is the total duration (seconds) across all completed days in that month, displayed formatted (e.g., 1:30).",
+        "For non-time numeric habits (e.g., reps), the monthly sum is the total numeric amount across all completed days in that month.",
+        "Days with no amount value entered contribute 0 to the monthly sum (not 1).",
+        "Non-applicable habits (e.g., 16/8 fasting, run, squash) are not forced into this monthly-sum behavior."
       ],
       "file_operations": [
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Adjust the monthly records query behavior to avoid showing stale/previous-month data during month changes (e.g., return an empty placeholder while fetching the new month/year and ensure the query does not keep prior data visible for a different queryKey)."
+          "description": "Update the toggleHabitCompletion mutation to optimistically update the cached monthly records for the active month/year (add/remove completion and set/clear amount) so UI-derived monthly sums update immediately after tick/untick/amount save; also invalidate any monthly-target query keys that depend on the affected habit+month+year to stay consistent with persisted computed totals."
+        },
+        {
+          "path": "frontend/src/components/MonthlyTargetsEditor.tsx",
+          "operation": "modify",
+          "description": "Change Monthly Targets to compute and display the monthly summed value for applicable habits from the currently loaded monthly records (treat missing amount as 0; sum seconds for time habits and format using formatDuration; sum numeric amounts for others) so the panel updates immediately as the grid changes; keep non-applicable habits excluded from forced sum behavior."
         },
         {
           "path": "frontend/src/components/TrackerDashboard.tsx",
           "operation": "modify",
-          "description": "On month switch, ensure the grid does not render the last resolved month’s records (e.g., derive recordsForUI = recordsLoading/isFetching ? [] : records, and pass isLoading to HabitGrid to show its skeleton/cleared state)."
-        },
-        {
-          "path": "frontend/src/components/HabitGrid.tsx",
-          "operation": "modify",
-          "description": "Ensure the loading/empty rendering path results in an unchecked/empty grid presentation for the selected month (e.g., rely on isLoading skeleton and/or empty records array without residual checked state)."
+          "description": "Wire the dashboard’s selectedMonth/selectedYear and current month records into MonthlyTargetsEditor as props so it can render sums for the active working month/year and react immediately to changes."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Make Daily Tracking record mapping robust against month/year collisions by using month/year in client-side lookup keys/maps.",
+      "summary": "Ensure Monthly Targets always reflects the dashboard-selected month/year and shows backend-persisted computed sums (with time formatting).",
       "acceptanceCriteria": [
-        "Client-side record lookup keys used by the grid uniquely identify a record by habitId + day + month + year.",
-        "No completion/amount display can be caused by a record from a different month/year due to key collisions."
+        "When the user switches months in the dashboard (e.g., February → March), the Monthly Targets panel updates to show targets for the same selected month/year.",
+        "The Monthly Targets panel shows values that match the backend-computed sums for the selected month/year.",
+        "The Monthly Targets panel formats time habit sums as durations (e.g., 90 seconds shown as 1:30)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/HabitGrid.tsx",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Change the recordMap key from habitId-day to habitId-day-month-year and update all reads/writes to that key so records from different months/years cannot collide in memory."
+          "description": "Refactor monthly-target data hooks to align with the typed backend interface (use getMonthlyTarget(habitId, month, year) rather than untyped multi-month retrieval) and provide a query keyed by habitId+month+year; ensure invalidation ties to the selected month/year."
         },
         {
-          "path": "frontend/src/components/HabitGrid.tsx",
+          "path": "frontend/src/components/MonthlyTargetsEditor.tsx",
           "operation": "modify",
-          "description": "Update any other per-cell keys derived from habitId/day (e.g., editingCell identifiers and popover input ids) to include month/year to prevent UI state collisions across month switches."
+          "description": "Remove the editor-controlled month/year selectors and instead consume the selectedMonth/selectedYear from the dashboard; for applicable habits, display the persisted backend-computed monthly sum for that same month/year, with a fallback to the immediately-derived sum from current records while queries are fetching; format time units via formatDuration."
+        },
+        {
+          "path": "frontend/src/components/TrackerDashboard.tsx",
+          "operation": "modify",
+          "description": "Pass selectedMonth/selectedYear into MonthlyTargetsEditor and ensure month switching triggers the corresponding monthly-target queries for that same month/year (no stale month/year state inside MonthlyTargetsEditor)."
         }
       ]
     }

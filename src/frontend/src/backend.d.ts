@@ -82,7 +82,7 @@ export interface backendInterface {
     getInvestmentGoals(): Promise<Array<InvestmentGoal>>;
     getLifetimeTotal(habitId: string): Promise<bigint>;
     getMonthlyRecords(month: bigint, year: bigint): Promise<Array<HabitRecord>>;
-    getMonthlyTargets(habitId: string): Promise<Array<MonthlyTarget>>;
+    getMonthlyTarget(habitId: string, month: bigint, year: bigint): Promise<MonthlyTarget | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;

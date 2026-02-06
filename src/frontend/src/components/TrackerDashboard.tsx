@@ -78,7 +78,12 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
             <div className="flex-1 space-y-6">
               <CollapsibleHabitManagerPanel />
 
-              <MonthlyTargetsEditor />
+              <MonthlyTargetsEditor 
+                selectedMonth={selectedMonth}
+                selectedYear={selectedYear}
+                habits={habits}
+                records={recordsForGrid}
+              />
 
               <div className="space-y-4">
                 <MonthTabs

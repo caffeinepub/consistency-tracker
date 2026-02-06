@@ -100,9 +100,9 @@ export const idlService = IDL.Service({
       [IDL.Vec(HabitRecord)],
       ['query'],
     ),
-  'getMonthlyTargets' : IDL.Func(
-      [IDL.Text],
-      [IDL.Vec(MonthlyTarget)],
+  'getMonthlyTarget' : IDL.Func(
+      [IDL.Text, IDL.Nat, IDL.Nat],
+      [IDL.Opt(MonthlyTarget)],
       ['query'],
     ),
   'getUserProfile' : IDL.Func(
@@ -236,9 +236,9 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(HabitRecord)],
         ['query'],
       ),
-    'getMonthlyTargets' : IDL.Func(
-        [IDL.Text],
-        [IDL.Vec(MonthlyTarget)],
+    'getMonthlyTarget' : IDL.Func(
+        [IDL.Text, IDL.Nat, IDL.Nat],
+        [IDL.Opt(MonthlyTarget)],
         ['query'],
       ),
     'getUserProfile' : IDL.Func(

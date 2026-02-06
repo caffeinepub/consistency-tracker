@@ -85,7 +85,10 @@ export interface _SERVICE {
   'getInvestmentGoals' : ActorMethod<[], Array<InvestmentGoal>>,
   'getLifetimeTotal' : ActorMethod<[string], bigint>,
   'getMonthlyRecords' : ActorMethod<[bigint, bigint], Array<HabitRecord>>,
-  'getMonthlyTargets' : ActorMethod<[string], Array<MonthlyTarget>>,
+  'getMonthlyTarget' : ActorMethod<
+    [string, bigint, bigint],
+    [] | [MonthlyTarget]
+  >,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,

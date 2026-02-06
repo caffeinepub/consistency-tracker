@@ -1,41 +1,56 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-05T23:23:01.168Z",
-  "summary": "Diff implements frontend-side month/year isolation in the Daily Tracking grid (filtering records by selected month/year and using month/year-scoped lookup keys) and clears records during month switches to avoid showing stale data while fetching. Backend changes relevant to month-specific persistence/querying cannot be verified from the truncated backend diff.",
+  "generatedAt": "2026-02-05T23:39:28.346Z",
+  "summary": "The diff implements a frontend-side monthly total display by summing fetched monthly records for a selected month/year and formatting time units, but it does not provide clear evidence of backend persistence/recalculation of monthly targets or of the frontend using persisted backend-computed monthly targets. There are also some unrequested UI/content changes and hardcoded habit applicability lists.",
   "missing_requirements": [
     {
-      "id": "REQ-1",
-      "requirement": "Persist and reload completion state/amounts per selected month/year in the backend so reloading and switching months shows only that month’s saved data (no cross-month bleed).",
-      "reason": "Frontend now filters records by selected month/year, but the diff summary does not show (due to truncation / missing relevant sections) that backend storage and month/year-scoped querying were updated/verified to ensure persisted separation across months and correct reload behavior.",
+      "id": "REQ-2",
+      "requirement": "Backend: persist the computed monthly summed value per habit+month+year so that Monthly Targets always show the correct total after reload and across devices/sessions (recalculate/store on toggle and amount edits).",
+      "reason": "Although backend/main.mo declares a MonthlyTarget type and a monthlyTargets map, the provided diff excerpt is truncated before any logic that recomputes monthly targets on toggle/edit and persists them; no functions or update paths are shown that satisfy the acceptance criteria.",
       "evidence": [
-        "backend/main.mo (truncated)",
-        "frontend/src/hooks/useQueries.ts (truncated)"
+        "backend/main.mo (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Frontend: Monthly Targets displays the persisted computed monthly sum for each applicable habit for the selected month/year (matching backend-computed sums).",
+      "reason": "MonthlyTargetsEditor computes totals directly from the `records` prop (client-side summation) and does not fetch or display a persisted backend monthly target value. The diff also doesn’t show any use of a backend monthly-target query result in this component.",
+      "evidence": [
+        "frontend/src/components/MonthlyTargetsEditor.tsx",
+        "frontend/src/components/TrackerDashboard.tsx"
+      ]
+    },
+    {
+      "id": "REQ-1",
+      "requirement": "Monthly target sum should reflect only completed daily entries (tick/untick) and amount edits for the selected month/year.",
+      "reason": "The monthly sum computation filters by habitId/month/year but does not filter records by completion status (e.g., `completedAt != null`). If uncompleted records can exist in `records`, they would be incorrectly included in the sum.",
+      "evidence": [
+        "frontend/src/components/MonthlyTargetsEditor.tsx"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Footer copy/link change referencing “© 2026. Built with love using caffeine.ai”.",
-      "reason": "Not requested by any REQ; unrelated to month-separated daily tracking behavior.",
+      "description": "Hardcoded applicability logic for monthly targets using explicit habit name allow/deny lists (including \"push-ups\" and excluding \"16/8 fasting\", \"run\", \"squash\").",
+      "reason": "The request specifies that some habits are applicable/non-applicable by example, but does not ask for hardcoded name lists or adding \"push-ups\" as a special-case applicable habit.",
       "evidence": [
-        "frontend/src/components/TrackerDashboard.tsx"
+        "frontend/src/components/MonthlyTargetsEditor.tsx"
       ]
     },
     {
-      "description": "Deterministic profile loading/isFetched gating behavior described/implemented in the user profile query hook.",
-      "reason": "Not requested by any REQ (scope is daily tracking month separation/loading behavior).",
+      "description": "Added/changed footer copy including “© 2026. Built with love using caffeine.ai” link.",
+      "reason": "Not requested by the BuildRequest and unrelated to monthly target summing/persistence behavior.",
       "evidence": [
-        "frontend/src/hooks/useQueries.ts (truncated)",
-        "frontend-file-summaries.txt"
+        "frontend/src/components/TrackerDashboard.tsx"
       ]
     }
   ],
-  "confidence": 0.56,
+  "confidence": 0.62,
   "changed_files": [
     "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/HabitGrid.tsx",
+    "frontend/src/components/MonthlyTargetsEditor.tsx",
     "frontend/src/components/TrackerDashboard.tsx",
     "frontend/src/hooks/useQueries.ts",
     "project_state.json"

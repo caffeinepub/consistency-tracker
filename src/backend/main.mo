@@ -4,16 +4,14 @@ import List "mo:core/List";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
 import Array "mo:core/Array";
+import Iter "mo:core/Iter";
 import Order "mo:core/Order";
 import Nat "mo:core/Nat";
-import Iter "mo:core/Iter";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
 
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
-
-
 
 actor {
   let accessControlState = AccessControl.initState();
@@ -263,6 +261,9 @@ actor {
           case (?currentTotal) { currentTotal + completedAmount };
         };
         lifetimeTotal.add(habitId, newLifetimeTotal);
+
+        // Update monthly target
+        updateMonthlyTargetInternal(habitId, month, year);
       };
       case (?records) {
         let existingRecord = records.find(
@@ -293,6 +294,9 @@ actor {
             case (?currentTotal) { currentTotal + completedAmount };
           };
           lifetimeTotal.add(habitId, newLifetimeTotal);
+
+          // Update monthly target
+          updateMonthlyTargetInternal(habitId, month, year);
         } else {
           // Removing existing record - subtract from lifetime total
           switch (existingRecord) {
@@ -315,10 +319,12 @@ actor {
             };
             case (null) { () };
           };
-
           let filteredRecords = records.filter(func(r) { not (r.day == day and r.month == month and r.year == year) });
           records.clear();
           records.addAll(filteredRecords.values());
+
+          // Update monthly target
+          updateMonthlyTargetInternal(habitId, month, year);
         };
       };
     };
@@ -440,6 +446,31 @@ actor {
     };
   };
 
+  func updateMonthlyTargetInternal(habitId : Text, month : Nat, year : Nat) {
+    let targetId = habitId.concat("_").concat(month.toText()).concat("_").concat(year.toText());
+
+    // Calculate sum of record counts for the habit in the month/year
+    let habitRecordsForMonth = switch (habitRecords.get(habitId)) {
+      case (null) { List.empty<HabitRecord>() };
+      case (?records) {
+        records.filter(
+          func(record) { record.month == month and record.year == year }
+        );
+      };
+    };
+
+    let completedEntriesCount = habitRecordsForMonth.size();
+
+    let newMonthlyTarget : MonthlyTarget = {
+      habitId;
+      amount = completedEntriesCount;
+      month;
+      year;
+    };
+
+    monthlyTargets.add(targetId, newMonthlyTarget);
+  };
+
   public shared ({ caller }) func updateMonthlyTarget(habitId : Text, amount : Nat, month : Nat, year : Nat) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can update monthly targets");
@@ -465,18 +496,11 @@ actor {
       };
     };
 
-    let targetId = habitId.concat("_").concat(month.toText()).concat("_").concat(year.toText());
-    let newMonthlyTarget : MonthlyTarget = {
-      habitId;
-      amount;
-      month;
-      year;
-    };
-
-    monthlyTargets.add(targetId, newMonthlyTarget);
+    // Complete updateMonthlyTargetInternal to always set it automatically
+    updateMonthlyTargetInternal(habitId, month, year);
   };
 
-  public query ({ caller }) func getMonthlyTargets(habitId : Text) : async [MonthlyTarget] {
+  public query ({ caller }) func getMonthlyTarget(habitId : Text, month : Nat, year : Nat) : async ?MonthlyTarget {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view monthly targets");
     };
@@ -501,11 +525,8 @@ actor {
       };
     };
 
-    monthlyTargets.toArray().filter(
-      func((k, target)) { target.habitId == habitId }
-    ).map<(?Text, MonthlyTarget), MonthlyTarget>(
-      func(entry) { switch (entry) { case ((_, target)) { target } } }
-    );
+    let targetId = habitId.concat("_").concat(month.toText()).concat("_").concat(year.toText());
+    monthlyTargets.get(targetId);
   };
 
   public query ({ caller }) func getLifetimeTotal(habitId : Text) : async Nat {

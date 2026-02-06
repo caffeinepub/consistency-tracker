@@ -1,72 +1,83 @@
 {
   "kind": "build_request",
-  "title": "Fix Daily Tracking to store and display completed values per month (no February bleed-over)",
-  "priority": "normal",
+  "title": "Make monthly targets equal summed daily completed amounts (Steady Climb rules)",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Ensure the Daily Tracking grid displays completion state and any saved values for the currently selected month/year only, so switching to another month (e.g., March) never shows data from a different month (e.g., February).",
+      "text": "Update the habit tracking logic so that for applicable habits (e.g., press-ups, squats, plank), the monthly target value for a given habit+month+year is always the sum of that habit’s daily completed entries in the same month+year, updating immediately after each tick/untick or amount edit.",
       "target": "both",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-10",
+          "msg-8",
+          "msg-6"
         ],
         "quotes": [
-          "When I select other months such as march on the daily tracking to mark task completed it still displays the February value.",
-          "Can you update each month on daily tracker once box is ticked to match the value for that month?",
-          "1. Correct",
-          "3. Permanently"
+          "Implement now",
+          "Immediately",
+          "See attached - in march it should be 30 of each for squats/ press-ups and plank 1:30. It’s showing wrong value"
         ]
       },
       "acceptanceCriteria": [
-        "After completing a habit day in February, switching to March shows March data only (unchecked/empty unless March has saved completions).",
-        "After completing a habit day in March, switching back to February shows February data only; February and March do not affect each other.",
-        "Reloading the app preserves month-specific completion data (data is persisted in the backend and correctly reloaded per selected month/year)."
+        "When a user marks a day as completed for an applicable habit in the Daily Tracking grid, the corresponding month’s value shown in Monthly Targets updates without requiring a page refresh.",
+        "When a user unticks a completed day for an applicable habit, the corresponding month’s value shown in Monthly Targets decreases accordingly.",
+        "When a user edits and saves an amount/duration for a completed day, the corresponding month’s value shown in Monthly Targets recalculates accordingly.",
+        "Only records whose (month, year) match the selected month/year are included in the monthly sum.",
+        "For time-based habits (e.g., plank), the monthly sum is the total duration (seconds) across all completed days in that month, displayed formatted (e.g., 1:30).",
+        "For non-time numeric habits (e.g., reps), the monthly sum is the total numeric amount across all completed days in that month.",
+        "Days with no amount value entered contribute 0 to the monthly sum (not 1).",
+        "Non-applicable habits (e.g., 16/8 fasting, run, squash) are not forced into this monthly-sum behavior."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "When the user switches months in the Daily Tracking view, do not render the previous month’s records while the new month’s records are being fetched; instead, show an empty state for the grid (all unchecked) or a loading/skeleton state until the selected month/year records query resolves.",
-      "target": "frontend",
+      "text": "Backend: persist the computed monthly summed value per habit+month+year so that Monthly Targets always show the correct total after reload and across devices/sessions.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-8",
+          "msg-6"
         ],
         "quotes": [
-          "Yes but only display once the box is ticked completed"
+          "Yes",
+          "See attached - in march it should be 30 of each for squats/ press-ups and plank 1:30. It’s showing wrong value"
         ]
       },
       "acceptanceCriteria": [
-        "Switching from February to March does not temporarily or permanently show February checkmarks/amounts under March.",
-        "If the selected month’s data is still loading, the UI indicates loading (or shows a cleared grid) rather than showing the last month’s data."
+        "After toggling and/or editing amounts in a month, reloading the app preserves the same Monthly Targets values for that month.",
+        "The backend recalculates and stores the monthly target for that habit+month+year whenever toggleHabitCompletion adds/removes a record or changes a record amount.",
+        "The stored monthly target for a habit+month+year equals the sum of amounts of completed records for that habit in that month+year (amount null counts as 0)."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Make record mapping in the Daily Tracking grid robustly month-separated by ensuring any client-side keys/maps used to look up records cannot collide across months/years (e.g., include month/year in the lookup key), even if records from multiple months were ever present in memory.",
+      "text": "Frontend: ensure the Monthly Targets view reflects the month/year the user is currently working in (the month selected in the Habits dashboard), and it displays the persisted computed monthly sum for each applicable habit for that same month/year.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-6"
         ],
         "quotes": [
-          "store and display completed-task values separately per month"
+          "See attached - in march it should be 30 of each for squats/ press-ups and plank 1:30. It’s showing wrong value"
         ]
       },
       "acceptanceCriteria": [
-        "Client-side record lookup keys used by the grid uniquely identify a record by habitId + day + month + year.",
-        "No completion/amount display can be caused by a record from a different month/year due to key collisions."
+        "When the user switches months in the dashboard (e.g., February → March), the Monthly Targets panel updates to show targets for the same selected month/year.",
+        "The Monthly Targets panel shows values that match the backend-computed sums for the selected month/year.",
+        "The Monthly Targets panel formats time habit sums as durations (e.g., 90 seconds shown as 1:30)."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo (no additional canisters/services).",
-    "Do not edit files under frontend/src/components/ui or the immutable hook files listed in SYSTEM_CONTEXT."
+    "Backend must remain a single Motoko actor in backend/main.mo.",
+    "Do not edit frontend files under frontend/src/components/ui or other immutablePaths listed in SYSTEM_CONTEXT.",
+    "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Do not change the monthly targets feature behavior or UI.",
-    "Do not add new authentication providers (Internet Identity remains the only auth method).",
-    "Do not introduce external databases or third-party storage."
+    "Adding new authentication providers beyond Internet Identity.",
+    "Introducing external databases or third-party backend services.",
+    "Building real-time syncing (e.g., WebSockets)."
   ],
   "imageRequirements": {
     "required": [],

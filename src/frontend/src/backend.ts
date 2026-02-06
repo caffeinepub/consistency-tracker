@@ -165,7 +165,7 @@ export interface backendInterface {
     getInvestmentGoals(): Promise<Array<InvestmentGoal>>;
     getLifetimeTotal(habitId: string): Promise<bigint>;
     getMonthlyRecords(month: bigint, year: bigint): Promise<Array<HabitRecord>>;
-    getMonthlyTargets(habitId: string): Promise<Array<MonthlyTarget>>;
+    getMonthlyTarget(habitId: string, month: bigint, year: bigint): Promise<MonthlyTarget | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
@@ -390,18 +390,18 @@ export class Backend implements backendInterface {
             return from_candid_vec_n9(this._uploadFile, this._downloadFile, result);
         }
     }
-    async getMonthlyTargets(arg0: string): Promise<Array<MonthlyTarget>> {
+    async getMonthlyTarget(arg0: string, arg1: bigint, arg2: bigint): Promise<MonthlyTarget | null> {
         if (this.processError) {
             try {
-                const result = await this.actor.getMonthlyTargets(arg0);
-                return result;
+                const result = await this.actor.getMonthlyTarget(arg0, arg1, arg2);
+                return from_candid_opt_n24(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getMonthlyTargets(arg0);
-            return result;
+            const result = await this.actor.getMonthlyTarget(arg0, arg1, arg2);
+            return from_candid_opt_n24(this._uploadFile, this._downloadFile, result);
         }
     }
     async getUserProfile(arg0: Principal): Promise<UserProfile | null> {
@@ -573,6 +573,9 @@ function from_candid_opt_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
     return value.length === 0 ? null : value[0];
 }
 function from_candid_opt_n23(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_InvestmentGoal]): InvestmentGoal | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n24(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_MonthlyTarget]): MonthlyTarget | null {
     return value.length === 0 ? null : value[0];
 }
 function from_candid_record_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {

@@ -1,56 +1,50 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-05T23:23:01.171Z",
+  "generatedAt": "2026-02-05T23:39:28.349Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
     "total": 3,
-    "implemented": 3,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Ensure the Daily Tracking grid displays completion state and any saved values for the currently selected month/year only, so switching to another month (e.g., March) never shows data from a different month (e.g., February).",
+        "summary": "Update the habit tracking logic so that for applicable habits (e.g., press-ups, squats, plank), the monthly target value for a given habit+month+year is always the sum of that habit’s daily completed entries in the same month+year, updating immediately after each tick/untick or amount edit.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/HabitGrid.tsx",
-          "frontend/src/components/HabitGrid.tsx",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/MonthlyTargetsEditor.tsx",
           "frontend/src/components/TrackerDashboard.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/HabitGrid.tsx",
-          "frontend/src/components/HabitGrid.tsx",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/MonthlyTargetsEditor.tsx",
           "frontend/src/components/TrackerDashboard.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "When the user switches months in the Daily Tracking view, do not render the previous month’s records while the new month’s records are being fetched; instead, show an empty state for the grid (all unchecked) or a loading/skeleton state until the selected month/year records query resolves.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/TrackerDashboard.tsx",
-          "frontend/src/components/HabitGrid.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/TrackerDashboard.tsx",
-          "frontend/src/components/HabitGrid.tsx"
-        ]
+        "summary": "Backend: persist the computed monthly summed value per habit+month+year so that Monthly Targets always show the correct total after reload and across devices/sessions.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       },
       {
         "id": "REQ-3",
-        "summary": "Make record mapping in the Daily Tracking grid robustly month-separated by ensuring any client-side keys/maps used to look up records cannot collide across months/years (e.g., include month/year in the lookup key), even if records from multiple months were ever present in memory.",
+        "summary": "Frontend: ensure the Monthly Targets view reflects the month/year the user is currently working in (the month selected in the Habits dashboard), and it displays the persisted computed monthly sum for each applicable habit for that same month/year.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/HabitGrid.tsx",
-          "frontend/src/components/HabitGrid.tsx"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/MonthlyTargetsEditor.tsx",
+          "frontend/src/components/TrackerDashboard.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/HabitGrid.tsx",
-          "frontend/src/components/HabitGrid.tsx"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/MonthlyTargetsEditor.tsx",
+          "frontend/src/components/TrackerDashboard.tsx"
         ]
       }
     ]
@@ -61,8 +55,12 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/HabitGrid.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/MonthlyTargetsEditor.tsx",
     "frontend/src/components/TrackerDashboard.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
     "frontend/src/hooks/useQueries.ts",
     "project_state.json",
     "scratch/component-selection.json",
