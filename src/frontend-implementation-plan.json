@@ -1,87 +1,64 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Revert frontend to Version 18 Habits tracker and harden startup against blank screens",
+  "title": "Dashboard Monthly Targets: Steady Climb plan targets + calendar-month mapping + Total vs Target",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Revert the frontend to the Version 18 Habits tracker UX and remove newer-version-only UI surface area that could affect deploy/publish consistency.",
+      "summary": "Replace computed-only Monthly Targets with Steady Climb plan targets for Push-ups/Press-ups, Squats, and Plank (plank as duration).",
       "acceptanceCriteria": [
-        "A fresh draft build uses the Version 18 Habits tracker UX (monthly tabs, habit grid, progress charts, habit management) and does not unexpectedly include newer-version-only behavior.",
-        "The resulting draft can be deployed and then published without the platform reverting to another version during publish.",
-        "The app loads successfully (no blank/white screen) through initial render, login, profile load, and dashboard render."
+        "In the Monthly Targets card, the displayed target for each applicable habit matches the Steady Climb plan values for the selected month.",
+        "Push-ups and Press-ups share the same monthly target values (treated as the same plan habit).",
+        "Squats monthly target values match the Steady Climb plan values.",
+        "Plank monthly target values match the Steady Climb plan values and are displayed as a duration (e.g., 1:15) rather than raw seconds.",
+        "The UI no longer presents these values as 'totals based on completed daily entries' (i.e., remove/replace copy that implies the numbers are computed totals rather than plan targets)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/steadyClimbPlan.ts",
+          "operation": "create",
+          "description": "Add a Steady Climb year plan lookup (Month 1..12) for Push-ups/Press-ups, Squats, and Plank, including plank targets stored as seconds to enable formatting via existing duration utilities."
+        },
+        {
+          "path": "frontend/src/components/MonthlyTargetsEditor.tsx",
+          "operation": "modify",
+          "description": "Use the Steady Climb plan lookup to derive the displayed Target values for applicable habits (push-ups/press-ups share the same plan target; squats and plank use their respective targets), and replace any copy implying targets are computed totals."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Map Steady Climb plan months directly to calendar months when switching via existing MonthTabs.",
+      "acceptanceCriteria": [
+        "Selecting January shows Month 1 targets; selecting February shows Month 2 targets; … selecting December shows Month 12 targets.",
+        "Month switching via the existing MonthTabs updates the targets accordingly without requiring any backend writes."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/MonthlyTargetsEditor.tsx",
           "operation": "modify",
-          "description": "Rework MonthlyTargetsEditor to match the Version 18 monthly-targets behavior (per-habit monthly target viewing/editing alongside actual month-to-date totals) using existing query/mutation hooks (e.g., targets fetch + update). Verify the component's usage instructions before implementing."
+          "description": "Treat selectedMonth (1-12) as the Steady Climb plan month index when picking plan targets so MonthTabs selection drives Steady Climb Month N targets with no backend interaction."
         },
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/components/MonthTabs.tsx",
           "operation": "modify",
-          "description": "Align React Query keys/invalidation and target-related hooks usage to the Version 18 tracker flow (monthly target read/write coherence with month switching and habit mutations), keeping behavior consistent with the Habits UI. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/TrackerDashboard.tsx",
-          "operation": "modify",
-          "description": "Ensure the dashboard composition matches Version 18 (month tabs + habit grid + progress charts + habit management + monthly targets) and remove/avoid any conditional UI paths that introduce newer-version-only behavior. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/InvestmentsPage.tsx",
-          "operation": "delete",
-          "description": "Remove newer-version placeholder page that is not part of the Version 18 Habits tracker to reduce risk of version drift during deploy/publish."
-        },
-        {
-          "path": "frontend/src/components/InvestmentGoalCard.tsx",
-          "operation": "delete",
-          "description": "Remove newer-version placeholder component that is not part of the Version 18 Habits tracker to reduce risk of version drift during deploy/publish."
-        },
-        {
-          "path": "frontend/src/components/ReportExportDialog.tsx",
-          "operation": "delete",
-          "description": "Remove newer-version placeholder export dialog component (not part of the Version 18 baseline) to reduce risk of version drift during deploy/publish."
-        },
-        {
-          "path": "frontend/src/utils/reportPdf.ts",
-          "operation": "delete",
-          "description": "Remove unused placeholder PDF export utility (not required for Version 18 baseline) to reduce risk of version drift during deploy/publish."
-        },
-        {
-          "path": "frontend/src/types/jspdf.d.ts",
-          "operation": "delete",
-          "description": "Remove unused placeholder type definition tied to the removed PDF export placeholder to reduce risk of version drift during deploy/publish."
+          "description": "Harden MonthTabs month parsing to ensure month values remain numeric 1-12 (e.g., explicit base-10 parsing and simple clamping/guard) so calendar selection reliably maps to Steady Climb Month 1..12."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Prevent blank/white screen on boot by making initial render null-safe and ensuring fatal render errors surface via the existing FatalErrorFallback error boundary UI.",
+      "summary": "Show completed monthly totals separately from Steady Climb plan targets (Total + Target per habit row) with correct duration formatting for time-based habits.",
       "acceptanceCriteria": [
-        "If a runtime/render error occurs during initial boot, the app shows the FatalErrorFallback UI rather than a blank white screen.",
-        "Normal boot (no errors) shows a loading state, then login or dashboard depending on authentication/profile state.",
-        "No direct access of possibly-undefined profile properties during initial render (e.g., avoid crashes like userProfile.name undefined)."
+        "For each applicable habit row, the UI displays both (a) completed monthly total computed from records and (b) the Steady Climb plan target for the selected month.",
+        "For time-based habits (e.g., Plank), both Total and Target are formatted using the existing duration formatting (frontend/src/utils/duration.ts).",
+        "If there are no applicable habits, the existing empty-state remains, but its text should not claim targets are computed from completed entries."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/components/MonthlyTargetsEditor.tsx",
           "operation": "modify",
-          "description": "Harden the boot state machine: ensure the authenticated/profile-loading path cannot render ProfileSetup/Dashboard until profile query is definitively resolved; handle query errors deterministically (surface through the existing ErrorBoundary/FatalErrorFallback), and eliminate any ambiguous falsy checks that can cause incorrect screens or crashes. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/TrackerDashboard.tsx",
-          "operation": "modify",
-          "description": "Add defensive rendering guards for early/transition states (e.g., month/records/habits loading) to ensure child components never receive inconsistent/undefined data during initial boot or month switches. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Make startup data hooks regression-safe by ensuring actor/identity dependencies prevent throws during initial render, and that hook return flags (isLoading/isFetched) reliably represent readiness to render downstream UI. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/Header.tsx",
-          "operation": "modify",
-          "description": "Ensure user profile display remains null-safe (name/initial fallbacks) and cannot throw during any transitional render while identity/profile data settles. Verify the component's usage instructions before implementing."
+          "description": "Update each applicable habit row to render both 'Total' (computed from records) and 'Target' (from Steady Climb plan), formatting time-based totals/targets with formatDuration and updating the empty-state wording to avoid claiming targets are computed."
         }
       ]
     }

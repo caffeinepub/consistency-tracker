@@ -2,12 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-make-version-18-the-active-codebase-by-fully-reverting-both-frontend-and-backend-behavior-to-the-version-18-consistency-tracker-habits-ui-referenced-in-this-conversation-removing-rolling-back-any-version-19-23-changes-that-could-be-causing-deployment-publish-to-fall-back-to-a-newer-version-and-blocking-release",
-      "featureTitle": "Make Version 18 the active codebase by fully reverting both frontend and backend behavior to the Version 18 consistency tracker (Habits UI) referenced in this conversation, removing/rolling back any Version 19–23 changes that could be causing deployment/publish to fall back to a newer version and blocking release.",
+      "featureId": "feature-update-the-monthly-targets-panel-to-use-the-steady-climb-year-plan-values-from-uploaded-image-img-3316-1-jpeg-as-the-monthly-targets-for-push-ups-press-ups-squats-and-plank-replacing-the-current-monthly-targets-behavior-shown-in-img-3328-jpeg",
+      "featureTitle": "Update the Monthly Targets panel to use the 'Steady Climb' year plan values (from uploaded image IMG_3316-1.jpeg) as the monthly targets for Push-ups/Press-ups, Squats, and Plank, replacing the current Monthly Targets behavior shown in IMG_3328.jpeg.",
       "files": [
         "frontend/src/components/MonthlyTargetsEditor.tsx",
-        "frontend/src/components/TrackerDashboard.tsx",
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/utils/steadyClimbPlan.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -23,13 +22,30 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-a-regression-safe-startup-path-so-the-ui-never-renders-a-blank-white-screen-on-initial-load-ensure-all-required-data-is-null-safe-during-initial-render-and-that-any-fatal-rendering-errors-are-caught-and-presented-via-the-existing-error-boundary-fallback-ui-instead-of-a-blank-screen",
-      "featureTitle": "Add a regression-safe startup path so the UI never renders a blank white screen on initial load: ensure all required data is null-safe during initial render and that any fatal rendering errors are caught and presented via the existing error boundary fallback UI instead of a blank screen.",
+      "featureId": "feature-map-the-steady-climb-plan-months-to-calendar-months-january-month-1-february-month-2-december-month-12-when-rendering-targets-for-the-currently-selected-month-in-the-dashboard-month-tabs",
+      "featureTitle": "Map the Steady Climb plan months to calendar months (January = Month 1, February = Month 2, …, December = Month 12) when rendering targets for the currently selected month in the dashboard month tabs.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/Header.tsx",
-        "frontend/src/components/TrackerDashboard.tsx",
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/components/MonthTabs.tsx",
+        "frontend/src/components/MonthlyTargetsEditor.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-keep-showing-the-user-s-completed-monthly-totals-derived-from-habit-records-but-present-them-separately-from-the-plan-target-e-g-show-both-total-and-target-for-each-applicable-habit-within-the-monthly-targets-panel",
+      "featureTitle": "Keep showing the user's completed monthly totals derived from habit records, but present them separately from the plan target (e.g., show both 'Total' and 'Target' for each applicable habit within the Monthly Targets panel).",
+      "files": [
+        "frontend/src/components/MonthlyTargetsEditor.tsx"
       ],
       "components": [
         "authorization@4.0.0",

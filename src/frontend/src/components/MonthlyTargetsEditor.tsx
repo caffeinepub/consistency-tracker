@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { isTimeUnit } from '../utils/habitUnit';
 import { formatDuration } from '../utils/duration';
+import { getSteadyClimbTargetForHabit } from '../utils/steadyClimbPlan';
 import type { Habit, HabitRecord } from '../backend';
 
 // Habits that should not show targets (non-applicable)
@@ -76,7 +77,7 @@ export function MonthlyTargetsEditor({
     return sum;
   };
 
-  const getDisplayTarget = (habit: Habit): string => {
+  const getDisplayTotal = (habit: Habit): string => {
     if (!habit || !habit.id || !habit.unit) {
       return '0';
     }
@@ -90,31 +91,54 @@ export function MonthlyTargetsEditor({
     }
   };
 
+  const getDisplayTarget = (habit: Habit): string => {
+    if (!habit || !habit.name) {
+      return '0';
+    }
+
+    const target = getSteadyClimbTargetForHabit(habit.name, selectedMonth);
+    
+    if (target === null) {
+      return '—';
+    }
+
+    if (isTimeUnit(habit.unit)) {
+      return formatDuration(target);
+    } else {
+      return String(target);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Monthly Targets</CardTitle>
         <CardDescription>
-          Showing totals for {MONTHS[selectedMonth - 1]} {selectedYear} based on completed daily entries.
+          Steady Climb plan targets for {MONTHS[selectedMonth - 1]} {selectedYear} with your progress.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {applicableHabits.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            No applicable habits with targets. Create a habit (Press-ups, Squats, or Plank) to see monthly totals.
+            No applicable habits with targets. Create a habit (Press-ups, Squats, or Plank) to see monthly targets.
           </div>
         ) : (
           <div className="space-y-2">
             {applicableHabits.map((habit) => (
               <div
                 key={habit.id}
-                className="grid grid-cols-[1fr_auto] gap-2 items-center p-3 rounded-lg border bg-card min-h-[3.5rem]"
+                className="grid grid-cols-[1fr_auto_auto] gap-3 items-center p-3 rounded-lg border bg-card min-h-[3.5rem]"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 min-w-0">
+                <div className="flex flex-col min-w-0">
                   <span className="font-medium truncate">{habit.name}</span>
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">
-                    Total: {getDisplayTarget(habit)}
-                  </span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-xs text-muted-foreground">Total</span>
+                  <span className="text-sm font-medium">{getDisplayTotal(habit)}</span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-xs text-muted-foreground">Target</span>
+                  <span className="text-sm font-semibold text-primary">{getDisplayTarget(habit)}</span>
                 </div>
               </div>
             ))}

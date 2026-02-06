@@ -1,85 +1,78 @@
 {
   "kind": "build_request",
-  "title": "Revert app to Version 18 consistency tracker and unblock deploy/publish with safe state compatibility",
-  "priority": "high",
+  "title": "Replace Monthly Targets with calendar-mapped 'Steady Climb' plan (push-ups, squats, plank)",
+  "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Make Version 18 the active codebase by fully reverting both frontend and backend behavior to the Version 18 consistency tracker (Habits UI) referenced in this conversation, removing/rolling back any Version 19–23 changes that could be causing deployment/publish to fall back to a newer version and blocking release.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "Create version 18 - consistency app tracker"
-        ]
-      },
-      "acceptanceCriteria": [
-        "A fresh draft build uses the Version 18 Habits tracker UX (monthly tabs, habit grid, progress charts, habit management) and does not unexpectedly include newer-version-only behavior.",
-        "The resulting draft can be deployed and then published without the platform reverting to another version during publish.",
-        "The app loads successfully (no blank/white screen) through initial render, login, profile load, and dashboard render."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Ensure the reverted Version 18 backend runs safely on the existing canister state by adding/maintaining Motoko upgrade migration logic that can read any newer stored stable state and convert it into a Version 18-compatible stable state without data loss for Version 18 entities (user profiles, habits, records, monthly targets).",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "Ensure the reverted Version 18 backend runs safely on the existing canister state by providing/maintaining Motoko upgrade migration logic that converts any newer stored stable state into the Version 18-compatible stable state without data loss for Version 18 entities (user profiles, habits, records, monthly targets)."
-        ]
-      },
-      "acceptanceCriteria": [
-        "On canister upgrade, previously saved user data (profiles, habits, records, monthly targets) remains available after upgrade for the same Internet Identity principal.",
-        "Upgrade does not trap due to unexpected/unknown stable-state variants/fields from newer versions.",
-        "Migration is idempotent (re-running on already-migrated state does not corrupt or change data)."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Add a regression-safe startup path so the UI never renders a blank white screen on initial load: ensure all required data is null-safe during initial render and that any fatal rendering errors are caught and presented via the existing error boundary fallback UI instead of a blank screen.",
+      "text": "Update the Monthly Targets panel to use the 'Steady Climb' year plan values (from uploaded image IMG_3316-1.jpeg) as the monthly targets for Push-ups/Press-ups, Squats, and Plank, replacing the current Monthly Targets behavior shown in IMG_3328.jpeg.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "App is just showing as blank white screen. Can you fix?",
-          "The draft when I open is just a blank white screen"
+          "For monthly targets, can you get the image 3328 to go in line with 3316 ie targets for each month will incrementally increase",
+          "1. Yes",
+          "2. Yes"
         ]
       },
       "acceptanceCriteria": [
-        "If a runtime/render error occurs during initial boot, the app shows the FatalErrorFallback UI rather than a blank white screen.",
-        "Normal boot (no errors) shows a loading state, then login or dashboard depending on authentication/profile state.",
-        "No direct access of possibly-undefined profile properties during initial render (e.g., avoid crashes like userProfile.name undefined)."
+        "In the Monthly Targets card, the displayed target for each applicable habit matches the Steady Climb plan values for the selected month.",
+        "Push-ups and Press-ups share the same monthly target values (treated as the same plan habit).",
+        "Squats monthly target values match the Steady Climb plan values.",
+        "Plank monthly target values match the Steady Climb plan values and are displayed as a duration (e.g., 1:15) rather than raw seconds.",
+        "The UI no longer presents these values as 'totals based on completed daily entries' (i.e., remove/replace copy that implies the numbers are computed totals rather than plan targets)."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Map the Steady Climb plan months to calendar months (January = Month 1, February = Month 2, …, December = Month 12) when rendering targets for the currently selected month in the dashboard month tabs.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "3. Targets map to calendar"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Selecting January shows Month 1 targets; selecting February shows Month 2 targets; … selecting December shows Month 12 targets.",
+        "Month switching via the existing MonthTabs updates the targets accordingly without requiring any backend writes."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Keep showing the user's completed monthly totals derived from habit records, but present them separately from the plan target (e.g., show both 'Total' and 'Target' for each applicable habit within the Monthly Targets panel).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "replace the existing Monthly Targets shown in 3328"
+        ]
+      },
+      "acceptanceCriteria": [
+        "For each applicable habit row, the UI displays both (a) completed monthly total computed from records and (b) the Steady Climb plan target for the selected month.",
+        "For time-based habits (e.g., Plank), both Total and Target are formatted using the existing duration formatting (frontend/src/utils/duration.ts).",
+        "If there are no applicable habits, the existing empty-state remains, but its text should not claim targets are computed from completed entries."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo.",
-    "Do not edit any files under frontend/src/components/ui or the immutable hook/bootstrap files listed in SYSTEM_CONTEXT.",
-    "Use English for any user-facing text."
+    "Do not edit files under frontend/src/components/ui (read-only).",
+    "Do not modify the Internet Identity or actor hooks in frontend/src/hooks/useInternetIdentity.ts(x) or frontend/src/hooks/useActor.ts (immutable paths).",
+    "Backend is single-actor (backend/main.mo); avoid introducing additional backend services."
   ],
   "nonGoals": [
-    "Adding new product features beyond restoring Version 18 behavior and ensuring safe state compatibility.",
-    "Integrations with external databases or third-party auth providers (only Internet Identity is supported)."
+    "Do not add a new 'Year Plan' section/page; the Steady Climb plan should replace the current Monthly Targets behavior in the existing panel.",
+    "Do not introduce third-party integrations or external data sources for targets.",
+    "Do not change how records are created/toggled or how charts are computed beyond what is necessary to display Total vs Target in the Monthly Targets panel."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

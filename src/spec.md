@@ -1,11 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Revert the application to the Version 18 consistency tracker (Habits UI) and unblock deploy/publish while ensuring safe compatibility with existing canister stable state and preventing blank-screen startup failures.
+**Goal:** Replace the current Monthly Targets behavior with calendar-mapped “Steady Climb” plan targets for Push-ups/Press-ups, Squats, and Plank, while still showing the user’s completed monthly totals.
 
 **Planned changes:**
-- Fully revert frontend and backend behavior to the Version 18 Habits tracker UX and logic, removing/rolling back Version 19–23 behavior that could cause deploy/publish to fall back to a newer version.
-- Add/maintain Motoko upgrade migration logic so the Version 18 backend can read newer stable-state shapes and convert them into Version 18-compatible stable state without losing Version 18 entity data (profiles, habits, records, monthly targets).
-- Make the startup/render path regression-safe: ensure initial UI render is null-safe, uses loading states appropriately, and routes fatal boot/render errors through the existing error boundary fallback UI instead of a blank white screen.
+- Update the Monthly Targets panel to display “Steady Climb” plan targets (from IMG_3316-1.jpeg) for the currently selected calendar month.
+- Treat Push-ups and Press-ups as the same plan habit and show the same monthly target for both.
+- Show both values per habit row: the computed completed monthly **Total** (from records) and the plan **Target** (from the Steady Climb month mapping).
+- Format Plank Target (and Total) as a duration (e.g., `1:15`) using the existing duration formatting utility, rather than raw seconds.
+- Remove/replace any copy in the Monthly Targets panel that implies the displayed numbers are “totals based on completed daily entries” when they are plan targets.
 
-**User-visible outcome:** A fresh draft build consistently opens to the Version 18 habits consistency tracker experience, loads reliably from login through dashboard without blank screens, and can be deployed and published without reverting to a newer version during publish; existing user data remains available after upgrade.
+**User-visible outcome:** When switching months in the dashboard month tabs, the Monthly Targets card shows the Steady Climb Target for that calendar month alongside the user’s completed Total for each applicable habit (with Plank displayed as a duration).
