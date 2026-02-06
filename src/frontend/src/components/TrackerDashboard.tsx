@@ -52,8 +52,10 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
     queryClient.clear();
   };
 
-  // Show loading state while initial data loads or when switching months
+  // Show loading state only for initial data load
   const isInitialLoading = habitsLoading || recordsLoading;
+  
+  // For month switching, pass a loading flag but don't block the entire dashboard
   const isMonthSwitching = recordsFetching && !recordsLoading;
 
   // Defensive: only pass valid data to child components

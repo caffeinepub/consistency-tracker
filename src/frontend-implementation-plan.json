@@ -1,64 +1,52 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Dashboard Monthly Targets: Steady Climb plan targets + calendar-month mapping + Total vs Target",
+  "title": "Preserve HabitGrid horizontal scroll position during completion toggles and background refetches",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Replace computed-only Monthly Targets with Steady Climb plan targets for Push-ups/Press-ups, Squats, and Plank (plank as duration).",
+      "summary": "Preserve Daily Tracking (HabitGrid) horizontal scroll position when toggling completion or saving an amount so the grid does not jump back to day 1.",
       "acceptanceCriteria": [
-        "In the Monthly Targets card, the displayed target for each applicable habit matches the Steady Climb plan values for the selected month.",
-        "Push-ups and Press-ups share the same monthly target values (treated as the same plan habit).",
-        "Squats monthly target values match the Steady Climb plan values.",
-        "Plank monthly target values match the Steady Climb plan values and are displayed as a duration (e.g., 1:15) rather than raw seconds.",
-        "The UI no longer presents these values as 'totals based on completed daily entries' (i.e., remove/replace copy that implies the numbers are computed totals rather than plan targets)."
+        "From the Daily Tracking grid, horizontally scroll to a later day (e.g., day 15) and toggle any checkbox; the grid remains scrolled to the same position after the UI updates.",
+        "The same non-jumping behavior applies when saving an amount in the popover (for unit-based habits).",
+        "No visual unmount/remount of the grid occurs during the completion toggle that would cause the scroll position to reset."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/steadyClimbPlan.ts",
+          "path": "frontend/src/hooks/usePreserveHorizontalScroll.ts",
           "operation": "create",
-          "description": "Add a Steady Climb year plan lookup (Month 1..12) for Push-ups/Press-ups, Squats, and Plank, including plank targets stored as seconds to enable formatting via existing duration utilities."
+          "description": "Create a small React hook to capture and restore a scroll container's horizontal scrollLeft across re-renders/data updates (e.g., store last known scrollLeft in a ref, expose a ref callback to locate the actual scrolling viewport element, and a restore function/effect trigger)."
         },
         {
-          "path": "frontend/src/components/MonthlyTargetsEditor.tsx",
+          "path": "frontend/src/components/HabitGrid.tsx",
           "operation": "modify",
-          "description": "Use the Steady Climb plan lookup to derive the displayed Target values for applicable habits (push-ups/press-ups share the same plan target; squats and plank use their respective targets), and replace any copy implying targets are computed totals."
+          "description": "Update HabitGrid to preserve horizontal scroll position across completion toggles and amount saves: keep a stable reference to the ScrollArea viewport, record scrollLeft on user scroll, and restore the same scrollLeft after records/UI updates. Also ensure mapped habit rows do not cause remounting by using a keyed React.Fragment (or another stable keyed wrapper) for each habit row group."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Map Steady Climb plan months directly to calendar months when switching via existing MonthTabs.",
+      "summary": "Adjust HabitGrid loading states so background refetches from toggles do not replace the grid with a loading skeleton while preserving initial full-page loading and keeping month switching correct.",
       "acceptanceCriteria": [
-        "Selecting January shows Month 1 targets; selecting February shows Month 2 targets; … selecting December shows Month 12 targets.",
-        "Month switching via the existing MonthTabs updates the targets accordingly without requiring any backend writes."
+        "Toggling a habit completion does not show the HabitGrid loading skeleton card; the grid remains rendered while data refreshes.",
+        "Initial page load can still show the existing loading UI when data has not loaded yet.",
+        "Switching months continues to work correctly and does not corrupt the displayed records for the newly selected month/year."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/MonthlyTargetsEditor.tsx",
+          "path": "frontend/src/components/TrackerDashboard.tsx",
           "operation": "modify",
-          "description": "Treat selectedMonth (1-12) as the Steady Climb plan month index when picking plan targets so MonthTabs selection drives Steady Climb Month N targets with no backend interaction."
+          "description": "Change the logic that passes loading state into HabitGrid so that background refetching (e.g., after toggleHabitCompletion invalidation) does not trigger a grid-replacing loading state. Preserve the existing full-page initial loading UI, and pass a non-destructive 'refreshing' signal to HabitGrid for month switching/background refetches (so the grid stays mounted)."
         },
         {
-          "path": "frontend/src/components/MonthTabs.tsx",
+          "path": "frontend/src/components/HabitGrid.tsx",
           "operation": "modify",
-          "description": "Harden MonthTabs month parsing to ensure month values remain numeric 1-12 (e.g., explicit base-10 parsing and simple clamping/guard) so calendar selection reliably maps to Steady Climb Month 1..12."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Show completed monthly totals separately from Steady Climb plan targets (Total + Target per habit row) with correct duration formatting for time-based habits.",
-      "acceptanceCriteria": [
-        "For each applicable habit row, the UI displays both (a) completed monthly total computed from records and (b) the Steady Climb plan target for the selected month.",
-        "For time-based habits (e.g., Plank), both Total and Target are formatted using the existing duration formatting (frontend/src/utils/duration.ts).",
-        "If there are no applicable habits, the existing empty-state remains, but its text should not claim targets are computed from completed entries."
-      ],
-      "file_operations": [
+          "description": "Remove/avoid the grid-replacing 'Loading...' skeleton behavior for non-initial fetches. Keep the grid rendered while data refreshes and (optionally) show a lightweight inline 'updating' indicator inside the existing Card header/content without unmounting the ScrollArea."
+        },
         {
-          "path": "frontend/src/components/MonthlyTargetsEditor.tsx",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Update each applicable habit row to render both 'Total' (computed from records) and 'Target' (from Steady Climb plan), formatting time-based totals/targets with formatDuration and updating the empty-state wording to avoid claiming targets are computed."
+          "description": "Adjust the monthly records query behavior to support sensible month switching without corrupting displayed records (e.g., avoid placeholder data patterns that cause transient incorrect renders; ensure switching month/year results in the grid showing only records matching the selected month/year while fetching completes)."
         }
       ]
     }

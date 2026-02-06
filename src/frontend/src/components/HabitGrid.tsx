@@ -1,10 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import type { Habit, HabitRecord, HabitUnit } from '../backend';
 import { useToggleHabitCompletion } from '../hooks/useQueries';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { getHabitUnitShortLabel, isNoUnit, isTimeUnit } from '../utils/habitUnit';
 import { parseDuration, formatDuration } from '../utils/duration';
 import { toast } from 'sonner';
+import { usePreserveHorizontalScroll } from '../hooks/usePreserveHorizontalScroll';
 
 interface HabitGridProps {
   habits: Habit[];
@@ -37,6 +37,8 @@ export function HabitGrid({
   const toggleCompletion = useToggleHabitCompletion();
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState('');
+  const { setScrollElement, restoreScrollPosition } = usePreserveHorizontalScroll();
+  const scrollViewportRef = useRef<HTMLDivElement | null>(null);
 
   const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
@@ -62,6 +64,21 @@ export function HabitGrid({
     });
     return map;
   }, [filteredRecords]);
+
+  // Restore scroll position after data updates
+  useEffect(() => {
+    restoreScrollPosition();
+  }, [recordMap, restoreScrollPosition]);
+
+  // Attach scroll element ref to the ScrollArea viewport
+  useEffect(() => {
+    if (scrollViewportRef.current) {
+      const viewport = scrollViewportRef.current.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+      if (viewport) {
+        setScrollElement(viewport);
+      }
+    }
+  }, [setScrollElement]);
 
   const handleToggle = async (habitId: string, day: number, currentlyCompleted: boolean) => {
     try {
@@ -140,14 +157,20 @@ export function HabitGrid({
     }
   };
 
-  if (isLoading) {
+  // Show loading only for month switching, not for background refetches
+  if (isLoading && habits.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Loading...</CardTitle>
+          <CardTitle>Daily Tracking</CardTitle>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-64 w-full" />
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
@@ -174,7 +197,7 @@ export function HabitGrid({
         <CardTitle>Daily Tracking</CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="w-full">
+        <ScrollArea className="w-full" ref={scrollViewportRef}>
           <div className="min-w-max">
             <div className="grid gap-2" style={{ gridTemplateColumns: `200px repeat(${daysInMonth}, 40px)` }}>
               {/* Header Row */}
@@ -191,9 +214,8 @@ export function HabitGrid({
                 const habitIsTime = isTimeUnit(habit.unit);
                 
                 return (
-                  <>
+                  <div key={habit.id} style={{ display: 'contents' }}>
                     <div
-                      key={`${habit.id}-name`}
                       className="font-medium text-sm sticky left-0 bg-card z-10 p-2 border-r flex flex-col justify-center"
                     >
                       <div>{habit.name}</div>
@@ -298,7 +320,7 @@ export function HabitGrid({
                         </div>
                       );
                     })}
-                  </>
+                  </div>
                 );
               })}
             </div>

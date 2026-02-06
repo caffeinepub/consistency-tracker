@@ -1,34 +1,28 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Implement calendar-mapped, steadily increasing monthly fitness targets (push-ups, squats, plank) based on the existing steady-climb plan, replacing the current Monthly Targets.",
+  "summary": "New project",
   "architectural_notes": [
-    "Monthly targets should be generated/mapped by calendar month (Jan–Dec), not user-relative months; replace existing Monthly Targets values with the steady-climb plan progression."
+    "Daily habits day-picker is a horizontally scrollable list; when toggling completion, UI updates must preserve existing horizontal scroll position (do not reset to far left)."
   ],
-  "known_issues": [],
-  "isFixRequest": false,
+  "known_issues": [
+    "Daily habits horizontal scroll position resets to far left (day 1) when a habit is marked complete; should remain at the current day/position."
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-update-the-monthly-targets-panel-to-use-the-steady-climb-year-plan-values-from-uploaded-image-img-3316-1-jpeg-as-the-monthly-targets-for-push-ups-press-ups-squats-and-plank-replacing-the-current-monthly-targets-behavior-shown-in-img-3328-jpeg",
-      "title": "Update the Monthly Targets panel to use the 'Steady Climb' year plan values (from uploaded image IMG_3316-1.jpeg) as the monthly targets for Push-ups/Press-ups, Squats, and Plank, replacing the current Monthly Targets behavior shown in IMG_3328.jpeg.",
+      "id": "feature-update-the-daily-tracking-habitgrid-horizontal-scroll-behavior-so-that-marking-a-habit-as-complete-incomplete-does-not-reset-the-horizontal-scroll-position-to-the-far-left-day-1-the-scroll-position-must-remain-exactly-where-the-user-left-it-e-g-when-viewing-day-15",
+      "title": "Update the Daily Tracking (HabitGrid) horizontal scroll behavior so that marking a habit as complete/incomplete does not reset the horizontal scroll position to the far left (day 1). The scroll position must remain exactly where the user left it (e.g., when viewing day 15).",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-map-the-steady-climb-plan-months-to-calendar-months-january-month-1-february-month-2-december-month-12-when-rendering-targets-for-the-currently-selected-month-in-the-dashboard-month-tabs",
-      "title": "Map the Steady Climb plan months to calendar months (January = Month 1, February = Month 2, …, December = Month 12) when rendering targets for the currently selected month in the dashboard month tabs.",
+      "id": "feature-adjust-loading-states-for-the-daily-tracking-grid-so-background-refetches-triggered-by-toggling-completion-do-not-replace-the-grid-with-the-loading-card-skeleton-which-causes-scroll-reset-preserve-the-existing-full-page-initial-loading-behavior-and-keep-month-switching-behavior-sensible-without-breaking-scroll-preservation",
+      "title": "Adjust loading states for the Daily Tracking grid so background refetches triggered by toggling completion do not replace the grid with the 'Loading...' card/skeleton (which causes scroll reset). Preserve the existing full-page initial loading behavior, and keep month switching behavior sensible without breaking scroll preservation.",
       "reqIds": [
         "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-keep-showing-the-user-s-completed-monthly-totals-derived-from-habit-records-but-present-them-separately-from-the-plan-target-e-g-show-both-total-and-target-for-each-applicable-habit-within-the-monthly-targets-panel",
-      "title": "Keep showing the user's completed monthly totals derived from habit records, but present them separately from the plan target (e.g., show both 'Total' and 'Target' for each applicable habit within the Monthly Targets panel).",
-      "reqIds": [
-        "REQ-3"
       ],
       "version": 1
     }
@@ -36,12 +30,12 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Update Monthly Targets to follow the steady-climb plan (image 3316) with incremental increases for each calendar month, replacing current targets (image 3328).",
+      "summary": "Prevent daily habits horizontal scroll view from jumping to the 1st day when marking a habit complete; preserve current scroll position (e.g., stay on the 15th).",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Replace Monthly Targets with calendar-mapped 'Steady Climb' plan (push-ups, squats, plank)",
+  "projectName": "Prevent Daily Tracking grid from jumping to day 1 when toggling completion",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

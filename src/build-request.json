@@ -1,78 +1,67 @@
 {
   "kind": "build_request",
-  "title": "Replace Monthly Targets with calendar-mapped 'Steady Climb' plan (push-ups, squats, plank)",
+  "title": "Prevent Daily Tracking grid from jumping to day 1 when toggling completion",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Update the Monthly Targets panel to use the 'Steady Climb' year plan values (from uploaded image IMG_3316-1.jpeg) as the monthly targets for Push-ups/Press-ups, Squats, and Plank, replacing the current Monthly Targets behavior shown in IMG_3328.jpeg.",
+      "text": "Update the Daily Tracking (HabitGrid) horizontal scroll behavior so that marking a habit as complete/incomplete does not reset the horizontal scroll position to the far left (day 1). The scroll position must remain exactly where the user left it (e.g., when viewing day 15).",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "For monthly targets, can you get the image 3328 to go in line with 3316 ie targets for each month will incrementally increase",
-          "1. Yes",
-          "2. Yes"
+          "Can you make it so it doesn’t jump when I tick it complete? Ie if I’m on 15th it will jump to the 1st when I click it",
+          "1. Yes \n2. Yes \n3. Correct"
         ]
       },
       "acceptanceCriteria": [
-        "In the Monthly Targets card, the displayed target for each applicable habit matches the Steady Climb plan values for the selected month.",
-        "Push-ups and Press-ups share the same monthly target values (treated as the same plan habit).",
-        "Squats monthly target values match the Steady Climb plan values.",
-        "Plank monthly target values match the Steady Climb plan values and are displayed as a duration (e.g., 1:15) rather than raw seconds.",
-        "The UI no longer presents these values as 'totals based on completed daily entries' (i.e., remove/replace copy that implies the numbers are computed totals rather than plan targets)."
+        "From the Daily Tracking grid, horizontally scroll to a later day (e.g., day 15) and toggle any checkbox; the grid remains scrolled to the same position after the UI updates.",
+        "The same non-jumping behavior applies when saving an amount in the popover (for unit-based habits).",
+        "No visual unmount/remount of the grid occurs during the completion toggle that would cause the scroll position to reset."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Map the Steady Climb plan months to calendar months (January = Month 1, February = Month 2, …, December = Month 12) when rendering targets for the currently selected month in the dashboard month tabs.",
+      "text": "Adjust loading states for the Daily Tracking grid so background refetches triggered by toggling completion do not replace the grid with the 'Loading...' card/skeleton (which causes scroll reset). Preserve the existing full-page initial loading behavior, and keep month switching behavior sensible without breaking scroll preservation.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "3. Targets map to calendar"
+          "when I select a box on daily habits to complete a task it jumps to the very left"
         ]
       },
       "acceptanceCriteria": [
-        "Selecting January shows Month 1 targets; selecting February shows Month 2 targets; … selecting December shows Month 12 targets.",
-        "Month switching via the existing MonthTabs updates the targets accordingly without requiring any backend writes."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Keep showing the user's completed monthly totals derived from habit records, but present them separately from the plan target (e.g., show both 'Total' and 'Target' for each applicable habit within the Monthly Targets panel).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "replace the existing Monthly Targets shown in 3328"
-        ]
-      },
-      "acceptanceCriteria": [
-        "For each applicable habit row, the UI displays both (a) completed monthly total computed from records and (b) the Steady Climb plan target for the selected month.",
-        "For time-based habits (e.g., Plank), both Total and Target are formatted using the existing duration formatting (frontend/src/utils/duration.ts).",
-        "If there are no applicable habits, the existing empty-state remains, but its text should not claim targets are computed from completed entries."
+        "Toggling a habit completion does not show the HabitGrid loading skeleton card; the grid remains rendered while data refreshes.",
+        "Initial page load can still show the existing loading UI when data has not loaded yet.",
+        "Switching months continues to work correctly and does not corrupt the displayed records for the newly selected month/year."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (read-only).",
-    "Do not modify the Internet Identity or actor hooks in frontend/src/hooks/useInternetIdentity.ts(x) or frontend/src/hooks/useActor.ts (immutable paths).",
-    "Backend is single-actor (backend/main.mo); avoid introducing additional backend services."
+    "Do not edit files under frontend/src/components/ui (compose existing UI components instead).",
+    "Keep the backend architecture unchanged (single Motoko actor); this change should be frontend-only unless a backend issue is discovered."
   ],
   "nonGoals": [
-    "Do not add a new 'Year Plan' section/page; the Steady Climb plan should replace the current Monthly Targets behavior in the existing panel.",
-    "Do not introduce third-party integrations or external data sources for targets.",
-    "Do not change how records are created/toggled or how charts are computed beyond what is necessary to display Total vs Target in the Monthly Targets panel."
+    "Adding new habit features or changing the habit completion data model.",
+    "Changing authentication (Internet Identity) flows.",
+    "Redesigning the dashboard layout beyond what is necessary to prevent scroll jumps."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

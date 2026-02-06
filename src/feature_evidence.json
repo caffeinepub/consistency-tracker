@@ -2,11 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-monthly-targets-panel-to-use-the-steady-climb-year-plan-values-from-uploaded-image-img-3316-1-jpeg-as-the-monthly-targets-for-push-ups-press-ups-squats-and-plank-replacing-the-current-monthly-targets-behavior-shown-in-img-3328-jpeg",
-      "featureTitle": "Update the Monthly Targets panel to use the 'Steady Climb' year plan values (from uploaded image IMG_3316-1.jpeg) as the monthly targets for Push-ups/Press-ups, Squats, and Plank, replacing the current Monthly Targets behavior shown in IMG_3328.jpeg.",
+      "featureId": "feature-update-the-daily-tracking-habitgrid-horizontal-scroll-behavior-so-that-marking-a-habit-as-complete-incomplete-does-not-reset-the-horizontal-scroll-position-to-the-far-left-day-1-the-scroll-position-must-remain-exactly-where-the-user-left-it-e-g-when-viewing-day-15",
+      "featureTitle": "Update the Daily Tracking (HabitGrid) horizontal scroll behavior so that marking a habit as complete/incomplete does not reset the horizontal scroll position to the far left (day 1). The scroll position must remain exactly where the user left it (e.g., when viewing day 15).",
       "files": [
-        "frontend/src/components/MonthlyTargetsEditor.tsx",
-        "frontend/src/utils/steadyClimbPlan.ts"
+        "frontend/src/components/HabitGrid.tsx",
+        "frontend/src/hooks/usePreserveHorizontalScroll.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -22,11 +22,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-map-the-steady-climb-plan-months-to-calendar-months-january-month-1-february-month-2-december-month-12-when-rendering-targets-for-the-currently-selected-month-in-the-dashboard-month-tabs",
-      "featureTitle": "Map the Steady Climb plan months to calendar months (January = Month 1, February = Month 2, …, December = Month 12) when rendering targets for the currently selected month in the dashboard month tabs.",
+      "featureId": "feature-adjust-loading-states-for-the-daily-tracking-grid-so-background-refetches-triggered-by-toggling-completion-do-not-replace-the-grid-with-the-loading-card-skeleton-which-causes-scroll-reset-preserve-the-existing-full-page-initial-loading-behavior-and-keep-month-switching-behavior-sensible-without-breaking-scroll-preservation",
+      "featureTitle": "Adjust loading states for the Daily Tracking grid so background refetches triggered by toggling completion do not replace the grid with the 'Loading...' card/skeleton (which causes scroll reset). Preserve the existing full-page initial loading behavior, and keep month switching behavior sensible without breaking scroll preservation.",
       "files": [
-        "frontend/src/components/MonthTabs.tsx",
-        "frontend/src/components/MonthlyTargetsEditor.tsx"
+        "frontend/src/components/HabitGrid.tsx",
+        "frontend/src/components/TrackerDashboard.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -38,25 +38,6 @@
       ],
       "testIds": [
         "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-keep-showing-the-user-s-completed-monthly-totals-derived-from-habit-records-but-present-them-separately-from-the-plan-target-e-g-show-both-total-and-target-for-each-applicable-habit-within-the-monthly-targets-panel",
-      "featureTitle": "Keep showing the user's completed monthly totals derived from habit records, but present them separately from the plan target (e.g., show both 'Total' and 'Target' for each applicable habit within the Monthly Targets panel).",
-      "files": [
-        "frontend/src/components/MonthlyTargetsEditor.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
       ],
       "confidence": "high"
     }

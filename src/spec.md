@@ -1,13 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Replace the current Monthly Targets behavior with calendar-mapped “Steady Climb” plan targets for Push-ups/Press-ups, Squats, and Plank, while still showing the user’s completed monthly totals.
+**Goal:** Prevent the Daily Tracking (HabitGrid) horizontal scroll position from resetting to day 1 when toggling habit completion or saving unit amounts.
 
 **Planned changes:**
-- Update the Monthly Targets panel to display “Steady Climb” plan targets (from IMG_3316-1.jpeg) for the currently selected calendar month.
-- Treat Push-ups and Press-ups as the same plan habit and show the same monthly target for both.
-- Show both values per habit row: the computed completed monthly **Total** (from records) and the plan **Target** (from the Steady Climb month mapping).
-- Format Plank Target (and Total) as a duration (e.g., `1:15`) using the existing duration formatting utility, rather than raw seconds.
-- Remove/replace any copy in the Monthly Targets panel that implies the displayed numbers are “totals based on completed daily entries” when they are plan targets.
+- Preserve the HabitGrid horizontal scroll position across completion toggles (complete/incomplete) so the view stays on the same day the user was viewing.
+- Preserve the same scroll position behavior when saving an amount via the unit-based habit popover.
+- Adjust HabitGrid loading behavior so background refetches triggered by toggles do not replace/unmount the grid with a loading card/skeleton, while keeping the initial page-load loading UI and ensuring month switching remains correct.
 
-**User-visible outcome:** When switching months in the dashboard month tabs, the Monthly Targets card shows the Steady Climb Target for that calendar month alongside the user’s completed Total for each applicable habit (with Plank displayed as a duration).
+**User-visible outcome:** When viewing a later day in the Daily Tracking grid (e.g., day 15), checking/unchecking a habit or saving an amount no longer jumps the grid back to day 1; the grid stays in place while updates/refetches occur.
