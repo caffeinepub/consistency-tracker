@@ -8,7 +8,6 @@ import { HabitGrid } from './HabitGrid';
 import { ProgressCharts } from './ProgressCharts';
 import { CollapsibleHabitManagerPanel } from './CollapsibleHabitManagerPanel';
 import { MonthlyTargetsEditor } from './MonthlyTargetsEditor';
-import { InvestmentsPage } from './InvestmentsPage';
 import { useGetHabits, useGetMonthlyRecords } from '../hooks/useQueries';
 
 interface TrackerDashboardProps {
@@ -30,13 +29,10 @@ const MONTHS = [
   'December',
 ];
 
-type ViewMode = 'habits' | 'investments';
-
 export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
   const [selectedYear] = useState(currentDate.getFullYear());
-  const [viewMode, setViewMode] = useState<ViewMode>('habits');
 
   const { data: habits = [], isLoading: habitsLoading } = useGetHabits();
   const { 
@@ -56,24 +52,35 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
     queryClient.clear();
   };
 
-  // Show loading state while fetching new month data to prevent stale data display
-  const isGridLoading = habitsLoading || recordsLoading || recordsFetching;
+  // Show loading state while initial data loads or when switching months
+  const isInitialLoading = habitsLoading || recordsLoading;
+  const isMonthSwitching = recordsFetching && !recordsLoading;
 
-  // Only pass records if they're for the current selected month/year
-  const recordsForGrid = isGridLoading ? [] : records;
+  // Defensive: only pass valid data to child components
+  const safeHabits = Array.isArray(habits) ? habits : [];
+  const safeRecords = Array.isArray(records) ? records : [];
+
+  // Filter records to ensure they match the selected month/year
+  const filteredRecords = safeRecords.filter(
+    (r) => Number(r.month) === selectedMonth && Number(r.year) === selectedYear
+  );
 
   return (
     <div className="min-h-screen bg-background">
       <Header
         userProfile={userProfile}
         onLogout={handleLogout}
-        habits={habits}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
       />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        {viewMode === 'habits' ? (
+        {isInitialLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
+              <p className="text-muted-foreground">Loading your habits...</p>
+            </div>
+          </div>
+        ) : (
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="flex-1 space-y-6">
               <CollapsibleHabitManagerPanel />
@@ -81,8 +88,8 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
               <MonthlyTargetsEditor 
                 selectedMonth={selectedMonth}
                 selectedYear={selectedYear}
-                habits={habits}
-                records={recordsForGrid}
+                habits={safeHabits}
+                records={filteredRecords}
               />
 
               <div className="space-y-4">
@@ -93,26 +100,24 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
                 />
 
                 <HabitGrid
-                  habits={habits}
-                  records={recordsForGrid}
+                  habits={safeHabits}
+                  records={filteredRecords}
                   selectedMonth={selectedMonth}
                   selectedYear={selectedYear}
-                  isLoading={isGridLoading}
+                  isLoading={isMonthSwitching}
                 />
               </div>
             </div>
 
             <div className="lg:w-96">
               <ProgressCharts
-                habits={habits}
-                records={recordsForGrid}
+                habits={safeHabits}
+                records={filteredRecords}
                 selectedMonth={selectedMonth}
                 selectedYear={selectedYear}
               />
             </div>
           </div>
-        ) : (
-          <InvestmentsPage />
         )}
       </main>
 

@@ -2,8 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-habit-tracking-logic-so-that-for-applicable-habits-e-g-press-ups-squats-plank-the-monthly-target-value-for-a-given-habit-month-year-is-always-the-sum-of-that-habit-s-daily-completed-entries-in-the-same-month-year-updating-immediately-after-each-tick-untick-or-amount-edit",
-      "featureTitle": "Update the habit tracking logic so that for applicable habits (e.g., press-ups, squats, plank), the monthly target value for a given habit+month+year is always the sum of that habit’s daily completed entries in the same month+year, updating immediately after each tick/untick or amount edit.",
+      "featureId": "feature-make-version-18-the-active-codebase-by-fully-reverting-both-frontend-and-backend-behavior-to-the-version-18-consistency-tracker-habits-ui-referenced-in-this-conversation-removing-rolling-back-any-version-19-23-changes-that-could-be-causing-deployment-publish-to-fall-back-to-a-newer-version-and-blocking-release",
+      "featureTitle": "Make Version 18 the active codebase by fully reverting both frontend and backend behavior to the Version 18 consistency tracker (Habits UI) referenced in this conversation, removing/rolling back any Version 19–23 changes that could be causing deployment/publish to fall back to a newer version and blocking release.",
       "files": [
         "frontend/src/components/MonthlyTargetsEditor.tsx",
         "frontend/src/components/TrackerDashboard.tsx",
@@ -23,10 +23,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-frontend-ensure-the-monthly-targets-view-reflects-the-month-year-the-user-is-currently-working-in-the-month-selected-in-the-habits-dashboard-and-it-displays-the-persisted-computed-monthly-sum-for-each-applicable-habit-for-that-same-month-year",
-      "featureTitle": "Frontend: ensure the Monthly Targets view reflects the month/year the user is currently working in (the month selected in the Habits dashboard), and it displays the persisted computed monthly sum for each applicable habit for that same month/year.",
+      "featureId": "feature-add-a-regression-safe-startup-path-so-the-ui-never-renders-a-blank-white-screen-on-initial-load-ensure-all-required-data-is-null-safe-during-initial-render-and-that-any-fatal-rendering-errors-are-caught-and-presented-via-the-existing-error-boundary-fallback-ui-instead-of-a-blank-screen",
+      "featureTitle": "Add a regression-safe startup path so the UI never renders a blank white screen on initial load: ensure all required data is null-safe during initial render and that any fatal rendering errors are caught and presented via the existing error boundary fallback UI instead of a blank screen.",
       "files": [
-        "frontend/src/components/MonthlyTargetsEditor.tsx",
+        "frontend/src/App.tsx",
+        "frontend/src/components/Header.tsx",
         "frontend/src/components/TrackerDashboard.tsx",
         "frontend/src/hooks/useQueries.ts"
       ],

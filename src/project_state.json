@@ -1,26 +1,31 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
+  "summary": "Personal consistency tracker web app (Habits) inspired by provided screenshots: monthly tabs, daily checkboxes, custom habit management, and progress/volume analytics with stable cross-device persistence. Extended with units (reps/time/km/none), numeric logging, and an Investments section for asset (shares/tokens) goals.",
   "architectural_notes": [
-    "Monthly totals should be computed as the sum of daily entries for the month and update immediately on tick/entry changes, following Steady Climb Year Plan rules (incl. handling of missing days and plank time aggregation)."
+    "Persist user data keyed by Internet Identity (principal) using stable storage and upgrade migration to survive redeploys/upgrades.",
+    "Store per-completion unit snapshot so changing a habit’s unit affects only future entries; historical logs keep original units.",
+    "Duration inputs should accept flexible free-text formats and be normalized to seconds internally for charts/summaries.",
+    "Volume aggregation rules: use numeric amount when present; otherwise count each done/not-done completion as volume=1 (retroactive).",
+    "Investments module tracks goals in shares/tokens by asset symbol; contributions overwrite current balance (no contribution history); deletion requires confirmation modal."
   ],
   "known_issues": [
-    "Monthly view shows incorrect values vs expected March totals (e.g., 30 squats/press-ups and 1:30 plank) — monthly totals not matching summed daily entries when ticked."
+    "Intermittent blank white screen on app load reported after certain updates (e.g., after adding km/unit changes); indicates startup/runtime crash risk that needs regression coverage.",
+    "Occasional deployment errors during draft/production deploy; underlying error details not always surfaced to user."
   ],
-  "isFixRequest": true,
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-update-the-habit-tracking-logic-so-that-for-applicable-habits-e-g-press-ups-squats-plank-the-monthly-target-value-for-a-given-habit-month-year-is-always-the-sum-of-that-habit-s-daily-completed-entries-in-the-same-month-year-updating-immediately-after-each-tick-untick-or-amount-edit",
-      "title": "Update the habit tracking logic so that for applicable habits (e.g., press-ups, squats, plank), the monthly target value for a given habit+month+year is always the sum of that habit’s daily completed entries in the same month+year, updating immediately after each tick/untick or amount edit.",
+      "id": "feature-make-version-18-the-active-codebase-by-fully-reverting-both-frontend-and-backend-behavior-to-the-version-18-consistency-tracker-habits-ui-referenced-in-this-conversation-removing-rolling-back-any-version-19-23-changes-that-could-be-causing-deployment-publish-to-fall-back-to-a-newer-version-and-blocking-release",
+      "title": "Make Version 18 the active codebase by fully reverting both frontend and backend behavior to the Version 18 consistency tracker (Habits UI) referenced in this conversation, removing/rolling back any Version 19–23 changes that could be causing deployment/publish to fall back to a newer version and blocking release.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-frontend-ensure-the-monthly-targets-view-reflects-the-month-year-the-user-is-currently-working-in-the-month-selected-in-the-habits-dashboard-and-it-displays-the-persisted-computed-monthly-sum-for-each-applicable-habit-for-that-same-month-year",
-      "title": "Frontend: ensure the Monthly Targets view reflects the month/year the user is currently working in (the month selected in the Habits dashboard), and it displays the persisted computed monthly sum for each applicable habit for that same month/year.",
+      "id": "feature-add-a-regression-safe-startup-path-so-the-ui-never-renders-a-blank-white-screen-on-initial-load-ensure-all-required-data-is-null-safe-during-initial-render-and-that-any-fatal-rendering-errors-are-caught-and-presented-via-the-existing-error-boundary-fallback-ui-instead-of-a-blank-screen",
+      "title": "Add a regression-safe startup path so the UI never renders a blank white screen on initial load: ensure all required data is null-safe during initial render and that any fatal rendering errors are caught and presented via the existing error boundary fallback UI instead of a blank screen.",
       "reqIds": [
         "REQ-3"
       ],
@@ -30,20 +35,87 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Fix monthly targets so they match (sum) daily entries immediately when ticked, for applicable habits (press-ups, squats, plank), following the Steady Climb Year Plan rules.",
+      "summary": "Create personal consistency tracker UI matching provided screenshots (monthly tabs, daily tickboxes, progress charts auto-update)",
       "reqIds": [],
-      "status": "in_progress"
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Custom habit/task creation and management (user-defined habits)",
+      "reqIds": [],
+      "status": "pending"
     },
     {
       "id": "AR-3",
-      "summary": "Backend: persist the computed monthly summed value per habit+month+year so that Monthly Targets always show the correct total after reload and across devices/sessions.",
+      "summary": "Per-habit weekly goal frequency (times/week) used in progress calculations; editable after creation; recalculates daily/monthly progress",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Numeric amount logging per completion while keeping done/not-done toggle; track both frequency and volume over time",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Habit units support: reps, time (duration), km, and none; unit can be edited inline and applies only to future entries (historical unit snapshot preserved)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Allow editing habit names while preserving habit ID/history",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Manage Habits section collapsible dropdown (contains habit list + add-habit form), hidden by default, toggle label 'Add/ Manage habits'",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Flexible duration input (e.g., '1 min 15 seconds', '1:15') stored as seconds for charts/summaries; available wherever time amounts are entered",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "Progress tab: restore monthly volume chart with habit selector showing single total for selected month; show empty-state text 'No volume recorded this month' when none",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Volume logic: if completion has no amount entered (done/not-done), count volume as 1 per tick (apply retroactively and going forward)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-11",
+      "summary": "Reliable cross-device data persistence keyed to Internet Identity; stable on-chain storage + safe upgrade migration so data survives logouts/devices/upgrades",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-12",
+      "summary": "Add Investments feature: top-level navigation between Habits and Investments; investment goals per asset ticker/token with target shares/tokens, current balance, progress bar, log contribution to update balance (no history), edit/delete (with confirmation modal)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-14",
+      "summary": "Ensure the reverted Version 18 backend runs safely on the existing canister state by adding/maintaining Motoko upgrade migration logic that can read any newer stored stable state and convert it into a Version 18-compatible stable state without data loss for Version 18 entities (user profiles, habits, records, monthly targets).",
       "reqIds": [
         "REQ-2"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Make monthly targets equal summed daily completed amounts (Steady Climb rules)",
+  "gameProjectType": "none",
+  "projectName": "Consistency app tracker",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

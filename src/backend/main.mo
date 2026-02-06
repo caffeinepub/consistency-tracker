@@ -5,14 +5,16 @@ import Text "mo:core/Text";
 import Time "mo:core/Time";
 import Array "mo:core/Array";
 import Iter "mo:core/Iter";
-import Order "mo:core/Order";
 import Nat "mo:core/Nat";
+import Order "mo:core/Order";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
 
+import Migration "migration";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
 
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -63,14 +65,6 @@ actor {
     unit : HabitUnit;
   };
 
-  public type InvestmentGoal = {
-    id : Text;
-    name : Text;
-    ticker : Text;
-    targetShares : Nat;
-    currentBalance : Nat;
-  };
-
   public type ExportData = {
     profile : ?UserProfile;
     habits : [Habit];
@@ -82,8 +76,6 @@ actor {
   let userHabits = Map.empty<Principal, Set.Set<Text>>();
   let habits = Map.empty<Text, Habit>();
   let habitRecords = Map.empty<Text, List.List<HabitRecord>>();
-  let userInvestmentGoals = Map.empty<Principal, Set.Set<Text>>();
-  let investmentGoals = Map.empty<Text, InvestmentGoal>();
   let monthlyTargets = Map.empty<Text, MonthlyTarget>();
   let lifetimeTotal = Map.empty<Text, Nat>();
 
@@ -116,6 +108,10 @@ actor {
   ) : async Text {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can create habits");
+    };
+
+    if (weeklyTarget < 1 or weeklyTarget > 7) {
+      Runtime.trap("Invalid weekly target: Must be between 1 and 7");
     };
 
     let habitId = name.concat(Time.now().toText());
@@ -298,7 +294,8 @@ actor {
           // Update monthly target
           updateMonthlyTargetInternal(habitId, month, year);
         } else {
-          // Removing existing record - subtract from lifetime total
+          // Remove existing record to undo completion
+          // Remove record and subtract from lifetime total
           switch (existingRecord) {
             case (?existing) {
               let removedAmount = switch (existing.amount) {
@@ -460,7 +457,6 @@ actor {
     };
 
     let completedEntriesCount = habitRecordsForMonth.size();
-
     let newMonthlyTarget : MonthlyTarget = {
       habitId;
       amount = completedEntriesCount;
@@ -670,140 +666,5 @@ actor {
       records = filteredRecords;
       monthlyTargets = [];
     };
-  };
-
-  public shared ({ caller }) func createInvestmentGoal(
-    name : Text,
-    ticker : Text,
-    targetShares : Nat,
-    currentBalance : Nat,
-  ) : async Text {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can create investment goals");
-    };
-
-    let goalId = name.concat(ticker).concat(Time.now().toText());
-    let investmentGoal : InvestmentGoal = {
-      id = goalId;
-      name;
-      ticker;
-      targetShares;
-      currentBalance;
-    };
-
-    if (investmentGoals.containsKey(goalId)) {
-      Runtime.trap("Investment goal already exists");
-    };
-
-    switch (userInvestmentGoals.get(caller)) {
-      case (null) {
-        let goalSet = Set.empty<Text>();
-        goalSet.add(goalId);
-        userInvestmentGoals.add(caller, goalSet);
-      };
-      case (?goalSet) {
-        if (goalSet.contains(goalId)) {
-          Runtime.trap("Investment goal already exists for user");
-        };
-        goalSet.add(goalId);
-      };
-    };
-
-    investmentGoals.add(goalId, investmentGoal);
-    goalId;
-  };
-
-  public shared ({ caller }) func updateInvestmentGoal(
-    goalId : Text,
-    newName : Text,
-    newTicker : Text,
-    newTargetShares : Nat,
-    newCurrentBalance : Nat,
-  ) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can update investment goals");
-    };
-
-    switch (userInvestmentGoals.get(caller)) {
-      case (null) { Runtime.trap("Unauthorized: Investment goal does not belong to user") };
-      case (?goalSet) {
-        if (not goalSet.contains(goalId)) {
-          Runtime.trap("Unauthorized: Investment goal does not belong to user");
-        };
-      };
-    };
-
-    switch (investmentGoals.get(goalId)) {
-      case (null) { Runtime.trap("Investment goal not found") };
-      case (?goal) {
-        let updatedGoal : InvestmentGoal = {
-          id = goalId;
-          name = newName;
-          ticker = newTicker;
-          targetShares = newTargetShares;
-          currentBalance = newCurrentBalance;
-        };
-        investmentGoals.add(goalId, updatedGoal);
-      };
-    };
-  };
-
-  public shared ({ caller }) func deleteInvestmentGoal(goalId : Text) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can delete investment goals");
-    };
-
-    switch (userInvestmentGoals.get(caller)) {
-      case (null) { Runtime.trap("Unauthorized: Investment goal does not belong to user") };
-      case (?goalSet) {
-        if (not goalSet.contains(goalId)) {
-          Runtime.trap("Unauthorized: Investment goal does not belong to user");
-        };
-        goalSet.remove(goalId);
-        investmentGoals.remove(goalId);
-      };
-    };
-  };
-
-  public query ({ caller }) func getInvestmentGoals() : async [InvestmentGoal] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view investment goals");
-    };
-
-    switch (userInvestmentGoals.get(caller)) {
-      case (null) { [] };
-      case (?goalSet) {
-        let goalIds = goalSet.toArray();
-        goalIds.map<Text, InvestmentGoal>(
-          func(id) {
-            switch (investmentGoals.get(id)) {
-              case (null) { Runtime.trap("Investment goal not found") };
-              case (?goal) { goal };
-            };
-          }
-        );
-      };
-    };
-  };
-
-  public query ({ caller }) func getInvestmentGoal(goalId : Text) : async ?InvestmentGoal {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view investment goals");
-    };
-
-    if (goalId == "") {
-      Runtime.trap("Goal id required");
-    };
-
-    switch (userInvestmentGoals.get(caller)) {
-      case (null) { Runtime.trap("Unauthorized: Investment goal does not belong to user") };
-      case (?goalSet) {
-        if (not goalSet.contains(goalId)) {
-          Runtime.trap("Unauthorized: Investment goal does not belong to user");
-        };
-      };
-    };
-
-    investmentGoals.get(goalId);
   };
 };

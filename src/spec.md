@@ -1,12 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Ensure “Steady Climb” habits show correct Monthly Targets by making each month’s target equal the sum of that habit’s completed daily amounts for the selected month/year, updating immediately and persisting across reloads.
+**Goal:** Revert the application to the Version 18 consistency tracker (Habits UI) and unblock deploy/publish while ensuring safe compatibility with existing canister stable state and preventing blank-screen startup failures.
 
 **Planned changes:**
-- Update habit tracking rules so that for applicable habits (e.g., press-ups, squats, plank), the monthly target for a habit+month+year is always recalculated as the sum of completed daily entries in that same month+year after every tick/untick and amount/duration edit.
-- Treat missing daily amounts as 0 in the monthly sum (not 1), and exclude non-applicable habits (e.g., 16/8 fasting, run, squash) from this forced monthly-sum behavior.
-- Persist the computed monthly summed value in the backend per habit+month+year, recalculating and storing it whenever completion records change, so values remain correct after reload and across devices/sessions.
-- Frontend: make Monthly Targets always reflect the currently selected month/year in the Habits dashboard, and display the backend-computed sums with correct formatting (time habits shown as durations like 1:30).
+- Fully revert frontend and backend behavior to the Version 18 Habits tracker UX and logic, removing/rolling back Version 19–23 behavior that could cause deploy/publish to fall back to a newer version.
+- Add/maintain Motoko upgrade migration logic so the Version 18 backend can read newer stable-state shapes and convert them into Version 18-compatible stable state without losing Version 18 entity data (profiles, habits, records, monthly targets).
+- Make the startup/render path regression-safe: ensure initial UI render is null-safe, uses loading states appropriately, and routes fatal boot/render errors through the existing error boundary fallback UI instead of a blank white screen.
 
-**User-visible outcome:** As the user checks/unchecks days or edits amounts (including durations like plank) in the Daily Tracking grid, the Monthly Targets for the currently selected month/year update immediately to the correct totals and remain correct after refresh or on another device.
+**User-visible outcome:** A fresh draft build consistently opens to the Version 18 habits consistency tracker experience, loads reliably from login through dashboard without blank screens, and can be deployed and published without reverting to a newer version during publish; existing user data remains available after upgrade.

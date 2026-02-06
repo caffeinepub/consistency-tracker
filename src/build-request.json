@@ -1,86 +1,85 @@
 {
   "kind": "build_request",
-  "title": "Make monthly targets equal summed daily completed amounts (Steady Climb rules)",
+  "title": "Revert app to Version 18 consistency tracker and unblock deploy/publish with safe state compatibility",
   "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Update the habit tracking logic so that for applicable habits (e.g., press-ups, squats, plank), the monthly target value for a given habit+month+year is always the sum of that habit’s daily completed entries in the same month+year, updating immediately after each tick/untick or amount edit.",
+      "text": "Make Version 18 the active codebase by fully reverting both frontend and backend behavior to the Version 18 consistency tracker (Habits UI) referenced in this conversation, removing/rolling back any Version 19–23 changes that could be causing deployment/publish to fall back to a newer version and blocking release.",
       "target": "both",
       "source": {
         "messageIds": [
-          "msg-10",
-          "msg-8",
-          "msg-6"
+          "msg-1"
         ],
         "quotes": [
-          "Implement now",
-          "Immediately",
-          "See attached - in march it should be 30 of each for squats/ press-ups and plank 1:30. It’s showing wrong value"
+          "Create version 18 - consistency app tracker"
         ]
       },
       "acceptanceCriteria": [
-        "When a user marks a day as completed for an applicable habit in the Daily Tracking grid, the corresponding month’s value shown in Monthly Targets updates without requiring a page refresh.",
-        "When a user unticks a completed day for an applicable habit, the corresponding month’s value shown in Monthly Targets decreases accordingly.",
-        "When a user edits and saves an amount/duration for a completed day, the corresponding month’s value shown in Monthly Targets recalculates accordingly.",
-        "Only records whose (month, year) match the selected month/year are included in the monthly sum.",
-        "For time-based habits (e.g., plank), the monthly sum is the total duration (seconds) across all completed days in that month, displayed formatted (e.g., 1:30).",
-        "For non-time numeric habits (e.g., reps), the monthly sum is the total numeric amount across all completed days in that month.",
-        "Days with no amount value entered contribute 0 to the monthly sum (not 1).",
-        "Non-applicable habits (e.g., 16/8 fasting, run, squash) are not forced into this monthly-sum behavior."
+        "A fresh draft build uses the Version 18 Habits tracker UX (monthly tabs, habit grid, progress charts, habit management) and does not unexpectedly include newer-version-only behavior.",
+        "The resulting draft can be deployed and then published without the platform reverting to another version during publish.",
+        "The app loads successfully (no blank/white screen) through initial render, login, profile load, and dashboard render."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Backend: persist the computed monthly summed value per habit+month+year so that Monthly Targets always show the correct total after reload and across devices/sessions.",
+      "text": "Ensure the reverted Version 18 backend runs safely on the existing canister state by adding/maintaining Motoko upgrade migration logic that can read any newer stored stable state and convert it into a Version 18-compatible stable state without data loss for Version 18 entities (user profiles, habits, records, monthly targets).",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-8",
-          "msg-6"
+          "msg-1"
         ],
         "quotes": [
-          "Yes",
-          "See attached - in march it should be 30 of each for squats/ press-ups and plank 1:30. It’s showing wrong value"
+          "Ensure the reverted Version 18 backend runs safely on the existing canister state by providing/maintaining Motoko upgrade migration logic that converts any newer stored stable state into the Version 18-compatible stable state without data loss for Version 18 entities (user profiles, habits, records, monthly targets)."
         ]
       },
       "acceptanceCriteria": [
-        "After toggling and/or editing amounts in a month, reloading the app preserves the same Monthly Targets values for that month.",
-        "The backend recalculates and stores the monthly target for that habit+month+year whenever toggleHabitCompletion adds/removes a record or changes a record amount.",
-        "The stored monthly target for a habit+month+year equals the sum of amounts of completed records for that habit in that month+year (amount null counts as 0)."
+        "On canister upgrade, previously saved user data (profiles, habits, records, monthly targets) remains available after upgrade for the same Internet Identity principal.",
+        "Upgrade does not trap due to unexpected/unknown stable-state variants/fields from newer versions.",
+        "Migration is idempotent (re-running on already-migrated state does not corrupt or change data)."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Frontend: ensure the Monthly Targets view reflects the month/year the user is currently working in (the month selected in the Habits dashboard), and it displays the persisted computed monthly sum for each applicable habit for that same month/year.",
+      "text": "Add a regression-safe startup path so the UI never renders a blank white screen on initial load: ensure all required data is null-safe during initial render and that any fatal rendering errors are caught and presented via the existing error boundary fallback UI instead of a blank screen.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-1"
         ],
         "quotes": [
-          "See attached - in march it should be 30 of each for squats/ press-ups and plank 1:30. It’s showing wrong value"
+          "App is just showing as blank white screen. Can you fix?",
+          "The draft when I open is just a blank white screen"
         ]
       },
       "acceptanceCriteria": [
-        "When the user switches months in the dashboard (e.g., February → March), the Monthly Targets panel updates to show targets for the same selected month/year.",
-        "The Monthly Targets panel shows values that match the backend-computed sums for the selected month/year.",
-        "The Monthly Targets panel formats time habit sums as durations (e.g., 90 seconds shown as 1:30)."
+        "If a runtime/render error occurs during initial boot, the app shows the FatalErrorFallback UI rather than a blank white screen.",
+        "Normal boot (no errors) shows a loading state, then login or dashboard depending on authentication/profile state.",
+        "No direct access of possibly-undefined profile properties during initial render (e.g., avoid crashes like userProfile.name undefined)."
       ]
     }
   ],
   "constraints": [
     "Backend must remain a single Motoko actor in backend/main.mo.",
-    "Do not edit frontend files under frontend/src/components/ui or other immutablePaths listed in SYSTEM_CONTEXT.",
+    "Do not edit any files under frontend/src/components/ui or the immutable hook/bootstrap files listed in SYSTEM_CONTEXT.",
     "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Adding new authentication providers beyond Internet Identity.",
-    "Introducing external databases or third-party backend services.",
-    "Building real-time syncing (e.g., WebSockets)."
+    "Adding new product features beyond restoring Version 18 behavior and ensuring safe state compatibility.",
+    "Integrations with external databases or third-party auth providers (only Internet Identity is supported)."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

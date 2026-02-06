@@ -1,55 +1,51 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-05T23:39:28.346Z",
-  "summary": "The diff implements a frontend-side monthly total display by summing fetched monthly records for a selected month/year and formatting time units, but it does not provide clear evidence of backend persistence/recalculation of monthly targets or of the frontend using persisted backend-computed monthly targets. There are also some unrequested UI/content changes and hardcoded habit applicability lists.",
+  "generatedAt": "2026-02-06T21:07:21.675Z",
+  "summary": "Diff focuses on hardening frontend startup/rendering (loading/error states, null-safety) and introduces a basic Motoko migration module plus some backend wiring. However, the changes shown do not provide the requested full “Version 18” revert across frontend+backend, and the migration logic does not demonstrate compatibility with newer stable-state shapes/variants. There is also a potentially extra UI behavior (MonthlyTargetsEditor with hard-coded habit applicability rules) not explicitly requested by the BuildRequest.",
   "missing_requirements": [
     {
-      "id": "REQ-2",
-      "requirement": "Backend: persist the computed monthly summed value per habit+month+year so that Monthly Targets always show the correct total after reload and across devices/sessions (recalculate/store on toggle and amount edits).",
-      "reason": "Although backend/main.mo declares a MonthlyTarget type and a monthlyTargets map, the provided diff excerpt is truncated before any logic that recomputes monthly targets on toggle/edit and persists them; no functions or update paths are shown that satisfy the acceptance criteria.",
-      "evidence": [
-        "backend/main.mo (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "requirement": "Frontend: Monthly Targets displays the persisted computed monthly sum for each applicable habit for the selected month/year (matching backend-computed sums).",
-      "reason": "MonthlyTargetsEditor computes totals directly from the `records` prop (client-side summation) and does not fetch or display a persisted backend monthly target value. The diff also doesn’t show any use of a backend monthly-target query result in this component.",
-      "evidence": [
-        "frontend/src/components/MonthlyTargetsEditor.tsx",
-        "frontend/src/components/TrackerDashboard.tsx"
-      ]
-    },
-    {
       "id": "REQ-1",
-      "requirement": "Monthly target sum should reflect only completed daily entries (tick/untick) and amount edits for the selected month/year.",
-      "reason": "The monthly sum computation filters by habitId/month/year but does not filter records by completion status (e.g., `completedAt != null`). If uncompleted records can exist in `records`, they would be incorrectly included in the sum.",
+      "requirement": "Make Version 18 the active codebase by fully reverting both frontend and backend behavior to the Version 18 consistency tracker, removing/rolling back any Version 19–23 changes that could be causing deployment/publish to fall back to a newer version and blocking release.",
+      "reason": "The diff shows some Version-18-aligned UI structure (monthly tabs, habit grid, charts), but does not provide clear evidence of a comprehensive rollback/removal of Version 19–23 behavior across the codebase or any deploy/publish-specific fix to prevent publish reverting to a newer version.",
       "evidence": [
-        "frontend/src/components/MonthlyTargetsEditor.tsx"
+        "frontend/src/components/TrackerDashboard.tsx",
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Ensure the reverted Version 18 backend runs safely on the existing canister state by adding/maintaining Motoko upgrade migration logic that can read any newer stored stable state and convert it into a Version 18-compatible stable state without data loss, not trapping on unknown variants/fields, and idempotent.",
+      "reason": "Added migration module appears to be an identity transform between identical OldState/NewState types and does not show handling of newer-version stable-state variants/fields or defensive decoding. The backend changes shown do not include explicit upgrade hooks (e.g., preupgrade/postupgrade) demonstrating migration execution and idempotency guarantees.",
+      "evidence": [
+        "backend/migration.mo",
+        "backend/main.mo"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Hardcoded applicability logic for monthly targets using explicit habit name allow/deny lists (including \"push-ups\" and excluding \"16/8 fasting\", \"run\", \"squash\").",
-      "reason": "The request specifies that some habits are applicable/non-applicable by example, but does not ask for hardcoded name lists or adding \"push-ups\" as a special-case applicable habit.",
+      "description": "Monthly Targets editor logic with hard-coded 'NON_APPLICABLE_HABITS'/'APPLICABLE_HABITS' name matching and computed monthly totals UI.",
+      "reason": "BuildRequest did not ask to add new product behaviors; this looks like additional domain logic/UI beyond the stated requirements (restore Version 18 + safe migration + non-blank startup).",
       "evidence": [
         "frontend/src/components/MonthlyTargetsEditor.tsx"
       ]
     },
     {
-      "description": "Added/changed footer copy including “© 2026. Built with love using caffeine.ai” link.",
-      "reason": "Not requested by the BuildRequest and unrelated to monthly target summing/persistence behavior.",
+      "description": "Profile-load failure screen that renders a custom centered error message instead of relying solely on the existing FatalErrorFallback error boundary UI.",
+      "reason": "REQ-3 specifies using the existing error boundary fallback UI for fatal boot errors; this adds a separate, bespoke error presentation path for profile query errors that was not explicitly requested.",
       "evidence": [
-        "frontend/src/components/TrackerDashboard.tsx"
+        "frontend/src/App.tsx"
       ]
     }
   ],
-  "confidence": 0.62,
+  "confidence": 0.72,
   "changed_files": [
     "backend/main.mo",
+    "backend/migration.mo",
     "frontend-file-summaries.txt",
+    "frontend/src/App.tsx",
+    "frontend/src/components/Header.tsx",
     "frontend/src/components/MonthlyTargetsEditor.tsx",
     "frontend/src/components/TrackerDashboard.tsx",
     "frontend/src/hooks/useQueries.ts",

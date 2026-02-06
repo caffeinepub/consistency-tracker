@@ -1,10 +1,7 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import type { Habit, HabitRecord } from '../backend';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ChartContainer,
   ChartTooltip,
@@ -12,9 +9,6 @@ import {
 } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { calculateReportStats } from '../utils/reportStats';
-import { formatDuration } from '../utils/duration';
-import { isTimeUnit } from '../utils/habitUnit';
-import { useGetLifetimeTotal } from '../hooks/useQueries';
 
 interface ProgressChartsProps {
   habits: Habit[];
@@ -29,9 +23,6 @@ export function ProgressCharts({
   selectedMonth,
   selectedYear,
 }: ProgressChartsProps) {
-  const [selectedHabitForVolume, setSelectedHabitForVolume] = useState<string>('');
-  const [volumeView, setVolumeView] = useState<'monthly' | 'lifetime'>('monthly');
-
   const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
 
   const stats = useMemo(() => {
@@ -50,51 +41,6 @@ export function ProgressCharts({
     );
   }, [habits, records, selectedMonth, selectedYear, daysInMonth]);
 
-  // Filter habits to only those with completions in the selected month
-  const habitsWithCompletions = useMemo(() => {
-    return habits.filter((habit) => {
-      return records.some(
-        (record) =>
-          record.habitId === habit.id &&
-          record.completedAt !== undefined &&
-          record.completedAt !== null
-      );
-    });
-  }, [habits, records]);
-
-  // Calculate total volume across all habits for empty state check
-  const totalVolumeAllHabits = useMemo(() => {
-    return stats.volumeStats.reduce((sum, vs) => sum + vs.totalVolume, 0);
-  }, [stats.volumeStats]);
-
-  // Auto-select first habit with completions, or clear if none available
-  useEffect(() => {
-    if (habitsWithCompletions.length > 0) {
-      // If current selection is not in the filtered list, select the first one
-      const isCurrentSelectionValid = habitsWithCompletions.some(
-        (h) => h.id === selectedHabitForVolume
-      );
-      if (!isCurrentSelectionValid) {
-        setSelectedHabitForVolume(habitsWithCompletions[0].id);
-      }
-    } else {
-      // No habits with completions, clear selection
-      setSelectedHabitForVolume('');
-    }
-  }, [habitsWithCompletions, selectedHabitForVolume]);
-
-  const selectedVolumeStats = stats.volumeStats.find(
-    (vs) => vs.habitId === selectedHabitForVolume
-  );
-
-  // Check if selected habit is a Time habit
-  const selectedHabit = habits.find((h) => h.id === selectedHabitForVolume);
-  const isTimeHabit = selectedHabit ? isTimeUnit(selectedHabit.unit) : false;
-
-  // Fetch lifetime total for selected habit
-  const { data: lifetimeTotal } = useGetLifetimeTotal(selectedHabitForVolume);
-  const lifetimeTotalNumber = lifetimeTotal ? Number(lifetimeTotal) : 0;
-
   const pieData = [
     { name: 'Completed', value: stats.overallPercentage },
     { name: 'Remaining', value: 100 - stats.overallPercentage },
@@ -103,6 +49,12 @@ export function ProgressCharts({
   const COLORS = ['oklch(var(--chart-1))', 'oklch(var(--muted))'];
 
   const weeksInMonth = Math.ceil(daysInMonth / 7);
+
+  // Map dailyStats to chart data format
+  const dailyTrendData = stats.dailyStats.map((stat) => ({
+    day: stat.day,
+    completions: stat.completed,
+  }));
 
   return (
     <div className="space-y-6">
@@ -147,7 +99,7 @@ export function ProgressCharts({
       {habits.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Habit Progress (Frequency)</CardTitle>
+            <CardTitle>Habit Progress</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {stats.habitStats.map((stat) => (
@@ -168,44 +120,45 @@ export function ProgressCharts({
         </Card>
       )}
 
-      {/* Daily Progress Line Chart */}
-      {habits.length > 0 && (
+      {/* Daily Frequency Trend */}
+      {dailyTrendData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Daily Trends (Frequency)</CardTitle>
+            <CardTitle>Daily Frequency Trend</CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer
               config={{
-                percentage: {
-                  label: 'Completion %',
+                completions: {
+                  label: 'Completions',
                   color: 'oklch(var(--chart-1))',
                 },
               }}
-              className="h-48"
+              className="h-[200px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={stats.dailyStats}>
+                <LineChart data={dailyTrendData}>
                   <XAxis
                     dataKey="day"
-                    tick={{ fontSize: 12 }}
+                    stroke="oklch(var(--muted-foreground))"
+                    fontSize={12}
                     tickLine={false}
                     axisLine={false}
                   />
                   <YAxis
-                    tick={{ fontSize: 12 }}
+                    stroke="oklch(var(--muted-foreground))"
+                    fontSize={12}
                     tickLine={false}
                     axisLine={false}
-                    domain={[0, 100]}
+                    allowDecimals={false}
                   />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Line
                     type="monotone"
-                    dataKey="percentage"
+                    dataKey="completions"
                     stroke="oklch(var(--chart-1))"
                     strokeWidth={2}
-                    dot={{ fill: 'oklch(var(--chart-1))', r: 3 }}
-                    activeDot={{ r: 5 }}
+                    dot={{ fill: 'oklch(var(--chart-1))' }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -213,83 +166,6 @@ export function ProgressCharts({
           </CardContent>
         </Card>
       )}
-
-      {/* Volume Tracking */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Volume Tracking</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {totalVolumeAllHabits === 0 && volumeView === 'monthly' ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No volume recorded this month
-            </div>
-          ) : habits.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No habits yet
-            </div>
-          ) : (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="habit-select">Select Habit</Label>
-                <Select value={selectedHabitForVolume} onValueChange={setSelectedHabitForVolume}>
-                  <SelectTrigger id="habit-select">
-                    <SelectValue placeholder="Choose a habit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {habits.map((habit) => (
-                      <SelectItem key={habit.id} value={habit.id}>
-                        {habit.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {selectedHabitForVolume && (
-                <>
-                  <Tabs value={volumeView} onValueChange={(v) => setVolumeView(v as 'monthly' | 'lifetime')}>
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="monthly">This Month</TabsTrigger>
-                      <TabsTrigger value="lifetime">All Time</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="monthly" className="mt-4">
-                      {selectedVolumeStats && selectedVolumeStats.totalVolume > 0 ? (
-                        <div className="p-4 bg-muted/30 rounded-lg">
-                          <div className="text-center">
-                            <div className="text-3xl font-bold">
-                              {isTimeHabit ? formatDuration(selectedVolumeStats.totalVolume) : selectedVolumeStats.totalVolume}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              Total {selectedVolumeStats.unit} this month
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                          No volume recorded this month for this habit
-                        </div>
-                      )}
-                    </TabsContent>
-                    <TabsContent value="lifetime" className="mt-4">
-                      <div className="p-4 bg-muted/30 rounded-lg">
-                        <div className="text-center">
-                          <div className="text-3xl font-bold">
-                            {isTimeHabit ? formatDuration(lifetimeTotalNumber) : lifetimeTotalNumber}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Total {selectedHabit ? (isTimeHabit ? 'time' : 'volume') : ''} all time
-                          </div>
-                        </div>
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-                </>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

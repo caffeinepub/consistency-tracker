@@ -1,7 +1,7 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-05T23:39:28.349Z",
+  "generatedAt": "2026-02-06T21:07:21.678Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
@@ -12,55 +12,61 @@
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Update the habit tracking logic so that for applicable habits (e.g., press-ups, squats, plank), the monthly target value for a given habit+month+year is always the sum of that habit’s daily completed entries in the same month+year, updating immediately after each tick/untick or amount edit.",
+        "summary": "Make Version 18 the active codebase by fully reverting both frontend and backend behavior to the Version 18 consistency tracker (Habits UI) referenced in this conversation, removing/rolling back any Version 19–23 changes that could be causing deployment/publish to fall back to a newer version and blocking release.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
           "frontend/src/components/MonthlyTargetsEditor.tsx",
-          "frontend/src/components/TrackerDashboard.tsx"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/TrackerDashboard.tsx",
+          "frontend/src/components/InvestmentsPage.tsx",
+          "frontend/src/components/InvestmentGoalCard.tsx",
+          "frontend/src/components/ReportExportDialog.tsx",
+          "frontend/src/utils/reportPdf.ts",
+          "frontend/src/types/jspdf.d.ts"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
           "frontend/src/components/MonthlyTargetsEditor.tsx",
+          "frontend/src/hooks/useQueries.ts",
           "frontend/src/components/TrackerDashboard.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Backend: persist the computed monthly summed value per habit+month+year so that Monthly Targets always show the correct total after reload and across devices/sessions.",
+        "summary": "Ensure the reverted Version 18 backend runs safely on the existing canister state by adding/maintaining Motoko upgrade migration logic that can read any newer stored stable state and convert it into a Version 18-compatible stable state without data loss for Version 18 entities (user profiles, habits, records, monthly targets).",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
         "id": "REQ-3",
-        "summary": "Frontend: ensure the Monthly Targets view reflects the month/year the user is currently working in (the month selected in the Habits dashboard), and it displays the persisted computed monthly sum for each applicable habit for that same month/year.",
+        "summary": "Add a regression-safe startup path so the UI never renders a blank white screen on initial load: ensure all required data is null-safe during initial render and that any fatal rendering errors are caught and presented via the existing error boundary fallback UI instead of a blank screen.",
         "status": "implemented",
         "plannedFiles": [
+          "frontend/src/App.tsx",
+          "frontend/src/components/TrackerDashboard.tsx",
           "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/MonthlyTargetsEditor.tsx",
-          "frontend/src/components/TrackerDashboard.tsx"
+          "frontend/src/components/Header.tsx"
         ],
         "matchedFiles": [
+          "frontend/src/App.tsx",
+          "frontend/src/components/TrackerDashboard.tsx",
           "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/MonthlyTargetsEditor.tsx",
-          "frontend/src/components/TrackerDashboard.tsx"
+          "frontend/src/components/Header.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
+    "frontend/src/App.tsx",
+    "frontend/src/components/Header.tsx",
     "frontend/src/components/MonthlyTargetsEditor.tsx",
     "frontend/src/components/TrackerDashboard.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
     "frontend/src/hooks/useQueries.ts",
     "project_state.json",
     "scratch/component-selection.json",

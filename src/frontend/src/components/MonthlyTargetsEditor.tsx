@@ -53,13 +53,17 @@ export function MonthlyTargetsEditor({
   habits, 
   records 
 }: MonthlyTargetsEditorProps) {
+  // Defensive: ensure habits and records are arrays
+  const safeHabits = Array.isArray(habits) ? habits : [];
+  const safeRecords = Array.isArray(records) ? records : [];
+
   // Filter habits to only show applicable ones
-  const applicableHabits = habits.filter((h) => isHabitApplicable(h.name));
+  const applicableHabits = safeHabits.filter((h) => h && h.name && isHabitApplicable(h.name));
 
   // Compute the monthly sum for a given habit from the records
   const computeMonthlySum = (habitId: string, habitUnit: Habit['unit']): number => {
-    const habitRecords = records.filter(
-      (r) => r.habitId === habitId && Number(r.month) === selectedMonth && Number(r.year) === selectedYear
+    const habitRecords = safeRecords.filter(
+      (r) => r && r.habitId === habitId && Number(r.month) === selectedMonth && Number(r.year) === selectedYear
     );
 
     let sum = 0;
@@ -73,6 +77,10 @@ export function MonthlyTargetsEditor({
   };
 
   const getDisplayTarget = (habit: Habit): string => {
+    if (!habit || !habit.id || !habit.unit) {
+      return '0';
+    }
+
     const sum = computeMonthlySum(habit.id, habit.unit);
     
     if (isTimeUnit(habit.unit)) {

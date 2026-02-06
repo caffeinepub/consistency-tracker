@@ -1,62 +1,87 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Steady Climb monthly targets as summed daily completions (frontend)",
+  "title": "Revert frontend to Version 18 Habits tracker and harden startup against blank screens",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Make Monthly Targets update immediately to equal the sum of completed daily amounts for applicable habits in the selected month/year (including time formatting and 0 for missing amounts).",
+      "summary": "Revert the frontend to the Version 18 Habits tracker UX and remove newer-version-only UI surface area that could affect deploy/publish consistency.",
       "acceptanceCriteria": [
-        "When a user marks a day as completed for an applicable habit in the Daily Tracking grid, the corresponding month’s value shown in Monthly Targets updates without requiring a page refresh.",
-        "When a user unticks a completed day for an applicable habit, the corresponding month’s value shown in Monthly Targets decreases accordingly.",
-        "When a user edits and saves an amount/duration for a completed day, the corresponding month’s value shown in Monthly Targets recalculates accordingly.",
-        "Only records whose (month, year) match the selected month/year are included in the monthly sum.",
-        "For time-based habits (e.g., plank), the monthly sum is the total duration (seconds) across all completed days in that month, displayed formatted (e.g., 1:30).",
-        "For non-time numeric habits (e.g., reps), the monthly sum is the total numeric amount across all completed days in that month.",
-        "Days with no amount value entered contribute 0 to the monthly sum (not 1).",
-        "Non-applicable habits (e.g., 16/8 fasting, run, squash) are not forced into this monthly-sum behavior."
+        "A fresh draft build uses the Version 18 Habits tracker UX (monthly tabs, habit grid, progress charts, habit management) and does not unexpectedly include newer-version-only behavior.",
+        "The resulting draft can be deployed and then published without the platform reverting to another version during publish.",
+        "The app loads successfully (no blank/white screen) through initial render, login, profile load, and dashboard render."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Update the toggleHabitCompletion mutation to optimistically update the cached monthly records for the active month/year (add/remove completion and set/clear amount) so UI-derived monthly sums update immediately after tick/untick/amount save; also invalidate any monthly-target query keys that depend on the affected habit+month+year to stay consistent with persisted computed totals."
-        },
-        {
           "path": "frontend/src/components/MonthlyTargetsEditor.tsx",
           "operation": "modify",
-          "description": "Change Monthly Targets to compute and display the monthly summed value for applicable habits from the currently loaded monthly records (treat missing amount as 0; sum seconds for time habits and format using formatDuration; sum numeric amounts for others) so the panel updates immediately as the grid changes; keep non-applicable habits excluded from forced sum behavior."
+          "description": "Rework MonthlyTargetsEditor to match the Version 18 monthly-targets behavior (per-habit monthly target viewing/editing alongside actual month-to-date totals) using existing query/mutation hooks (e.g., targets fetch + update). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Align React Query keys/invalidation and target-related hooks usage to the Version 18 tracker flow (monthly target read/write coherence with month switching and habit mutations), keeping behavior consistent with the Habits UI. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/components/TrackerDashboard.tsx",
           "operation": "modify",
-          "description": "Wire the dashboard’s selectedMonth/selectedYear and current month records into MonthlyTargetsEditor as props so it can render sums for the active working month/year and react immediately to changes."
+          "description": "Ensure the dashboard composition matches Version 18 (month tabs + habit grid + progress charts + habit management + monthly targets) and remove/avoid any conditional UI paths that introduce newer-version-only behavior. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/InvestmentsPage.tsx",
+          "operation": "delete",
+          "description": "Remove newer-version placeholder page that is not part of the Version 18 Habits tracker to reduce risk of version drift during deploy/publish."
+        },
+        {
+          "path": "frontend/src/components/InvestmentGoalCard.tsx",
+          "operation": "delete",
+          "description": "Remove newer-version placeholder component that is not part of the Version 18 Habits tracker to reduce risk of version drift during deploy/publish."
+        },
+        {
+          "path": "frontend/src/components/ReportExportDialog.tsx",
+          "operation": "delete",
+          "description": "Remove newer-version placeholder export dialog component (not part of the Version 18 baseline) to reduce risk of version drift during deploy/publish."
+        },
+        {
+          "path": "frontend/src/utils/reportPdf.ts",
+          "operation": "delete",
+          "description": "Remove unused placeholder PDF export utility (not required for Version 18 baseline) to reduce risk of version drift during deploy/publish."
+        },
+        {
+          "path": "frontend/src/types/jspdf.d.ts",
+          "operation": "delete",
+          "description": "Remove unused placeholder type definition tied to the removed PDF export placeholder to reduce risk of version drift during deploy/publish."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Ensure Monthly Targets always reflects the dashboard-selected month/year and shows backend-persisted computed sums (with time formatting).",
+      "summary": "Prevent blank/white screen on boot by making initial render null-safe and ensuring fatal render errors surface via the existing FatalErrorFallback error boundary UI.",
       "acceptanceCriteria": [
-        "When the user switches months in the dashboard (e.g., February → March), the Monthly Targets panel updates to show targets for the same selected month/year.",
-        "The Monthly Targets panel shows values that match the backend-computed sums for the selected month/year.",
-        "The Monthly Targets panel formats time habit sums as durations (e.g., 90 seconds shown as 1:30)."
+        "If a runtime/render error occurs during initial boot, the app shows the FatalErrorFallback UI rather than a blank white screen.",
+        "Normal boot (no errors) shows a loading state, then login or dashboard depending on authentication/profile state.",
+        "No direct access of possibly-undefined profile properties during initial render (e.g., avoid crashes like userProfile.name undefined)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Refactor monthly-target data hooks to align with the typed backend interface (use getMonthlyTarget(habitId, month, year) rather than untyped multi-month retrieval) and provide a query keyed by habitId+month+year; ensure invalidation ties to the selected month/year."
-        },
-        {
-          "path": "frontend/src/components/MonthlyTargetsEditor.tsx",
-          "operation": "modify",
-          "description": "Remove the editor-controlled month/year selectors and instead consume the selectedMonth/selectedYear from the dashboard; for applicable habits, display the persisted backend-computed monthly sum for that same month/year, with a fallback to the immediately-derived sum from current records while queries are fetching; format time units via formatDuration."
+          "description": "Harden the boot state machine: ensure the authenticated/profile-loading path cannot render ProfileSetup/Dashboard until profile query is definitively resolved; handle query errors deterministically (surface through the existing ErrorBoundary/FatalErrorFallback), and eliminate any ambiguous falsy checks that can cause incorrect screens or crashes. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/components/TrackerDashboard.tsx",
           "operation": "modify",
-          "description": "Pass selectedMonth/selectedYear into MonthlyTargetsEditor and ensure month switching triggers the corresponding monthly-target queries for that same month/year (no stale month/year state inside MonthlyTargetsEditor)."
+          "description": "Add defensive rendering guards for early/transition states (e.g., month/records/habits loading) to ensure child components never receive inconsistent/undefined data during initial boot or month switches. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Make startup data hooks regression-safe by ensuring actor/identity dependencies prevent throws during initial render, and that hook return flags (isLoading/isFetched) reliably represent readiness to render downstream UI. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/Header.tsx",
+          "operation": "modify",
+          "description": "Ensure user profile display remains null-safe (name/initial fallbacks) and cannot throw during any transitional render while identity/profile data settles. Verify the component's usage instructions before implementing."
         }
       ]
     }

@@ -39,13 +39,6 @@ export type HabitUnit = { 'custom' : string } |
   { 'none' : null } |
   { 'reps' : null } |
   { 'time' : null };
-export interface InvestmentGoal {
-  'id' : string,
-  'ticker' : string,
-  'currentBalance' : bigint,
-  'name' : string,
-  'targetShares' : bigint,
-}
 export interface MonthlyTarget {
   'month' : bigint,
   'year' : bigint,
@@ -64,12 +57,7 @@ export interface _SERVICE {
     [string, bigint, HabitUnit, DefaultAmount],
     string
   >,
-  'createInvestmentGoal' : ActorMethod<
-    [string, string, bigint, bigint],
-    string
-  >,
   'deleteHabit' : ActorMethod<[string], undefined>,
-  'deleteInvestmentGoal' : ActorMethod<[string], undefined>,
   'exportAllData' : ActorMethod<
     [bigint, bigint, bigint, bigint, bigint, bigint],
     ExportData
@@ -81,8 +69,6 @@ export interface _SERVICE {
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getHabits' : ActorMethod<[], Array<Habit>>,
-  'getInvestmentGoal' : ActorMethod<[string], [] | [InvestmentGoal]>,
-  'getInvestmentGoals' : ActorMethod<[], Array<InvestmentGoal>>,
   'getLifetimeTotal' : ActorMethod<[string], bigint>,
   'getMonthlyRecords' : ActorMethod<[bigint, bigint], Array<HabitRecord>>,
   'getMonthlyTarget' : ActorMethod<
@@ -100,10 +86,6 @@ export interface _SERVICE {
   'updateHabitName' : ActorMethod<[string, string], undefined>,
   'updateHabitUnit' : ActorMethod<[string, HabitUnit], undefined>,
   'updateHabitWeeklyTarget' : ActorMethod<[string, bigint], undefined>,
-  'updateInvestmentGoal' : ActorMethod<
-    [string, string, string, bigint, bigint],
-    undefined
-  >,
   'updateMonthlyTarget' : ActorMethod<
     [string, bigint, bigint, bigint],
     undefined

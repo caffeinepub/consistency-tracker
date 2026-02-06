@@ -52,13 +52,6 @@ export const ExportData = IDL.Record({
   'habits' : IDL.Vec(Habit),
   'profile' : IDL.Opt(UserProfile),
 });
-export const InvestmentGoal = IDL.Record({
-  'id' : IDL.Text,
-  'ticker' : IDL.Text,
-  'currentBalance' : IDL.Nat,
-  'name' : IDL.Text,
-  'targetShares' : IDL.Nat,
-});
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -68,13 +61,7 @@ export const idlService = IDL.Service({
       [IDL.Text],
       [],
     ),
-  'createInvestmentGoal' : IDL.Func(
-      [IDL.Text, IDL.Text, IDL.Nat, IDL.Nat],
-      [IDL.Text],
-      [],
-    ),
   'deleteHabit' : IDL.Func([IDL.Text], [], []),
-  'deleteInvestmentGoal' : IDL.Func([IDL.Text], [], []),
   'exportAllData' : IDL.Func(
       [IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat],
       [ExportData],
@@ -88,12 +75,6 @@ export const idlService = IDL.Service({
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getHabits' : IDL.Func([], [IDL.Vec(Habit)], ['query']),
-  'getInvestmentGoal' : IDL.Func(
-      [IDL.Text],
-      [IDL.Opt(InvestmentGoal)],
-      ['query'],
-    ),
-  'getInvestmentGoals' : IDL.Func([], [IDL.Vec(InvestmentGoal)], ['query']),
   'getLifetimeTotal' : IDL.Func([IDL.Text], [IDL.Nat], ['query']),
   'getMonthlyRecords' : IDL.Func(
       [IDL.Nat, IDL.Nat],
@@ -121,11 +102,6 @@ export const idlService = IDL.Service({
   'updateHabitName' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'updateHabitUnit' : IDL.Func([IDL.Text, HabitUnit], [], []),
   'updateHabitWeeklyTarget' : IDL.Func([IDL.Text, IDL.Nat], [], []),
-  'updateInvestmentGoal' : IDL.Func(
-      [IDL.Text, IDL.Text, IDL.Text, IDL.Nat, IDL.Nat],
-      [],
-      [],
-    ),
   'updateMonthlyTarget' : IDL.Func(
       [IDL.Text, IDL.Nat, IDL.Nat, IDL.Nat],
       [],
@@ -180,13 +156,6 @@ export const idlFactory = ({ IDL }) => {
     'habits' : IDL.Vec(Habit),
     'profile' : IDL.Opt(UserProfile),
   });
-  const InvestmentGoal = IDL.Record({
-    'id' : IDL.Text,
-    'ticker' : IDL.Text,
-    'currentBalance' : IDL.Nat,
-    'name' : IDL.Text,
-    'targetShares' : IDL.Nat,
-  });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -196,13 +165,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Text],
         [],
       ),
-    'createInvestmentGoal' : IDL.Func(
-        [IDL.Text, IDL.Text, IDL.Nat, IDL.Nat],
-        [IDL.Text],
-        [],
-      ),
     'deleteHabit' : IDL.Func([IDL.Text], [], []),
-    'deleteInvestmentGoal' : IDL.Func([IDL.Text], [], []),
     'exportAllData' : IDL.Func(
         [IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat],
         [ExportData],
@@ -224,12 +187,6 @@ export const idlFactory = ({ IDL }) => {
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getHabits' : IDL.Func([], [IDL.Vec(Habit)], ['query']),
-    'getInvestmentGoal' : IDL.Func(
-        [IDL.Text],
-        [IDL.Opt(InvestmentGoal)],
-        ['query'],
-      ),
-    'getInvestmentGoals' : IDL.Func([], [IDL.Vec(InvestmentGoal)], ['query']),
     'getLifetimeTotal' : IDL.Func([IDL.Text], [IDL.Nat], ['query']),
     'getMonthlyRecords' : IDL.Func(
         [IDL.Nat, IDL.Nat],
@@ -257,11 +214,6 @@ export const idlFactory = ({ IDL }) => {
     'updateHabitName' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'updateHabitUnit' : IDL.Func([IDL.Text, HabitUnit], [], []),
     'updateHabitWeeklyTarget' : IDL.Func([IDL.Text, IDL.Nat], [], []),
-    'updateInvestmentGoal' : IDL.Func(
-        [IDL.Text, IDL.Text, IDL.Text, IDL.Nat, IDL.Nat],
-        [],
-        [],
-      ),
     'updateMonthlyTarget' : IDL.Func(
         [IDL.Text, IDL.Nat, IDL.Nat, IDL.Nat],
         [],
