@@ -1,28 +1,38 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
+  "summary": "Expand an existing consistency tracker by adding an Investment Diary and multi-goal Investment Goals module with progress tracking and UI tab integration.",
   "architectural_notes": [
-    "Daily habits day-picker is a horizontally scrollable list; when toggling completion, UI updates must preserve existing horizontal scroll position (do not reset to far left)."
+    "Goals support multiple concurrent targets.",
+    "Goal progress is computed from the sum of manually selected diary entries per goal (not automatic asset matching).",
+    "All goals share a required deadline of Dec 31, 2026."
   ],
   "known_issues": [
-    "Daily habits horizontal scroll position resets to far left (day 1) when a habit is marked complete; should remain at the current day/position."
+    "Previous implementation attempt failed (\"AI couldn't implement that\"); may need to retry build/implementation."
   ],
-  "isFixRequest": true,
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-update-the-daily-tracking-habitgrid-horizontal-scroll-behavior-so-that-marking-a-habit-as-complete-incomplete-does-not-reset-the-horizontal-scroll-position-to-the-far-left-day-1-the-scroll-position-must-remain-exactly-where-the-user-left-it-e-g-when-viewing-day-15",
-      "title": "Update the Daily Tracking (HabitGrid) horizontal scroll behavior so that marking a habit as complete/incomplete does not reset the horizontal scroll position to the far left (day 1). The scroll position must remain exactly where the user left it (e.g., when viewing day 15).",
+      "id": "feature-add-frontend-react-query-hooks-for-investment-diary-entries-and-investment-goals-that-integrate-with-the-existing-actor-auth-flow-similar-conventions-to-frontend-src-hooks-usequeries-ts",
+      "title": "Add frontend React Query hooks for Investment Diary entries and Investment Goals that integrate with the existing actor/auth flow (similar conventions to frontend/src/hooks/useQueries.ts).",
       "reqIds": [
-        "REQ-1"
+        "REQ-3"
       ],
       "version": 1
     },
     {
-      "id": "feature-adjust-loading-states-for-the-daily-tracking-grid-so-background-refetches-triggered-by-toggling-completion-do-not-replace-the-grid-with-the-loading-card-skeleton-which-causes-scroll-reset-preserve-the-existing-full-page-initial-loading-behavior-and-keep-month-switching-behavior-sensible-without-breaking-scroll-preservation",
-      "title": "Adjust loading states for the Daily Tracking grid so background refetches triggered by toggling completion do not replace the grid with the 'Loading...' card/skeleton (which causes scroll reset). Preserve the existing full-page initial loading behavior, and keep month switching behavior sensible without breaking scroll preservation.",
+      "id": "feature-implement-the-investment-goals-ui-module-to-match-the-existing-clean-consistency-tracker-aesthetic-add-a-new-tab-or-navigation-link-labeled-exactly-investment-goals-that-allows-switching-between-the-existing-tracker-dashboard-view-and-the-new-investments-view",
+      "title": "Implement the 'Investment goals' UI module to match the existing clean consistency-tracker aesthetic. Add a new tab or navigation link labeled exactly 'Investment goals' that allows switching between the existing tracker dashboard view and the new Investments view.",
       "reqIds": [
-        "REQ-2"
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-the-investments-module-ui-1-investment-diary-entry-form-and-list-2-investment-goal-creation-editing-3-per-goal-progress-bar-computed-from-the-sum-of-amounts-invested-across-the-manually-selected-diary-entries-for-that-goal",
+      "title": "Build the Investments module UI: (1) Investment Diary entry form and list; (2) Investment Goal creation/editing; (3) per-goal progress bar computed from the sum of amounts invested across the manually selected diary entries for that goal.",
+      "reqIds": [
+        "REQ-5"
       ],
       "version": 1
     }
@@ -30,12 +40,28 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Prevent daily habits horizontal scroll view from jumping to the 1st day when marking a habit complete; preserve current scroll position (e.g., stay on the 15th).",
+      "summary": "Add Investment Diary + Investment Goals module: diary entries (Date, Asset Name, Amount Invested, Notes), multi-goal portfolio targets with progress bars based on manually selected entries, and a new 'Investment goals' tab/link matching the existing consistency tracker UI; all goals have a required deadline of Dec 31, 2026.",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Implement backend support for an Investment Diary with per-user persistence and access control. Each diary entry must store: date, asset name, amount invested, and notes, and must be readable/writable only by the authenticated caller.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Implement backend support for Investment Goals with multiple concurrent goals per user. Each goal must include: asset name, portfolio target amount, a required deadline fixed to December 31, 2026, and a set/list of manually selected investment diary entry IDs that count toward the goal’s progress.",
+      "reqIds": [
+        "REQ-2"
+      ],
       "status": "pending"
     }
   ],
-  "projectName": "Prevent Daily Tracking grid from jumping to day 1 when toggling completion",
+  "projectName": "Add Investment Diary + Investment Goals module with multi-goal progress tracking (deadline Dec 31, 2026)",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

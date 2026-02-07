@@ -1,67 +1,122 @@
 {
   "kind": "build_request",
-  "title": "Prevent Daily Tracking grid from jumping to day 1 when toggling completion",
+  "title": "Add Investment Diary + Investment Goals module with multi-goal progress tracking (deadline Dec 31, 2026)",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Update the Daily Tracking (HabitGrid) horizontal scroll behavior so that marking a habit as complete/incomplete does not reset the horizontal scroll position to the far left (day 1). The scroll position must remain exactly where the user left it (e.g., when viewing day 15).",
-      "target": "frontend",
+      "text": "Implement backend support for an Investment Diary with per-user persistence and access control. Each diary entry must store: date, asset name, amount invested, and notes, and must be readable/writable only by the authenticated caller.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-5"
         ],
         "quotes": [
-          "Can you make it so it doesn’t jump when I tick it complete? Ie if I’m on 15th it will jump to the 1st when I click it",
-          "1. Yes \n2. Yes \n3. Correct"
+          "Entry Fields: Date, Asset Name (e.g., BTC, AAPL, Index Fund), Amount Invested, and a 'Notes' section for the rationale behind the trade."
         ]
       },
       "acceptanceCriteria": [
-        "From the Daily Tracking grid, horizontally scroll to a later day (e.g., day 15) and toggle any checkbox; the grid remains scrolled to the same position after the UI updates.",
-        "The same non-jumping behavior applies when saving an amount in the popover (for unit-based habits).",
-        "No visual unmount/remount of the grid occurs during the completion toggle that would cause the scroll position to reset."
+        "Backend exposes query+update methods to create, list, update, and delete investment diary entries for the caller.",
+        "Each entry includes Date, Asset Name, Amount Invested, and Notes as stored fields.",
+        "Calls are rejected (trap) when the caller is not authorized as a user (consistent with existing access-control patterns in backend/main.mo).",
+        "Diary entries are scoped to the caller (one user cannot read or mutate another user’s entries)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Adjust loading states for the Daily Tracking grid so background refetches triggered by toggling completion do not replace the grid with the 'Loading...' card/skeleton (which causes scroll reset). Preserve the existing full-page initial loading behavior, and keep month switching behavior sensible without breaking scroll preservation.",
-      "target": "frontend",
+      "text": "Implement backend support for Investment Goals with multiple concurrent goals per user. Each goal must include: asset name, portfolio target amount, a required deadline fixed to December 31, 2026, and a set/list of manually selected investment diary entry IDs that count toward the goal’s progress.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-6",
+          "msg-9"
         ],
         "quotes": [
-          "when I select a box on daily habits to complete a task it jumps to the very left"
+          "2. Yes multiple",
+          "The goals are set for 2026 so I just need to achieve them by end of year"
         ]
       },
       "acceptanceCriteria": [
-        "Toggling a habit completion does not show the HabitGrid loading skeleton card; the grid remains rendered while data refreshes.",
-        "Initial page load can still show the existing loading UI when data has not loaded yet.",
-        "Switching months continues to work correctly and does not corrupt the displayed records for the newly selected month/year."
+        "Backend exposes query+update methods to create, list, update, and delete investment goals for the caller.",
+        "A goal can reference multiple diary entry IDs, and these selections are persisted as part of the goal state.",
+        "All goals use a required deadline of Dec 31, 2026 (not optional, not user-editable).",
+        "Calls are rejected (trap) when the caller is not authorized as a user.",
+        "Goals are scoped to the caller (one user cannot read or mutate another user’s goals)."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Add frontend React Query hooks for Investment Diary entries and Investment Goals that integrate with the existing actor/auth flow (similar conventions to frontend/src/hooks/useQueries.ts).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-5"
+        ],
+        "quotes": [
+          "I want to expand my current consistency tracker by adding a new module: an Investment Diary and Goal Tracker."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Frontend includes new query hooks to fetch the caller’s investment diary entries and investment goals.",
+        "Frontend includes mutations to create/update/delete diary entries and goals, and to update a goal’s selected entry IDs.",
+        "Queries are enabled only when an authenticated actor is available (consistent with existing hooks).",
+        "Mutations invalidate the relevant queries so UI reflects updates without a hard refresh."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Implement the 'Investment goals' UI module to match the existing clean consistency-tracker aesthetic. Add a new tab or navigation link labeled exactly 'Investment goals' that allows switching between the existing tracker dashboard view and the new Investments view.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-5",
+          "msg-8"
+        ],
+        "quotes": [
+          "UI Integration: Add a new tab or navigation link labeled 'Investment goals' that mirrors the clean aesthetic of my current consistency tracker."
+        ]
+      },
+      "acceptanceCriteria": [
+        "The app provides an obvious navigation control labeled 'Investment goals'.",
+        "Switching to 'Investment goals' shows the Investments module (investment diary + goals) without breaking existing tracker functionality.",
+        "Visual styling is consistent with the existing UI (layout, spacing, typography, and component feel)."
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Build the Investments module UI: (1) Investment Diary entry form and list; (2) Investment Goal creation/editing; (3) per-goal progress bar computed from the sum of amounts invested across the manually selected diary entries for that goal.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-5",
+          "msg-6"
+        ],
+        "quotes": [
+          "Goal Tracking: Allow me to set a 'Portfolio Target' (e.g. 0.01 BTC or 1000 Mara shares by December). Create a progress bar that calculates how close I am based on the sum of my entries.",
+          "3. Manual selection"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Investment Diary UI allows creating entries with Date, Asset Name, Amount Invested, and Notes, and displays an entries list.",
+        "Investment Goals UI supports multiple goals and allows creating/editing goals with Asset Name and Portfolio Target amount.",
+        "For each goal, the user can manually select which diary entries count toward that goal (multi-select UI persisted via backend).",
+        "Each goal displays a progress bar based on sum(selectedEntry.amountInvested) / portfolioTarget (capped at 100% visually), plus a numeric summary (e.g., 'X / Target').",
+        "Each goal displays the fixed deadline 'Dec 31, 2026' (read-only) in English."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (compose existing UI components instead).",
-    "Keep the backend architecture unchanged (single Motoko actor); this change should be frontend-only unless a backend issue is discovered."
+    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
+    "Do not edit frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui/*.",
+    "Use English for all user-facing UI text."
   ],
   "nonGoals": [
-    "Adding new habit features or changing the habit completion data model.",
-    "Changing authentication (Internet Identity) flows.",
-    "Redesigning the dashboard layout beyond what is necessary to prevent scroll jumps."
+    "Automatic selection of diary entries for a goal based on asset matching (selection must be manual).",
+    "Support for deadlines other than Dec 31, 2026 (no custom or optional deadlines).",
+    "External integrations (brokerage sync, market prices, charts, notifications)."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

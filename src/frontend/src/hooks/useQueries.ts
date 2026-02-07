@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import { useInternetIdentity } from './useInternetIdentity';
-import type { Habit, HabitRecord, UserProfile, HabitUnit, DefaultAmount, MonthlyTarget } from '../backend';
+import type { Habit, HabitRecord, UserProfile, HabitUnit, DefaultAmount, MonthlyTarget, DiaryEntry } from '../backend';
 
 export function useGetCallerUserProfile() {
   const { actor, isFetching: actorFetching } = useActor();
@@ -277,6 +277,72 @@ export function useUpdateMonthlyTarget() {
       queryClient.invalidateQueries({ 
         queryKey: ['monthlyTarget', variables.habitId, variables.month, variables.year] 
       });
+    },
+  });
+}
+
+// Investment Diary Hooks
+export function useGetDiaryEntries() {
+  const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
+
+  return useQuery<DiaryEntry[]>({
+    queryKey: ['diaryEntries'],
+    queryFn: async () => {
+      if (!actor) return [];
+      const entries = await actor.getDiaryEntries();
+      return entries || [];
+    },
+    enabled: !!actor && !!identity && !actorFetching,
+    placeholderData: [],
+  });
+}
+
+export function useAddDiaryEntry() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ date, asset, amount, notes }: { date: Date; asset: string; amount: number; notes: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      const dateNanos = BigInt(date.getTime()) * BigInt(1_000_000);
+      return actor.addDiaryEntry(dateNanos, asset, BigInt(Math.floor(amount * 100)), notes);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['diaryEntries'] });
+    },
+  });
+}
+
+// Note: The following hooks are placeholders since the backend doesn't support these operations yet
+// They will throw errors if called - the UI should hide these features until backend is updated
+
+export function useAddInvestmentGoal() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ asset, targetAmount }: { asset: string; targetAmount: number }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.addInvestmentGoal(asset, BigInt(Math.floor(targetAmount * 100)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['investmentGoals'] });
+    },
+  });
+}
+
+export function useLinkDiaryEntryToGoal() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ entryId, goalId }: { entryId: bigint; goalId: bigint }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.linkDiaryEntryToGoal(entryId, goalId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['investmentGoals'] });
     },
   });
 }

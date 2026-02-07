@@ -109,6 +109,13 @@ export type HabitUnit = {
     __kind__: "time";
     time: null;
 };
+export interface DiaryEntry {
+    id: bigint;
+    asset: string;
+    date: bigint;
+    notes: string;
+    amount: bigint;
+}
 export interface HabitRecord {
     day: bigint;
     completedAt?: Time;
@@ -133,6 +140,10 @@ export interface MonthlyTarget {
     habitId: string;
     amount: bigint;
 }
+export interface DiagnosticLog {
+    message: string;
+    timestamp: Time;
+}
 export type DefaultAmount = bigint | null;
 export interface UserProfile {
     name: string;
@@ -144,6 +155,8 @@ export enum UserRole {
 }
 export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
+    addDiaryEntry(date: bigint, asset: string, amount: bigint, notes: string): Promise<bigint>;
+    addInvestmentGoal(asset: string, targetAmount: bigint): Promise<bigint>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createHabit(name: string, weeklyTarget: bigint, unit: HabitUnit, defaultAmount: DefaultAmount): Promise<string>;
     deleteHabit(habitId: string): Promise<void>;
@@ -151,13 +164,17 @@ export interface backendInterface {
     exportSelectedHabitsData(habitIds: Array<string>, startDay: bigint, startMonth: bigint, startYear: bigint, endDay: bigint, endMonth: bigint, endYear: bigint): Promise<ExportData>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getDiaryEntries(): Promise<Array<DiaryEntry>>;
     getHabits(): Promise<Array<Habit>>;
     getLifetimeTotal(habitId: string): Promise<bigint>;
+    getLogs(): Promise<Array<DiagnosticLog>>;
     getMonthlyRecords(month: bigint, year: bigint): Promise<Array<HabitRecord>>;
     getMonthlyTarget(habitId: string, month: bigint, year: bigint): Promise<MonthlyTarget | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
+    linkDiaryEntryToGoal(entryId: bigint, goalId: bigint): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    testLog(_message: string): Promise<string>;
     toggleHabitCompletion(habitId: string, day: bigint, month: bigint, year: bigint, amount: DefaultAmount): Promise<void>;
     updateHabitDefaultAmount(habitId: string, newDefaultAmount: DefaultAmount): Promise<void>;
     updateHabitName(habitId: string, newName: string): Promise<void>;
@@ -179,6 +196,34 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor._initializeAccessControlWithSecret(arg0);
+            return result;
+        }
+    }
+    async addDiaryEntry(arg0: bigint, arg1: string, arg2: bigint, arg3: string): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addDiaryEntry(arg0, arg1, arg2, arg3);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addDiaryEntry(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
+    async addInvestmentGoal(arg0: string, arg1: bigint): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addInvestmentGoal(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addInvestmentGoal(arg0, arg1);
             return result;
         }
     }
@@ -280,6 +325,20 @@ export class Backend implements backendInterface {
             return from_candid_UserRole_n21(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getDiaryEntries(): Promise<Array<DiaryEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getDiaryEntries();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getDiaryEntries();
+            return result;
+        }
+    }
     async getHabits(): Promise<Array<Habit>> {
         if (this.processError) {
             try {
@@ -305,6 +364,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getLifetimeTotal(arg0);
+            return result;
+        }
+    }
+    async getLogs(): Promise<Array<DiagnosticLog>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getLogs();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getLogs();
             return result;
         }
     }
@@ -364,6 +437,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async linkDiaryEntryToGoal(arg0: bigint, arg1: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.linkDiaryEntryToGoal(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.linkDiaryEntryToGoal(arg0, arg1);
+            return result;
+        }
+    }
     async saveCallerUserProfile(arg0: UserProfile): Promise<void> {
         if (this.processError) {
             try {
@@ -375,6 +462,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.saveCallerUserProfile(arg0);
+            return result;
+        }
+    }
+    async testLog(arg0: string): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.testLog(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.testLog(arg0);
             return result;
         }
     }

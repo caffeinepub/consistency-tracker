@@ -52,9 +52,26 @@ export const ExportData = IDL.Record({
   'habits' : IDL.Vec(Habit),
   'profile' : IDL.Opt(UserProfile),
 });
+export const DiaryEntry = IDL.Record({
+  'id' : IDL.Nat,
+  'asset' : IDL.Text,
+  'date' : IDL.Int,
+  'notes' : IDL.Text,
+  'amount' : IDL.Nat,
+});
+export const DiagnosticLog = IDL.Record({
+  'message' : IDL.Text,
+  'timestamp' : Time,
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+  'addDiaryEntry' : IDL.Func(
+      [IDL.Int, IDL.Text, IDL.Nat, IDL.Text],
+      [IDL.Nat],
+      [],
+    ),
+  'addInvestmentGoal' : IDL.Func([IDL.Text, IDL.Nat], [IDL.Nat], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'createHabit' : IDL.Func(
       [IDL.Text, IDL.Nat, HabitUnit, DefaultAmount],
@@ -74,8 +91,10 @@ export const idlService = IDL.Service({
     ),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getDiaryEntries' : IDL.Func([], [IDL.Vec(DiaryEntry)], ['query']),
   'getHabits' : IDL.Func([], [IDL.Vec(Habit)], ['query']),
   'getLifetimeTotal' : IDL.Func([IDL.Text], [IDL.Nat], ['query']),
+  'getLogs' : IDL.Func([], [IDL.Vec(DiagnosticLog)], ['query']),
   'getMonthlyRecords' : IDL.Func(
       [IDL.Nat, IDL.Nat],
       [IDL.Vec(HabitRecord)],
@@ -92,7 +111,9 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'linkDiaryEntryToGoal' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'testLog' : IDL.Func([IDL.Text], [IDL.Text], []),
   'toggleHabitCompletion' : IDL.Func(
       [IDL.Text, IDL.Nat, IDL.Nat, IDL.Nat, DefaultAmount],
       [],
@@ -156,9 +177,26 @@ export const idlFactory = ({ IDL }) => {
     'habits' : IDL.Vec(Habit),
     'profile' : IDL.Opt(UserProfile),
   });
+  const DiaryEntry = IDL.Record({
+    'id' : IDL.Nat,
+    'asset' : IDL.Text,
+    'date' : IDL.Int,
+    'notes' : IDL.Text,
+    'amount' : IDL.Nat,
+  });
+  const DiagnosticLog = IDL.Record({
+    'message' : IDL.Text,
+    'timestamp' : Time,
+  });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+    'addDiaryEntry' : IDL.Func(
+        [IDL.Int, IDL.Text, IDL.Nat, IDL.Text],
+        [IDL.Nat],
+        [],
+      ),
+    'addInvestmentGoal' : IDL.Func([IDL.Text, IDL.Nat], [IDL.Nat], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'createHabit' : IDL.Func(
         [IDL.Text, IDL.Nat, HabitUnit, DefaultAmount],
@@ -186,8 +224,10 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getDiaryEntries' : IDL.Func([], [IDL.Vec(DiaryEntry)], ['query']),
     'getHabits' : IDL.Func([], [IDL.Vec(Habit)], ['query']),
     'getLifetimeTotal' : IDL.Func([IDL.Text], [IDL.Nat], ['query']),
+    'getLogs' : IDL.Func([], [IDL.Vec(DiagnosticLog)], ['query']),
     'getMonthlyRecords' : IDL.Func(
         [IDL.Nat, IDL.Nat],
         [IDL.Vec(HabitRecord)],
@@ -204,7 +244,9 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'linkDiaryEntryToGoal' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'testLog' : IDL.Func([IDL.Text], [IDL.Text], []),
     'toggleHabitCompletion' : IDL.Func(
         [IDL.Text, IDL.Nat, IDL.Nat, IDL.Nat, DefaultAmount],
         [],

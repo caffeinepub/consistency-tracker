@@ -2,11 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-daily-tracking-habitgrid-horizontal-scroll-behavior-so-that-marking-a-habit-as-complete-incomplete-does-not-reset-the-horizontal-scroll-position-to-the-far-left-day-1-the-scroll-position-must-remain-exactly-where-the-user-left-it-e-g-when-viewing-day-15",
-      "featureTitle": "Update the Daily Tracking (HabitGrid) horizontal scroll behavior so that marking a habit as complete/incomplete does not reset the horizontal scroll position to the far left (day 1). The scroll position must remain exactly where the user left it (e.g., when viewing day 15).",
+      "featureId": "feature-add-frontend-react-query-hooks-for-investment-diary-entries-and-investment-goals-that-integrate-with-the-existing-actor-auth-flow-similar-conventions-to-frontend-src-hooks-usequeries-ts",
+      "featureTitle": "Add frontend React Query hooks for Investment Diary entries and Investment Goals that integrate with the existing actor/auth flow (similar conventions to frontend/src/hooks/useQueries.ts).",
       "files": [
-        "frontend/src/components/HabitGrid.tsx",
-        "frontend/src/hooks/usePreserveHorizontalScroll.ts"
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/utils/investments.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -17,15 +17,16 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-1"
+        "REQ-3"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-adjust-loading-states-for-the-daily-tracking-grid-so-background-refetches-triggered-by-toggling-completion-do-not-replace-the-grid-with-the-loading-card-skeleton-which-causes-scroll-reset-preserve-the-existing-full-page-initial-loading-behavior-and-keep-month-switching-behavior-sensible-without-breaking-scroll-preservation",
-      "featureTitle": "Adjust loading states for the Daily Tracking grid so background refetches triggered by toggling completion do not replace the grid with the 'Loading...' card/skeleton (which causes scroll reset). Preserve the existing full-page initial loading behavior, and keep month switching behavior sensible without breaking scroll preservation.",
+      "featureId": "feature-implement-the-investment-goals-ui-module-to-match-the-existing-clean-consistency-tracker-aesthetic-add-a-new-tab-or-navigation-link-labeled-exactly-investment-goals-that-allows-switching-between-the-existing-tracker-dashboard-view-and-the-new-investments-view",
+      "featureTitle": "Implement the 'Investment goals' UI module to match the existing clean consistency-tracker aesthetic. Add a new tab or navigation link labeled exactly 'Investment goals' that allows switching between the existing tracker dashboard view and the new Investments view.",
       "files": [
-        "frontend/src/components/HabitGrid.tsx",
+        "frontend/src/components/Header.tsx",
+        "frontend/src/components/InvestmentsPage.tsx",
         "frontend/src/components/TrackerDashboard.tsx"
       ],
       "components": [
@@ -37,7 +38,27 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-2"
+        "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-build-the-investments-module-ui-1-investment-diary-entry-form-and-list-2-investment-goal-creation-editing-3-per-goal-progress-bar-computed-from-the-sum-of-amounts-invested-across-the-manually-selected-diary-entries-for-that-goal",
+      "featureTitle": "Build the Investments module UI: (1) Investment Diary entry form and list; (2) Investment Goal creation/editing; (3) per-goal progress bar computed from the sum of amounts invested across the manually selected diary entries for that goal.",
+      "files": [
+        "frontend/src/components/InvestmentsPage.tsx",
+        "frontend/src/utils/investments.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
       ],
       "confidence": "high"
     }

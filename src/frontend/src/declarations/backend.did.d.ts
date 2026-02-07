@@ -11,6 +11,14 @@ import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
 export type DefaultAmount = [] | [bigint];
+export interface DiagnosticLog { 'message' : string, 'timestamp' : Time }
+export interface DiaryEntry {
+  'id' : bigint,
+  'asset' : string,
+  'date' : bigint,
+  'notes' : string,
+  'amount' : bigint,
+}
 export interface ExportData {
   'records' : Array<HabitRecord>,
   'monthlyTargets' : Array<MonthlyTarget>,
@@ -52,6 +60,8 @@ export type UserRole = { 'admin' : null } |
   { 'guest' : null };
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'addDiaryEntry' : ActorMethod<[bigint, string, bigint, string], bigint>,
+  'addInvestmentGoal' : ActorMethod<[string, bigint], bigint>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'createHabit' : ActorMethod<
     [string, bigint, HabitUnit, DefaultAmount],
@@ -68,8 +78,10 @@ export interface _SERVICE {
   >,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getDiaryEntries' : ActorMethod<[], Array<DiaryEntry>>,
   'getHabits' : ActorMethod<[], Array<Habit>>,
   'getLifetimeTotal' : ActorMethod<[string], bigint>,
+  'getLogs' : ActorMethod<[], Array<DiagnosticLog>>,
   'getMonthlyRecords' : ActorMethod<[bigint, bigint], Array<HabitRecord>>,
   'getMonthlyTarget' : ActorMethod<
     [string, bigint, bigint],
@@ -77,7 +89,9 @@ export interface _SERVICE {
   >,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
+  'linkDiaryEntryToGoal' : ActorMethod<[bigint, bigint], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'testLog' : ActorMethod<[string], string>,
   'toggleHabitCompletion' : ActorMethod<
     [string, bigint, bigint, bigint, DefaultAmount],
     undefined

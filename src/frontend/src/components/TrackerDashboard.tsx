@@ -8,6 +8,7 @@ import { HabitGrid } from './HabitGrid';
 import { ProgressCharts } from './ProgressCharts';
 import { CollapsibleHabitManagerPanel } from './CollapsibleHabitManagerPanel';
 import { MonthlyTargetsEditor } from './MonthlyTargetsEditor';
+import { InvestmentsPage } from './InvestmentsPage';
 import { useGetHabits, useGetMonthlyRecords } from '../hooks/useQueries';
 
 interface TrackerDashboardProps {
@@ -33,6 +34,7 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
   const [selectedYear] = useState(currentDate.getFullYear());
+  const [currentView, setCurrentView] = useState<'tracker' | 'investments'>('tracker');
 
   const { data: habits = [], isLoading: habitsLoading } = useGetHabits();
   const { 
@@ -72,10 +74,14 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
       <Header
         userProfile={userProfile}
         onLogout={handleLogout}
+        currentView={currentView}
+        onViewChange={setCurrentView}
       />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        {isInitialLoading ? (
+        {currentView === 'investments' ? (
+          <InvestmentsPage />
+        ) : isInitialLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
