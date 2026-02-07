@@ -1,9 +1,12 @@
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { Button } from '@/components/ui/button';
-import { CheckSquare } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CheckSquare, AlertCircle } from 'lucide-react';
 
 export function LoginScreen() {
-  const { login, isLoggingIn } = useInternetIdentity();
+  const { login, isLoggingIn, isInitializing, isLoginError, loginError } = useInternetIdentity();
+
+  const isDisabled = isInitializing || isLoggingIn;
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-background via-background to-accent/5 p-4">
@@ -21,13 +24,34 @@ export function LoginScreen() {
         </div>
 
         <div className="space-y-4 pt-8">
+          {isInitializing && (
+            <Alert>
+              <AlertDescription className="text-center">
+                Initializing authentication...
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {isLoginError && loginError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {loginError.message}
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Button
             onClick={login}
-            disabled={isLoggingIn}
+            disabled={isDisabled}
             size="lg"
             className="w-full text-lg h-12"
           >
-            {isLoggingIn ? 'Connecting...' : 'Login to Get Started'}
+            {isInitializing
+              ? 'Initializing...'
+              : isLoggingIn
+              ? 'Connecting...'
+              : 'Login to Get Started'}
           </Button>
           <p className="text-sm text-muted-foreground">
             Track your daily habits and visualize your progress
@@ -36,7 +60,7 @@ export function LoginScreen() {
       </div>
 
       <footer className="absolute bottom-4 text-center text-sm text-muted-foreground">
-        © 2025. Built with love using{' '}
+        © 2026. Built with love using{' '}
         <a
           href="https://caffeine.ai"
           target="_blank"

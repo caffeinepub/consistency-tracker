@@ -1,11 +1,2 @@
-// Local type definitions for Investment features
-// These mirror the backend Motoko types but are defined here
-// because the backend interface generation doesn't export them yet
-
-export interface InvestmentGoal {
-  id: bigint;
-  asset: string;
-  targetAmount: bigint;
-  deadline: bigint;
-  linkedEntries: bigint[];
-}
+// This file is no longer needed as InvestmentGoal is now exported from the backend interface
+// Keeping it for backwards compatibility but it's empty

@@ -2,11 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-frontend-react-query-hooks-for-investment-diary-entries-and-investment-goals-that-integrate-with-the-existing-actor-auth-flow-similar-conventions-to-frontend-src-hooks-usequeries-ts",
-      "featureTitle": "Add frontend React Query hooks for Investment Diary entries and Investment Goals that integrate with the existing actor/auth flow (similar conventions to frontend/src/hooks/useQueries.ts).",
+      "featureId": "feature-restore-and-redeploy-the-full-application-frontend-and-backend-to-the-exact-code-and-configuration-of-version-35-replacing-the-currently-deployed-version-36",
+      "featureTitle": "Restore and redeploy the full application (frontend and backend) to the exact code and configuration of Version 35, replacing the currently deployed Version 36.",
       "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/utils/investments.ts"
+        "frontend/src/App.tsx",
+        "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -17,17 +17,16 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-3"
+        "REQ-1"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-implement-the-investment-goals-ui-module-to-match-the-existing-clean-consistency-tracker-aesthetic-add-a-new-tab-or-navigation-link-labeled-exactly-investment-goals-that-allows-switching-between-the-existing-tracker-dashboard-view-and-the-new-investments-view",
-      "featureTitle": "Implement the 'Investment goals' UI module to match the existing clean consistency-tracker aesthetic. Add a new tab or navigation link labeled exactly 'Investment goals' that allows switching between the existing tracker dashboard view and the new Investments view.",
+      "featureId": "feature-after-restoring-version-35-verify-end-to-end-initialization-works-for-an-authenticated-user-internet-identity-login-completes-the-backend-actor-becomes-available-and-the-app-proceeds-past-initialization-to-the-normal-ui-profile-setup-for-new-users-or-the-dashboard-for-existing-users-without-getting-stuck-on-the-loading-watchdog-timeout-screen",
+      "featureTitle": "After restoring Version 35, verify end-to-end initialization works for an authenticated user: Internet Identity login completes, the backend actor becomes available, and the app proceeds past initialization to the normal UI (Profile Setup for new users or the Dashboard for existing users) without getting stuck on the loading watchdog/timeout screen.",
       "files": [
-        "frontend/src/components/Header.tsx",
-        "frontend/src/components/InvestmentsPage.tsx",
-        "frontend/src/components/TrackerDashboard.tsx"
+        "frontend/src/App.tsx",
+        "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -38,27 +37,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-4"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-build-the-investments-module-ui-1-investment-diary-entry-form-and-list-2-investment-goal-creation-editing-3-per-goal-progress-bar-computed-from-the-sum-of-amounts-invested-across-the-manually-selected-diary-entries-for-that-goal",
-      "featureTitle": "Build the Investments module UI: (1) Investment Diary entry form and list; (2) Investment Goal creation/editing; (3) per-goal progress bar computed from the sum of amounts invested across the manually selected diary entries for that goal.",
-      "files": [
-        "frontend/src/components/InvestmentsPage.tsx",
-        "frontend/src/utils/investments.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-5"
+        "REQ-2"
       ],
       "confidence": "high"
     }

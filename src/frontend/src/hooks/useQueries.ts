@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import { useInternetIdentity } from './useInternetIdentity';
-import type { Habit, HabitRecord, UserProfile, HabitUnit, DefaultAmount, MonthlyTarget, DiaryEntry } from '../backend';
+import type { Habit, HabitRecord, UserProfile, HabitUnit, DefaultAmount, MonthlyTarget, InvestmentDiaryEntry, InvestmentGoal, NewInvestmentGoal, UpdateInvestmentGoal, ExportData } from '../backend';
 
 export function useGetCallerUserProfile() {
   const { actor, isFetching: actorFetching } = useActor();
@@ -16,13 +16,12 @@ export function useGetCallerUserProfile() {
     },
     enabled: !!actor && !!identity && !actorFetching,
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
-  // Return deterministic loading state that blocks until query has resolved
   return {
     ...query,
-    isLoading: actorFetching || query.isLoading || (!!actor && !!identity && !query.isFetched),
+    isLoading: actorFetching || query.isLoading,
     isFetched: !!actor && !!identity && query.isFetched,
   };
 }
@@ -51,10 +50,9 @@ export function useGetHabits() {
     queryFn: async () => {
       if (!actor) return [];
       const habits = await actor.getHabits();
-      return habits || [];
+      return habits;
     },
     enabled: !!actor && !!identity && !actorFetching,
-    placeholderData: [],
   });
 }
 
@@ -63,10 +61,19 @@ export function useCreateHabit() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ name, weeklyTarget, unit, defaultAmount }: { name: string; weeklyTarget: number; unit: HabitUnit; defaultAmount?: number | null }) => {
+    mutationFn: async ({
+      name,
+      weeklyTarget,
+      unit,
+      defaultAmount,
+    }: {
+      name: string;
+      weeklyTarget: bigint;
+      unit: HabitUnit;
+      defaultAmount: DefaultAmount;
+    }) => {
       if (!actor) throw new Error('Actor not available');
-      const amountValue: DefaultAmount = defaultAmount !== undefined && defaultAmount !== null ? BigInt(defaultAmount) : null;
-      return actor.createHabit(name, BigInt(weeklyTarget), unit, amountValue);
+      return actor.createHabit(name, weeklyTarget, unit, defaultAmount);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['habits'] });
@@ -86,7 +93,6 @@ export function useDeleteHabit() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['habits'] });
       queryClient.invalidateQueries({ queryKey: ['monthlyRecords'] });
-      queryClient.invalidateQueries({ queryKey: ['monthlyTarget'] });
     },
   });
 }
@@ -112,9 +118,9 @@ export function useUpdateHabitWeeklyTarget() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ habitId, newWeeklyTarget }: { habitId: string; newWeeklyTarget: number }) => {
+    mutationFn: async ({ habitId, newWeeklyTarget }: { habitId: string; newWeeklyTarget: bigint }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.updateHabitWeeklyTarget(habitId, BigInt(newWeeklyTarget));
+      return actor.updateHabitWeeklyTarget(habitId, newWeeklyTarget);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['habits'] });
@@ -142,10 +148,9 @@ export function useUpdateHabitDefaultAmount() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ habitId, newDefaultAmount }: { habitId: string; newDefaultAmount: number | null }) => {
+    mutationFn: async ({ habitId, newDefaultAmount }: { habitId: string; newDefaultAmount: DefaultAmount }) => {
       if (!actor) throw new Error('Actor not available');
-      const amountValue: DefaultAmount = newDefaultAmount !== null ? BigInt(newDefaultAmount) : null;
-      return actor.updateHabitDefaultAmount(habitId, amountValue);
+      return actor.updateHabitDefaultAmount(habitId, newDefaultAmount);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['habits'] });
@@ -162,10 +167,9 @@ export function useGetMonthlyRecords(month: number, year: number) {
     queryFn: async () => {
       if (!actor) return [];
       const records = await actor.getMonthlyRecords(BigInt(month), BigInt(year));
-      return records || [];
+      return records;
     },
     enabled: !!actor && !!identity && !actorFetching,
-    placeholderData: [],
   });
 }
 
@@ -182,24 +186,20 @@ export function useToggleHabitCompletion() {
       amount,
     }: {
       habitId: string;
-      day: number;
-      month: number;
-      year: number;
-      amount?: number | null;
+      day: bigint;
+      month: bigint;
+      year: bigint;
+      amount: DefaultAmount;
     }) => {
       if (!actor) throw new Error('Actor not available');
-      const amountBigInt = amount !== undefined && amount !== null ? BigInt(amount) : null;
-      return actor.toggleHabitCompletion(habitId, BigInt(day), BigInt(month), BigInt(year), amountBigInt);
+      return actor.toggleHabitCompletion(habitId, day, month, year, amount);
     },
     onSuccess: (_, variables) => {
-      // Invalidate the monthly records for the affected month
       queryClient.invalidateQueries({
-        queryKey: ['monthlyRecords', variables.month, variables.year],
+        queryKey: ['monthlyRecords', Number(variables.month), Number(variables.year)],
       });
-      // Invalidate monthly target for this specific habit+month+year
-      queryClient.invalidateQueries({
-        queryKey: ['monthlyTarget', variables.habitId, variables.month, variables.year],
-      });
+      queryClient.invalidateQueries({ queryKey: ['monthlyTarget'] });
+      queryClient.invalidateQueries({ queryKey: ['lifetimeTotal'] });
     },
   });
 }
@@ -219,130 +219,149 @@ export function useGetMonthlyTarget(habitId: string, month: number, year: number
   });
 }
 
-export function useGetMultipleMonthlyTargets(habitIds: string[], month: number, year: number) {
+export function useGetLifetimeTotal(habitId: string) {
   const { actor, isFetching: actorFetching } = useActor();
   const { identity } = useInternetIdentity();
 
-  const queries = useQueries({
-    queries: habitIds.map((habitId) => ({
-      queryKey: ['monthlyTarget', habitId, month, year],
-      queryFn: async () => {
-        if (!actor) return null;
-        const target = await actor.getMonthlyTarget(habitId, BigInt(month), BigInt(year));
-        return target;
-      },
-      enabled: !!actor && !!identity && !actorFetching && !!habitId,
-    })),
+  return useQuery<bigint>({
+    queryKey: ['lifetimeTotal', habitId],
+    queryFn: async () => {
+      if (!actor) return BigInt(0);
+      const total = await actor.getLifetimeTotal(habitId);
+      return total;
+    },
+    enabled: !!actor && !!identity && !actorFetching && !!habitId,
   });
-
-  // Combine all targets into a single lookup map
-  const targetsMap = new Map<string, MonthlyTarget>();
-  queries.forEach((query) => {
-    if (query.data) {
-      const key = `${query.data.habitId}_${query.data.month}_${query.data.year}`;
-      targetsMap.set(key, query.data);
-    }
-  });
-
-  const isLoading = queries.some((q) => q.isLoading);
-  const isFetching = queries.some((q) => q.isFetching);
-
-  return {
-    targetsMap,
-    isLoading,
-    isFetching,
-  };
 }
 
-export function useUpdateMonthlyTarget() {
+export function useSaveDiaryEntry() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ date, title, content }: { date: string; title: string; content: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.saveDiaryEntry(date, title, content);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['diaryEntry'] });
+      queryClient.invalidateQueries({ queryKey: ['allDiaryEntries'] });
+    },
+  });
+}
+
+export function useGetDiaryEntry(date: string) {
+  const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
+
+  return useQuery({
+    queryKey: ['diaryEntry', date],
+    queryFn: async () => {
+      if (!actor) return null;
+      const entry = await actor.getDiaryEntry(date);
+      return entry;
+    },
+    enabled: !!actor && !!identity && !actorFetching && !!date,
+  });
+}
+
+export function useGetAllDiaryEntries() {
+  const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
+
+  return useQuery({
+    queryKey: ['allDiaryEntries'],
+    queryFn: async () => {
+      if (!actor) return [];
+      const entries = await actor.getAllDiaryEntries();
+      return entries;
+    },
+    enabled: !!actor && !!identity && !actorFetching,
+  });
+}
+
+export function useCreateInvestmentGoal() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (newGoal: NewInvestmentGoal) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.createInvestmentGoal(newGoal);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['investmentGoals'] });
+    },
+  });
+}
+
+export function useUpdateInvestmentGoal() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ goalId, updates }: { goalId: bigint; updates: UpdateInvestmentGoal }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.updateInvestmentGoal(goalId, updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['investmentGoals'] });
+    },
+  });
+}
+
+export function useDeleteInvestmentGoal() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (goalId: bigint) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.deleteInvestmentGoal(goalId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['investmentGoals'] });
+    },
+  });
+}
+
+export function useGetInvestmentGoals() {
+  const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
+
+  return useQuery<InvestmentGoal[]>({
+    queryKey: ['investmentGoals'],
+    queryFn: async () => {
+      if (!actor) return [];
+      const goals = await actor.getInvestmentGoals();
+      return goals;
+    },
+    enabled: !!actor && !!identity && !actorFetching,
+  });
+}
+
+export function useExportAllData() {
+  const { actor } = useActor();
 
   return useMutation({
     mutationFn: async ({
-      habitId,
-      amount,
-      month,
-      year,
+      startDay,
+      startMonth,
+      startYear,
+      endDay,
+      endMonth,
+      endYear,
     }: {
-      habitId: string;
-      amount: number;
-      month: number;
-      year: number;
+      startDay: bigint;
+      startMonth: bigint;
+      startYear: bigint;
+      endDay: bigint;
+      endMonth: bigint;
+      endYear: bigint;
     }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.updateMonthlyTarget(habitId, BigInt(amount), BigInt(month), BigInt(year));
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ 
-        queryKey: ['monthlyTarget', variables.habitId, variables.month, variables.year] 
-      });
-    },
-  });
-}
-
-// Investment Diary Hooks
-export function useGetDiaryEntries() {
-  const { actor, isFetching: actorFetching } = useActor();
-  const { identity } = useInternetIdentity();
-
-  return useQuery<DiaryEntry[]>({
-    queryKey: ['diaryEntries'],
-    queryFn: async () => {
-      if (!actor) return [];
-      const entries = await actor.getDiaryEntries();
-      return entries || [];
-    },
-    enabled: !!actor && !!identity && !actorFetching,
-    placeholderData: [],
-  });
-}
-
-export function useAddDiaryEntry() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ date, asset, amount, notes }: { date: Date; asset: string; amount: number; notes: string }) => {
-      if (!actor) throw new Error('Actor not available');
-      const dateNanos = BigInt(date.getTime()) * BigInt(1_000_000);
-      return actor.addDiaryEntry(dateNanos, asset, BigInt(Math.floor(amount * 100)), notes);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['diaryEntries'] });
-    },
-  });
-}
-
-// Note: The following hooks are placeholders since the backend doesn't support these operations yet
-// They will throw errors if called - the UI should hide these features until backend is updated
-
-export function useAddInvestmentGoal() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ asset, targetAmount }: { asset: string; targetAmount: number }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.addInvestmentGoal(asset, BigInt(Math.floor(targetAmount * 100)));
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['investmentGoals'] });
-    },
-  });
-}
-
-export function useLinkDiaryEntryToGoal() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ entryId, goalId }: { entryId: bigint; goalId: bigint }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.linkDiaryEntryToGoal(entryId, goalId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['investmentGoals'] });
+      const data = await actor.exportAllData(startDay, startMonth, startYear, endDay, endMonth, endYear);
+      return data;
     },
   });
 }

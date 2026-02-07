@@ -1,92 +1,67 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-07T00:11:46.100Z",
+  "generatedAt": "2026-02-07T15:00:20.525Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 5,
-    "implemented": 3,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Implement backend support for an Investment Diary with per-user persistence and access control. Each diary entry must store: date, asset name, amount invested, and notes, and must be readable/writable only by the authenticated caller.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
+        "summary": "Restore and redeploy the full application (frontend and backend) to the exact code and configuration of Version 35, replacing the currently deployed Version 36.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/App.tsx",
+          "frontend/src/hooks/useActor.ts",
+          "frontend/src/hooks/useInternetIdentity.ts",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/LoadingTimeoutFallback.tsx",
+          "frontend/src/components/AuthenticatedInitFallback.tsx",
+          "frontend/src/hooks/useBackendReachability.ts",
+          "frontend/src/utils/diagnostics.ts",
+          "frontend/src/main.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/App.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ]
       },
       {
         "id": "REQ-2",
-        "summary": "Implement backend support for Investment Goals with multiple concurrent goals per user. Each goal must include: asset name, portfolio target amount, a required deadline fixed to December 31, 2026, and a set/list of manually selected investment diary entry IDs that count toward the goal’s progress.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Add frontend React Query hooks for Investment Diary entries and Investment Goals that integrate with the existing actor/auth flow (similar conventions to frontend/src/hooks/useQueries.ts).",
+        "summary": "After restoring Version 35, verify end-to-end initialization works for an authenticated user: Internet Identity login completes, the backend actor becomes available, and the app proceeds past initialization to the normal UI (Profile Setup for new users or the Dashboard for existing users) without getting stuck on the loading watchdog/timeout screen.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/backend.d.ts",
+          "frontend/src/App.tsx",
+          "frontend/src/hooks/useActor.ts",
           "frontend/src/hooks/useQueries.ts",
-          "frontend/src/utils/investments.ts"
+          "frontend/src/hooks/useInternetIdentity.ts",
+          "frontend/src/hooks/useBackendReachability.ts",
+          "frontend/src/components/LoadingTimeoutFallback.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/backend.d.ts",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/utils/investments.ts"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Implement the 'Investment goals' UI module to match the existing clean consistency-tracker aesthetic. Add a new tab or navigation link labeled exactly 'Investment goals' that allows switching between the existing tracker dashboard view and the new Investments view.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/Header.tsx",
-          "frontend/src/components/TrackerDashboard.tsx",
-          "frontend/src/components/InvestmentsPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/Header.tsx",
-          "frontend/src/components/TrackerDashboard.tsx",
-          "frontend/src/components/InvestmentsPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-5",
-        "summary": "Build the Investments module UI: (1) Investment Diary entry form and list; (2) Investment Goal creation/editing; (3) per-goal progress bar computed from the sum of amounts invested across the manually selected diary entries for that goal.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/InvestmentsPage.tsx",
-          "frontend/src/components/InvestmentGoalCard.tsx",
-          "frontend/src/utils/investments.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/InvestmentsPage.tsx",
-          "frontend/src/utils/investments.ts"
+          "frontend/src/App.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ]
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/components/Header.tsx",
-    "frontend/src/components/InvestmentsPage.tsx",
-    "frontend/src/components/TrackerDashboard.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
+    "frontend/src/App.tsx",
+    "frontend/src/components/CollapsibleHabitManagerPanel.tsx",
+    "frontend/src/components/DiaryPage.tsx",
+    "frontend/src/components/ExportDataPage.tsx",
+    "frontend/src/components/HabitGrid.tsx",
+    "frontend/src/components/HabitManager.tsx",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/types/investments.ts",
-    "frontend/src/utils/investments.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

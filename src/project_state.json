@@ -1,67 +1,36 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Expand an existing consistency tracker by adding an Investment Diary and multi-goal Investment Goals module with progress tracking and UI tab integration.",
+  "summary": "Personal consistency tracker web app with monthly tabs and daily habit checkboxes, progress charts, habit weekly frequency goals, optional numeric volume logging with units (time/reps/km/none), editable habit names/units/frequency, diary reflections module, investments goals module, and export data (XLSX/PDF) — using Internet Identity for cross-device persistence.",
   "architectural_notes": [
-    "Goals support multiple concurrent targets.",
-    "Goal progress is computed from the sum of manually selected diary entries per goal (not automatic asset matching).",
-    "All goals share a required deadline of Dec 31, 2026."
+    "Auth uses Internet Identity; user data should persist across logouts/devices/upgrades via stable on-chain storage keyed by principal.",
+    "Actor initialization should not require a URL-provided adminToken/secret (remove _initializeAccessControlWithSecret(adminToken)) to avoid startup/init failures."
   ],
   "known_issues": [
-    "Previous implementation attempt failed (\"AI couldn't implement that\"); may need to retry build/implementation."
+    "Production/draft deployments intermittently fail with generic 'Deployment error' and no detailed logs available to user.",
+    "App can get stuck on initialization/authenticated init due to backend actor initialization failures (e.g., 'Authenticated init problem detected', backend reachability check hanging)."
   ],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-add-frontend-react-query-hooks-for-investment-diary-entries-and-investment-goals-that-integrate-with-the-existing-actor-auth-flow-similar-conventions-to-frontend-src-hooks-usequeries-ts",
-      "title": "Add frontend React Query hooks for Investment Diary entries and Investment Goals that integrate with the existing actor/auth flow (similar conventions to frontend/src/hooks/useQueries.ts).",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-the-investment-goals-ui-module-to-match-the-existing-clean-consistency-tracker-aesthetic-add-a-new-tab-or-navigation-link-labeled-exactly-investment-goals-that-allows-switching-between-the-existing-tracker-dashboard-view-and-the-new-investments-view",
-      "title": "Implement the 'Investment goals' UI module to match the existing clean consistency-tracker aesthetic. Add a new tab or navigation link labeled exactly 'Investment goals' that allows switching between the existing tracker dashboard view and the new Investments view.",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-build-the-investments-module-ui-1-investment-diary-entry-form-and-list-2-investment-goal-creation-editing-3-per-goal-progress-bar-computed-from-the-sum-of-amounts-invested-across-the-manually-selected-diary-entries-for-that-goal",
-      "title": "Build the Investments module UI: (1) Investment Diary entry form and list; (2) Investment Goal creation/editing; (3) per-goal progress bar computed from the sum of amounts invested across the manually selected diary entries for that goal.",
-      "reqIds": [
-        "REQ-5"
-      ],
-      "version": 1
-    }
-  ],
-  "new_feature_requests": [
-    {
-      "id": "AR-1",
-      "summary": "Add Investment Diary + Investment Goals module: diary entries (Date, Asset Name, Amount Invested, Notes), multi-goal portfolio targets with progress bars based on manually selected entries, and a new 'Investment goals' tab/link matching the existing consistency tracker UI; all goals have a required deadline of Dec 31, 2026.",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Implement backend support for an Investment Diary with per-user persistence and access control. Each diary entry must store: date, asset name, amount invested, and notes, and must be readable/writable only by the authenticated caller.",
+      "id": "feature-restore-and-redeploy-the-full-application-frontend-and-backend-to-the-exact-code-and-configuration-of-version-35-replacing-the-currently-deployed-version-36",
+      "title": "Restore and redeploy the full application (frontend and backend) to the exact code and configuration of Version 35, replacing the currently deployed Version 36.",
       "reqIds": [
         "REQ-1"
       ],
-      "status": "pending"
+      "version": 1
     },
     {
-      "id": "AR-3",
-      "summary": "Implement backend support for Investment Goals with multiple concurrent goals per user. Each goal must include: asset name, portfolio target amount, a required deadline fixed to December 31, 2026, and a set/list of manually selected investment diary entry IDs that count toward the goal’s progress.",
+      "id": "feature-after-restoring-version-35-verify-end-to-end-initialization-works-for-an-authenticated-user-internet-identity-login-completes-the-backend-actor-becomes-available-and-the-app-proceeds-past-initialization-to-the-normal-ui-profile-setup-for-new-users-or-the-dashboard-for-existing-users-without-getting-stuck-on-the-loading-watchdog-timeout-screen",
+      "title": "After restoring Version 35, verify end-to-end initialization works for an authenticated user: Internet Identity login completes, the backend actor becomes available, and the app proceeds past initialization to the normal UI (Profile Setup for new users or the Dashboard for existing users) without getting stuck on the loading watchdog/timeout screen.",
       "reqIds": [
         "REQ-2"
       ],
-      "status": "pending"
+      "version": 1
     }
   ],
-  "projectName": "Add Investment Diary + Investment Goals module with multi-goal progress tracking (deadline Dec 31, 2026)",
+  "new_feature_requests": [],
+  "projectName": "Restore app to Version 35 (last working build)",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

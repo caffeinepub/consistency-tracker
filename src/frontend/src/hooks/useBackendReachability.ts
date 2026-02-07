@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useActor } from './useActor';
 import { diagnostics } from '../utils/diagnostics';
+import { createActorWithConfig } from '../config';
 
 interface ReachabilityResult {
   status: 'checking' | 'reachable' | 'unreachable';
@@ -9,7 +9,6 @@ interface ReachabilityResult {
 }
 
 export function useBackendReachability(shouldCheck: boolean) {
-  const { actor } = useActor();
   const [result, setResult] = useState<ReachabilityResult>({ status: 'checking' });
 
   useEffect(() => {
@@ -24,20 +23,19 @@ export function useBackendReachability(shouldCheck: boolean) {
       setResult({ status: 'checking' });
 
       try {
-        if (!actor) {
-          const errorMsg = 'Actor not available for reachability check';
-          diagnostics.record(errorMsg, 'error');
-          if (!cancelled) {
-            setResult({
-              status: 'unreachable',
-              error: errorMsg,
-            });
-          }
-          return;
+        // Create a fresh anonymous actor for the health check
+        // This bypasses any authentication or initialization issues
+        diagnostics.record('Creating anonymous actor for health check', 'info');
+        const healthCheckActor = await createActorWithConfig();
+        
+        if (!healthCheckActor) {
+          throw new Error('Failed to create health check actor');
         }
 
-        // Call the diagnostic backend method
-        const response = await actor.testLog('Frontend reachability check');
+        diagnostics.record('Calling healthCheck endpoint', 'info');
+        
+        // Use healthCheck instead of testLog for a more reliable check
+        const response = await healthCheckActor.healthCheck();
         
         diagnostics.record(`Backend reachable: ${response}`, 'info');
         
@@ -65,7 +63,7 @@ export function useBackendReachability(shouldCheck: boolean) {
     return () => {
       cancelled = true;
     };
-  }, [shouldCheck, actor]);
+  }, [shouldCheck]);
 
   return result;
 }

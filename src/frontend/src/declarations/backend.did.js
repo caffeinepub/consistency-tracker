@@ -20,6 +20,24 @@ export const HabitUnit = IDL.Variant({
   'time' : IDL.Null,
 });
 export const DefaultAmount = IDL.Opt(IDL.Nat);
+export const NewInvestmentGoal = IDL.Record({
+  'asset' : IDL.Text,
+  'target' : IDL.Nat,
+  'currentlyHeld' : IDL.Nat,
+});
+export const MonthlyTarget = IDL.Record({
+  'month' : IDL.Nat,
+  'year' : IDL.Nat,
+  'habitId' : IDL.Text,
+  'amount' : IDL.Nat,
+});
+export const InvestmentDiaryEntry = IDL.Record({
+  'id' : IDL.Nat,
+  'asset' : IDL.Text,
+  'date' : IDL.Int,
+  'notes' : IDL.Text,
+  'amount' : IDL.Nat,
+});
 export const Time = IDL.Int;
 export const HabitRecord = IDL.Record({
   'day' : IDL.Nat,
@@ -31,11 +49,15 @@ export const HabitRecord = IDL.Record({
   'habitId' : IDL.Text,
   'amount' : IDL.Opt(IDL.Nat),
 });
-export const MonthlyTarget = IDL.Record({
-  'month' : IDL.Nat,
-  'year' : IDL.Nat,
-  'habitId' : IDL.Text,
-  'amount' : IDL.Nat,
+export const DiaryEntry = IDL.Record({
+  'title' : IDL.Text,
+  'content' : IDL.Text,
+});
+export const InvestmentGoal = IDL.Record({
+  'id' : IDL.Nat,
+  'asset' : IDL.Text,
+  'target' : IDL.Nat,
+  'currentlyHeld' : IDL.Nat,
 });
 export const Habit = IDL.Record({
   'id' : IDL.Text,
@@ -47,21 +69,21 @@ export const Habit = IDL.Record({
 });
 export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 export const ExportData = IDL.Record({
-  'records' : IDL.Vec(HabitRecord),
   'monthlyTargets' : IDL.Vec(MonthlyTarget),
+  'investmentDiaryEntries' : IDL.Vec(InvestmentDiaryEntry),
+  'habitRecords' : IDL.Vec(HabitRecord),
+  'diaryEntries' : IDL.Vec(IDL.Tuple(IDL.Text, DiaryEntry)),
+  'investmentGoals' : IDL.Vec(InvestmentGoal),
   'habits' : IDL.Vec(Habit),
   'profile' : IDL.Opt(UserProfile),
-});
-export const DiaryEntry = IDL.Record({
-  'id' : IDL.Nat,
-  'asset' : IDL.Text,
-  'date' : IDL.Int,
-  'notes' : IDL.Text,
-  'amount' : IDL.Nat,
 });
 export const DiagnosticLog = IDL.Record({
   'message' : IDL.Text,
   'timestamp' : Time,
+});
+export const UpdateInvestmentGoal = IDL.Record({
+  'target' : IDL.Nat,
+  'currentlyHeld' : IDL.Nat,
 });
 
 export const idlService = IDL.Service({
@@ -71,28 +93,32 @@ export const idlService = IDL.Service({
       [IDL.Nat],
       [],
     ),
-  'addInvestmentGoal' : IDL.Func([IDL.Text, IDL.Nat], [IDL.Nat], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'createHabit' : IDL.Func(
       [IDL.Text, IDL.Nat, HabitUnit, DefaultAmount],
       [IDL.Text],
       [],
     ),
+  'createInvestmentGoal' : IDL.Func([NewInvestmentGoal], [IDL.Nat], []),
   'deleteHabit' : IDL.Func([IDL.Text], [], []),
+  'deleteInvestmentGoal' : IDL.Func([IDL.Nat], [], []),
   'exportAllData' : IDL.Func(
       [IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat],
       [ExportData],
       ['query'],
     ),
-  'exportSelectedHabitsData' : IDL.Func(
-      [IDL.Vec(IDL.Text), IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat],
-      [ExportData],
+  'getAllDiaryEntries' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Text, DiaryEntry))],
       ['query'],
     ),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
-  'getDiaryEntries' : IDL.Func([], [IDL.Vec(DiaryEntry)], ['query']),
+  'getDiaryEntries' : IDL.Func([], [IDL.Vec(InvestmentDiaryEntry)], ['query']),
+  'getDiaryEntry' : IDL.Func([IDL.Text], [IDL.Opt(DiaryEntry)], ['query']),
+  'getGoalProgress' : IDL.Func([IDL.Nat], [IDL.Opt(IDL.Nat)], ['query']),
   'getHabits' : IDL.Func([], [IDL.Vec(Habit)], ['query']),
+  'getInvestmentGoals' : IDL.Func([], [IDL.Vec(InvestmentGoal)], ['query']),
   'getLifetimeTotal' : IDL.Func([IDL.Text], [IDL.Nat], ['query']),
   'getLogs' : IDL.Func([], [IDL.Vec(DiagnosticLog)], ['query']),
   'getMonthlyRecords' : IDL.Func(
@@ -105,14 +131,16 @@ export const idlService = IDL.Service({
       [IDL.Opt(MonthlyTarget)],
       ['query'],
     ),
+  'getTotalGoalsProgress' : IDL.Func([], [IDL.Nat], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
+  'healthCheck' : IDL.Func([], [IDL.Text], []),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-  'linkDiaryEntryToGoal' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'saveDiaryEntry' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
   'testLog' : IDL.Func([IDL.Text], [IDL.Text], []),
   'toggleHabitCompletion' : IDL.Func(
       [IDL.Text, IDL.Nat, IDL.Nat, IDL.Nat, DefaultAmount],
@@ -123,6 +151,7 @@ export const idlService = IDL.Service({
   'updateHabitName' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'updateHabitUnit' : IDL.Func([IDL.Text, HabitUnit], [], []),
   'updateHabitWeeklyTarget' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+  'updateInvestmentGoal' : IDL.Func([IDL.Nat, UpdateInvestmentGoal], [], []),
   'updateMonthlyTarget' : IDL.Func(
       [IDL.Text, IDL.Nat, IDL.Nat, IDL.Nat],
       [],
@@ -145,6 +174,24 @@ export const idlFactory = ({ IDL }) => {
     'time' : IDL.Null,
   });
   const DefaultAmount = IDL.Opt(IDL.Nat);
+  const NewInvestmentGoal = IDL.Record({
+    'asset' : IDL.Text,
+    'target' : IDL.Nat,
+    'currentlyHeld' : IDL.Nat,
+  });
+  const MonthlyTarget = IDL.Record({
+    'month' : IDL.Nat,
+    'year' : IDL.Nat,
+    'habitId' : IDL.Text,
+    'amount' : IDL.Nat,
+  });
+  const InvestmentDiaryEntry = IDL.Record({
+    'id' : IDL.Nat,
+    'asset' : IDL.Text,
+    'date' : IDL.Int,
+    'notes' : IDL.Text,
+    'amount' : IDL.Nat,
+  });
   const Time = IDL.Int;
   const HabitRecord = IDL.Record({
     'day' : IDL.Nat,
@@ -156,11 +203,12 @@ export const idlFactory = ({ IDL }) => {
     'habitId' : IDL.Text,
     'amount' : IDL.Opt(IDL.Nat),
   });
-  const MonthlyTarget = IDL.Record({
-    'month' : IDL.Nat,
-    'year' : IDL.Nat,
-    'habitId' : IDL.Text,
-    'amount' : IDL.Nat,
+  const DiaryEntry = IDL.Record({ 'title' : IDL.Text, 'content' : IDL.Text });
+  const InvestmentGoal = IDL.Record({
+    'id' : IDL.Nat,
+    'asset' : IDL.Text,
+    'target' : IDL.Nat,
+    'currentlyHeld' : IDL.Nat,
   });
   const Habit = IDL.Record({
     'id' : IDL.Text,
@@ -172,21 +220,21 @@ export const idlFactory = ({ IDL }) => {
   });
   const UserProfile = IDL.Record({ 'name' : IDL.Text });
   const ExportData = IDL.Record({
-    'records' : IDL.Vec(HabitRecord),
     'monthlyTargets' : IDL.Vec(MonthlyTarget),
+    'investmentDiaryEntries' : IDL.Vec(InvestmentDiaryEntry),
+    'habitRecords' : IDL.Vec(HabitRecord),
+    'diaryEntries' : IDL.Vec(IDL.Tuple(IDL.Text, DiaryEntry)),
+    'investmentGoals' : IDL.Vec(InvestmentGoal),
     'habits' : IDL.Vec(Habit),
     'profile' : IDL.Opt(UserProfile),
-  });
-  const DiaryEntry = IDL.Record({
-    'id' : IDL.Nat,
-    'asset' : IDL.Text,
-    'date' : IDL.Int,
-    'notes' : IDL.Text,
-    'amount' : IDL.Nat,
   });
   const DiagnosticLog = IDL.Record({
     'message' : IDL.Text,
     'timestamp' : Time,
+  });
+  const UpdateInvestmentGoal = IDL.Record({
+    'target' : IDL.Nat,
+    'currentlyHeld' : IDL.Nat,
   });
   
   return IDL.Service({
@@ -196,36 +244,36 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Nat],
         [],
       ),
-    'addInvestmentGoal' : IDL.Func([IDL.Text, IDL.Nat], [IDL.Nat], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'createHabit' : IDL.Func(
         [IDL.Text, IDL.Nat, HabitUnit, DefaultAmount],
         [IDL.Text],
         [],
       ),
+    'createInvestmentGoal' : IDL.Func([NewInvestmentGoal], [IDL.Nat], []),
     'deleteHabit' : IDL.Func([IDL.Text], [], []),
+    'deleteInvestmentGoal' : IDL.Func([IDL.Nat], [], []),
     'exportAllData' : IDL.Func(
         [IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat],
         [ExportData],
         ['query'],
       ),
-    'exportSelectedHabitsData' : IDL.Func(
-        [
-          IDL.Vec(IDL.Text),
-          IDL.Nat,
-          IDL.Nat,
-          IDL.Nat,
-          IDL.Nat,
-          IDL.Nat,
-          IDL.Nat,
-        ],
-        [ExportData],
+    'getAllDiaryEntries' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Text, DiaryEntry))],
         ['query'],
       ),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
-    'getDiaryEntries' : IDL.Func([], [IDL.Vec(DiaryEntry)], ['query']),
+    'getDiaryEntries' : IDL.Func(
+        [],
+        [IDL.Vec(InvestmentDiaryEntry)],
+        ['query'],
+      ),
+    'getDiaryEntry' : IDL.Func([IDL.Text], [IDL.Opt(DiaryEntry)], ['query']),
+    'getGoalProgress' : IDL.Func([IDL.Nat], [IDL.Opt(IDL.Nat)], ['query']),
     'getHabits' : IDL.Func([], [IDL.Vec(Habit)], ['query']),
+    'getInvestmentGoals' : IDL.Func([], [IDL.Vec(InvestmentGoal)], ['query']),
     'getLifetimeTotal' : IDL.Func([IDL.Text], [IDL.Nat], ['query']),
     'getLogs' : IDL.Func([], [IDL.Vec(DiagnosticLog)], ['query']),
     'getMonthlyRecords' : IDL.Func(
@@ -238,14 +286,16 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(MonthlyTarget)],
         ['query'],
       ),
+    'getTotalGoalsProgress' : IDL.Func([], [IDL.Nat], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
+    'healthCheck' : IDL.Func([], [IDL.Text], []),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-    'linkDiaryEntryToGoal' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'saveDiaryEntry' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
     'testLog' : IDL.Func([IDL.Text], [IDL.Text], []),
     'toggleHabitCompletion' : IDL.Func(
         [IDL.Text, IDL.Nat, IDL.Nat, IDL.Nat, DefaultAmount],
@@ -256,6 +306,7 @@ export const idlFactory = ({ IDL }) => {
     'updateHabitName' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'updateHabitUnit' : IDL.Func([IDL.Text, HabitUnit], [], []),
     'updateHabitWeeklyTarget' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+    'updateInvestmentGoal' : IDL.Func([IDL.Nat, UpdateInvestmentGoal], [], []),
     'updateMonthlyTarget' : IDL.Func(
         [IDL.Text, IDL.Nat, IDL.Nat, IDL.Nat],
         [],

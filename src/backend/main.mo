@@ -9,18 +9,30 @@ import Order "mo:core/Order";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
 import Diagnostics "mo:core/Debug";
-import Migration "migration";
 
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
 
-// Handle persistent state migrations on upgrades
-(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
   type DefaultAmount = ?Nat;
+
+  public type DiaryEntry = {
+    title : Text;
+    content : Text;
+  };
+
+  public type ExportData = {
+    profile : ?UserProfile;
+    habitRecords : [HabitRecord];
+    habits : [Habit];
+    diaryEntries : [(Text, DiaryEntry)];
+    monthlyTargets : [MonthlyTarget];
+    investmentGoals : [InvestmentGoal];
+    investmentDiaryEntries : [InvestmentDiaryEntry];
+  };
 
   public type UserProfile = {
     name : Text;
@@ -66,13 +78,6 @@ actor {
     unit : HabitUnit;
   };
 
-  public type ExportData = {
-    profile : ?UserProfile;
-    habits : [Habit];
-    records : [HabitRecord];
-    monthlyTargets : [MonthlyTarget];
-  };
-
   public type DiagnosticLog = {
     timestamp : Time.Time;
     message : Text;
@@ -81,12 +86,11 @@ actor {
   public type InvestmentGoal = {
     id : Nat;
     asset : Text;
-    targetAmount : Nat;
-    deadline : Int;
-    linkedEntries : List.List<Nat>;
+    currentlyHeld : Nat;
+    target : Nat;
   };
 
-  public type DiaryEntry = {
+  public type InvestmentDiaryEntry = {
     id : Nat;
     date : Int;
     asset : Text;
@@ -94,11 +98,27 @@ actor {
     notes : Text;
   };
 
+  public type NewInvestmentGoal = {
+    asset : Text;
+    currentlyHeld : Nat;
+    target : Nat;
+  };
+
+  public type UpdateInvestmentGoal = {
+    currentlyHeld : Nat;
+    target : Nat;
+  };
+
   public type InvestmentDiary = {
-    entries : List.List<DiaryEntry>;
+    entries : List.List<InvestmentDiaryEntry>;
     goals : Map.Map<Nat, InvestmentGoal>;
     nextGoalId : Nat;
     nextEntryId : Nat;
+  };
+
+  public type InvestmentGoalsResponse = {
+    goals : [InvestmentGoal];
+    totalValue : Nat;
   };
 
   let userProfiles = Map.empty<Principal, UserProfile>();
@@ -109,7 +129,9 @@ actor {
   let lifetimeTotal = Map.empty<Text, Nat>();
   let logs = List.empty<DiagnosticLog>();
   let investmentDiaries = Map.empty<Principal, InvestmentDiary>();
+  let userDiaries = Map.empty<Principal, Map.Map<Text, DiaryEntry>>();
 
+  // Internal Logging
   func logMessageInternal(message : Text) {
     let log : DiagnosticLog = {
       timestamp = Time.now();
@@ -120,9 +142,67 @@ actor {
   };
 
   public query ({ caller }) func getLogs() : async [DiagnosticLog] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can view logs");
+    };
     logs.toArray();
   };
 
+  // Diagnostic health check - required to never trap on healthy actor
+  // This endpoint must be callable without authentication for frontend diagnostics
+  public shared ({ caller }) func healthCheck() : async Text {
+    "healthy";
+  };
+
+  // Diary Methods
+  public shared ({ caller }) func saveDiaryEntry(date : Text, title : Text, content : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can save diary entries");
+    };
+
+    let entry : DiaryEntry = {
+      title;
+      content;
+    };
+
+    switch (userDiaries.get(caller)) {
+      case (null) {
+        let newDiary = Map.empty<Text, DiaryEntry>();
+        newDiary.add(date, entry);
+        userDiaries.add(caller, newDiary);
+      };
+      case (?diary) {
+        diary.add(date, entry);
+      };
+    };
+  };
+
+  public query ({ caller }) func getDiaryEntry(date : Text) : async ?DiaryEntry {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view diary entries");
+    };
+
+    switch (userDiaries.get(caller)) {
+      case (null) { null };
+      case (?diary) { diary.get(date) };
+    };
+  };
+
+  public query ({ caller }) func getAllDiaryEntries() : async [(Text, DiaryEntry)] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view diary entries");
+    };
+
+    switch (userDiaries.get(caller)) {
+      case (null) { [] };
+      case (?diary) {
+        let entriesIter = diary.entries();
+        entriesIter.toArray();
+      };
+    };
+  };
+
+  // User Profile Management
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view profiles");
@@ -144,6 +224,7 @@ actor {
     userProfiles.add(caller, profile);
   };
 
+  // Habit Tracking
   public shared ({ caller }) func createHabit(
     name : Text,
     weeklyTarget : Nat,
@@ -293,7 +374,7 @@ actor {
 
         // Update lifetime total for new record
         let completedAmount = switch (finalAmount) {
-          case (null) { 1 };
+          case (null) { 1 : Nat };
           case (?amt) { amt };
         };
         let newLifetimeTotal = switch (lifetimeTotal.get(habitId)) {
@@ -326,7 +407,7 @@ actor {
 
           // Update lifetime total for new record
           let completedAmount = switch (finalAmount) {
-            case (null) { 1 };
+            case (null) { 1 : Nat };
             case (?amt) { amt };
           };
           let newLifetimeTotal = switch (lifetimeTotal.get(habitId)) {
@@ -343,7 +424,7 @@ actor {
           switch (existingRecord) {
             case (?existing) {
               let removedAmount = switch (existing.amount) {
-                case (null) { 1 };
+                case (null) { 1 : Nat };
                 case (?amt) { amt };
               };
               let newLifetimeTotal = switch (lifetimeTotal.get(habitId)) {
@@ -602,28 +683,21 @@ actor {
       Runtime.trap("Unauthorized: Only users can export data");
     };
 
-    let profile = userProfiles.get(caller);
+    let startDate = startYear * 10000 + startMonth * 100 + startDay;
+    let endDate = endYear * 10000 + endMonth * 100 + endDay;
 
-    let userHabitsList : [Habit] = switch (userHabits.get(caller)) {
+    // Get caller's habit IDs for filtering
+    let callerHabitIds : Set.Set<Text> = switch (userHabits.get(caller)) {
+      case (null) { Set.empty<Text>() };
+      case (?habitSet) { habitSet };
+    };
+
+    // Filter habit records - only caller's habits within date range
+    let filteredHabitRecords : [HabitRecord] = switch (userHabits.get(caller)) {
       case (null) { [] };
       case (?habitSet) {
         let habitIds = habitSet.toArray();
-        habitIds.map<Text, Habit>(
-          func(id) {
-            switch (habits.get(id)) {
-              case (null) { Runtime.trap("Habit not found") };
-              case (?habit) { habit };
-            };
-          }
-        ).sort();
-      };
-    };
-
-    let filteredRecords : [HabitRecord] = switch (userHabits.get(caller)) {
-      case (null) { [] };
-      case (?habitSet) {
-        let userHabitIds = habitSet.toArray();
-        userHabitIds.map<Text, [HabitRecord]>(
+        habitIds.map<Text, [HabitRecord]>(
           func(habitId) {
             switch (habitRecords.get(habitId)) {
               case (null) { [] };
@@ -631,8 +705,6 @@ actor {
                 records.toArray().filter(
                   func(r) {
                     let recordDate = r.year * 10000 + r.month * 100 + r.day;
-                    let startDate = startYear * 10000 + startMonth * 100 + startDay;
-                    let endDate = endYear * 10000 + endMonth * 100 + endDay;
                     recordDate >= startDate and recordDate <= endDate;
                   }
                 );
@@ -643,82 +715,84 @@ actor {
       };
     };
 
-    {
-      profile;
-      habits = userHabitsList;
-      records = filteredRecords;
-      monthlyTargets = [];
-    };
-  };
-
-  public query ({ caller }) func exportSelectedHabitsData(
-    habitIds : [Text],
-    startDay : Nat,
-    startMonth : Nat,
-    startYear : Nat,
-    endDay : Nat,
-    endMonth : Nat,
-    endYear : Nat
-  ) : async ExportData {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can export data");
-    };
-
-    let userHabitSet = switch (userHabits.get(caller)) {
-      case (null) { Runtime.trap("User has no habits") };
-      case (?habitSet) { habitSet };
-    };
-
-    for (habitId in habitIds.values()) {
-      if (not userHabitSet.contains(habitId)) {
-        Runtime.trap("Unauthorized: One or more habits do not belong to user");
+    // Filter habits - only caller's habits
+    let filteredHabits : [Habit] = switch (userHabits.get(caller)) {
+      case (null) { [] };
+      case (?habitSet) {
+        let habitIds = habitSet.toArray();
+        habitIds.map<Text, Habit>(
+          func(id) {
+            switch (habits.get(id)) {
+              case (null) { Runtime.trap("Habit not found") };
+              case (?habit) { habit };
+            };
+          }
+        );
       };
     };
 
-    let profile = userProfiles.get(caller);
-
-    let selectedHabits : [Habit] = habitIds.map<Text, Habit>(
-      func(id) {
-        switch (habits.get(id)) {
-          case (null) { Runtime.trap("Habit not found") };
-          case (?habit) { habit };
+    // Filter monthly targets - only caller's habits within date range
+    let filteredMonthlyTargets : [MonthlyTarget] = monthlyTargets.toArray().filter(
+      func((_, mt)) {
+        // Check if this monthly target belongs to caller's habits
+        if (not callerHabitIds.contains(mt.habitId)) {
+          return false;
         };
+        // Check date range (MonthlyTarget has no day field, use first day of month)
+        let targetDate = mt.year * 10000 + mt.month * 100 + 1;
+        targetDate >= startDate and targetDate <= endDate;
       }
-    ).sort();
+    ).map<(Text, MonthlyTarget), MonthlyTarget>(func((_, mt)) { mt });
 
-    let filteredRecords : [HabitRecord] = habitIds.map<Text, [HabitRecord]>(
-      func(habitId) {
-        switch (habitRecords.get(habitId)) {
-          case (null) { [] };
-          case (?records) {
-            records.toArray().filter(
-              func(r) {
-                let recordDate = r.year * 10000 + r.month * 100 + r.day;
-                let startDate = startYear * 10000 + startMonth * 100 + startDay;
-                let endDate = endYear * 10000 + endMonth * 100 + endDay;
-                recordDate >= startDate and recordDate <= endDate;
-              }
-            );
-          };
+    // Filter diary entries - only caller's entries
+    let filteredDiaryEntries : [(Text, DiaryEntry)] = switch (userDiaries.get(caller)) {
+      case (null) { [] };
+      case (?diary) { diary.toArray() };
+    };
+
+    // Filter investment data - only caller's data within date range
+    let filteredInvestments = switch (investmentDiaries.get(caller)) {
+      case (null) {
+        {
+          goals = [] : [InvestmentGoal];
+          entries = [] : [InvestmentDiaryEntry];
         };
-      }
-    ).flatten();
+      };
+      case (?diary) {
+        let entriesArray = diary.entries.toArray();
+        let filteredEntries = entriesArray.filter(
+          func(entry) {
+            let entryDate = entry.date;
+            entryDate >= startDate and entryDate <= endDate
+          }
+        );
+        let filteredGoals = diary.goals.values().toArray();
+        {
+          goals = filteredGoals;
+          entries = filteredEntries;
+        };
+      };
+    };
 
-    {
-      profile;
-      habits = selectedHabits;
-      records = filteredRecords;
-      monthlyTargets = [];
+    return {
+      profile = userProfiles.get(caller);
+      habitRecords = filteredHabitRecords;
+      habits = filteredHabits;
+      diaryEntries = filteredDiaryEntries;
+      monthlyTargets = filteredMonthlyTargets;
+      investmentGoals = filteredInvestments.goals;
+      investmentDiaryEntries = filteredInvestments.entries;
     };
   };
 
+  // New & Updated Investment Diary Functionality
   public shared ({ caller }) func addDiaryEntry(date : Int, asset : Text, amount : Nat, notes : Text) : async Nat {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can add diary entries");
     };
 
     let newEntryId = getNextEntryId(caller);
-    let entry : DiaryEntry = {
+    let entry : InvestmentDiaryEntry = {
       id = newEntryId;
       date;
       asset;
@@ -732,7 +806,7 @@ actor {
     newEntryId;
   };
 
-  public query ({ caller }) func getDiaryEntries() : async [DiaryEntry] {
+  public query ({ caller }) func getDiaryEntries() : async [InvestmentDiaryEntry] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view diary entries");
     };
@@ -741,56 +815,114 @@ actor {
     diary.entries.toArray();
   };
 
-  public shared ({ caller }) func addInvestmentGoal(asset : Text, targetAmount : Nat) : async Nat {
+  public shared ({ caller }) func createInvestmentGoal(newGoal : NewInvestmentGoal) : async Nat {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can create investment goals");
     };
 
-    let newGoalId = getNextGoalId(caller);
-    let deadline = 1767225600_000_000_000;
+    let goalId = getNextGoalId(caller);
     let goal : InvestmentGoal = {
-      id = newGoalId;
-      asset;
-      targetAmount;
-      deadline;
-      linkedEntries = List.empty<Nat>();
+      id = goalId;
+      asset = newGoal.asset;
+      currentlyHeld = newGoal.currentlyHeld;
+      target = newGoal.target;
     };
 
     let diary = getUserInvestmentDiary(caller);
-    diary.goals.add(newGoalId, goal);
+    diary.goals.add(goalId, goal);
 
-    newGoalId;
+    goalId;
   };
 
-  public shared ({ caller }) func linkDiaryEntryToGoal(entryId : Nat, goalId : Nat) : async () {
+  public shared ({ caller }) func updateInvestmentGoal(goalId : Nat, updates : UpdateInvestmentGoal) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can link entries to goals");
+      Runtime.trap("Unauthorized: Only users can update investment goals");
     };
 
     let diary = getUserInvestmentDiary(caller);
 
-    // Use any() instead of .some()
-    let entryExists = diary.entries.any(func(entry) { entry.id == entryId });
-    if (not entryExists) {
-      Runtime.trap("Diary entry does not exist");
-    };
-
     switch (diary.goals.get(goalId)) {
-      case (null) { Runtime.trap("Goal does not exist") };
-      case (?goal) {
-        if (goal.deadline <= Time.now()) {
-          Runtime.trap("Cannot link entries to expired goals");
+      case (null) {
+        Runtime.trap("Goal not found");
+      };
+      case (?existingGoal) {
+        let updatedGoal : InvestmentGoal = {
+          existingGoal with
+          currentlyHeld = updates.currentlyHeld;
+          target = updates.target;
         };
-        goal.linkedEntries.add(entryId);
+        diary.goals.add(goalId, updatedGoal);
       };
     };
   };
 
+  public shared ({ caller }) func deleteInvestmentGoal(goalId : Nat) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can delete investment goals");
+    };
+
+    let diary = getUserInvestmentDiary(caller);
+    if (not diary.goals.containsKey(goalId)) {
+      Runtime.trap("Goal not found");
+    };
+    diary.goals.remove(goalId);
+  };
+
+  public query ({ caller }) func getInvestmentGoals() : async [InvestmentGoal] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view investment goals");
+    };
+
+    let diary = getUserInvestmentDiary(caller);
+    let goalsIter = diary.goals.values();
+    goalsIter.toArray();
+  };
+
+  public query ({ caller }) func getGoalProgress(goalId : Nat) : async ?Nat {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view goal progress");
+    };
+
+    let diary = getUserInvestmentDiary(caller);
+
+    switch (diary.goals.get(goalId)) {
+      case (null) { null };
+      case (?goal) {
+        if (goal.target == 0) { return ?0 };
+        ?((goal.currentlyHeld * 100) / goal.target);
+      };
+    };
+  };
+
+  public query ({ caller }) func getTotalGoalsProgress() : async Nat {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view total progress");
+    };
+
+    let diary = getUserInvestmentDiary(caller);
+    let goalsIter = diary.goals.values();
+    let goals = goalsIter.toArray();
+
+    var totalProgress = 0;
+    var count = 0;
+
+    for (goal in goals.values()) {
+      if (goal.target > 0) {
+        totalProgress += (goal.currentlyHeld * 100) / goal.target;
+        count += 1;
+      };
+    };
+
+    if (count == 0) { return 0 };
+    totalProgress / count;
+  };
+
+  // Internal Mapping Functions
   func getUserInvestmentDiary(caller : Principal) : InvestmentDiary {
     switch (investmentDiaries.get(caller)) {
       case (null) {
         let newDiary : InvestmentDiary = {
-          entries = List.empty<DiaryEntry>();
+          entries = List.empty<InvestmentDiaryEntry>();
           goals = Map.empty<Nat, InvestmentGoal>();
           nextGoalId = 1;
           nextEntryId = 1;
@@ -825,6 +957,9 @@ actor {
   };
 
   public shared ({ caller }) func testLog(_message : Text) : async Text {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can write test logs");
+    };
     let message = "Backend reached at: " # Time.now().toText();
     logMessageInternal(message);
     message;

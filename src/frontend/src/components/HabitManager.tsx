@@ -1,39 +1,35 @@
 import { useState } from 'react';
-import { useCreateHabit, useDeleteHabit, useGetHabits, useUpdateHabitName, useUpdateHabitWeeklyTarget, useUpdateHabitUnit, useUpdateHabitDefaultAmount } from '../hooks/useQueries';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Pencil, Check, X } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Trash2, Edit2, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { createHabitUnit, getHabitUnitLabel, isNoUnit, habitUnitToSelectValue, isTimeUnit } from '../utils/habitUnit';
+import type { Habit, HabitUnit } from '../backend';
+import { useCreateHabit, useDeleteHabit, useUpdateHabitName, useUpdateHabitWeeklyTarget, useUpdateHabitUnit, useUpdateHabitDefaultAmount } from '../hooks/useQueries';
+import { createHabitUnit, getHabitUnitLabel, isTimeUnit } from '../utils/habitUnit';
 import { parseDuration, formatDuration } from '../utils/duration';
-import type { HabitUnit } from '../backend';
 
-export function HabitManager() {
+interface HabitManagerProps {
+  habits: Habit[];
+}
+
+type UnitSelection = 'none' | 'reps' | 'time' | 'km';
+
+export function HabitManager({ habits }: HabitManagerProps) {
   const [newHabitName, setNewHabitName] = useState('');
   const [weeklyTarget, setWeeklyTarget] = useState('7');
-  const [selectedUnit, setSelectedUnit] = useState<'reps' | 'time' | 'km' | 'none'>('reps');
+  const [selectedUnit, setSelectedUnit] = useState<UnitSelection>('none');
   const [defaultAmount, setDefaultAmount] = useState('');
+  const [habitToDelete, setHabitToDelete] = useState<string | null>(null);
   const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
-  const [editingWeeklyTarget, setEditingWeeklyTarget] = useState('');
-  const [editingUnit, setEditingUnit] = useState<'reps' | 'time' | 'km' | 'none'>('reps');
+  const [editingTarget, setEditingTarget] = useState('');
+  const [editingUnit, setEditingUnit] = useState<UnitSelection>('none');
   const [editingDefaultAmount, setEditingDefaultAmount] = useState('');
-  
-  const { data: habits = [] } = useGetHabits();
+
   const createHabit = useCreateHabit();
   const deleteHabit = useDeleteHabit();
   const updateName = useUpdateHabitName();
@@ -41,8 +37,7 @@ export function HabitManager() {
   const updateUnit = useUpdateHabitUnit();
   const updateDefaultAmount = useUpdateHabitDefaultAmount();
 
-  const handleCreateHabit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateHabit = async () => {
     if (!newHabitName.trim()) {
       toast.error('Please enter a habit name');
       return;
@@ -54,69 +49,77 @@ export function HabitManager() {
       return;
     }
 
-    // Validate default amount if provided and unit is not 'none'
-    let amountValue: number | null = null;
-    if (selectedUnit !== 'none' && defaultAmount.trim() !== '') {
+    const unit = createHabitUnit(selectedUnit);
+
+    let amountValue: bigint | null = null;
+    if (defaultAmount.trim() !== '') {
       if (selectedUnit === 'time') {
-        // Parse duration for Time habits
-        const parsedSeconds = parseDuration(defaultAmount);
+        const parsedSeconds = parseDuration(defaultAmount.trim());
         if (parsedSeconds === null || parsedSeconds < 0) {
           toast.error('Invalid duration format. Try "1 min 15 sec", "75 sec", or "1:15"');
           return;
         }
-        amountValue = parsedSeconds;
-      } else {
-        // Parse as integer for non-Time habits (reps, km)
-        const parsedAmount = parseInt(defaultAmount);
-        if (isNaN(parsedAmount) || parsedAmount < 0 || !Number.isInteger(parsedAmount)) {
-          toast.error('Default amount must be a non-negative integer');
+        amountValue = BigInt(parsedSeconds);
+      } else if (selectedUnit !== 'none') {
+        const parsedAmount = parseInt(defaultAmount.trim());
+        if (isNaN(parsedAmount) || parsedAmount < 0) {
+          toast.error('Default amount must be a non-negative number');
           return;
         }
-        amountValue = parsedAmount;
+        amountValue = BigInt(parsedAmount);
       }
     }
 
     try {
-      const unit = createHabitUnit(selectedUnit);
-      await createHabit.mutateAsync({ name: newHabitName.trim(), weeklyTarget: target, unit, defaultAmount: amountValue });
+      await createHabit.mutateAsync({ name: newHabitName.trim(), weeklyTarget: BigInt(target), unit, defaultAmount: amountValue });
       setNewHabitName('');
       setWeeklyTarget('7');
-      setSelectedUnit('reps');
+      setSelectedUnit('none');
       setDefaultAmount('');
-      toast.success('Habit created successfully!');
-    } catch (error: any) {
-      const errorMessage = error?.message || 'Failed to create habit';
-      toast.error(errorMessage);
-      console.error(error);
-    }
-  };
-
-  const handleDeleteHabit = async (habitId: string, habitName: string) => {
-    try {
-      await deleteHabit.mutateAsync(habitId);
-      toast.success(`"${habitName}" deleted`);
+      toast.success('Habit created successfully');
     } catch (error) {
-      toast.error('Failed to delete habit');
-      console.error(error);
+      console.error('Failed to create habit:', error);
+      toast.error('Failed to create habit');
     }
   };
 
-  const startEditing = (habitId: string, currentName: string, currentTarget: bigint, currentUnit: HabitUnit, currentDefaultAmount: bigint | null) => {
-    setEditingHabitId(habitId);
-    setEditingName(currentName);
-    setEditingWeeklyTarget(String(Number(currentTarget)));
-    
-    // Convert HabitUnit to UI selection value
-    setEditingUnit(habitUnitToSelectValue(currentUnit));
+  const handleDeleteHabit = async () => {
+    if (!habitToDelete) return;
 
-    // Set default amount (empty string if null or unit is none)
-    // For Time habits, format seconds as duration
-    if (currentDefaultAmount !== null && currentUnit.__kind__ !== 'none') {
-      const amountNum = Number(currentDefaultAmount);
-      if (isTimeUnit(currentUnit)) {
-        setEditingDefaultAmount(formatDuration(amountNum));
+    try {
+      await deleteHabit.mutateAsync(habitToDelete);
+      setHabitToDelete(null);
+      toast.success('Habit deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete habit:', error);
+      toast.error('Failed to delete habit');
+    }
+  };
+
+  const startEditing = (habit: Habit) => {
+    setEditingHabitId(habit.id);
+    setEditingName(habit.name);
+    setEditingTarget(habit.weeklyTarget.toString());
+    
+    // Determine unit selection
+    if (habit.unit.__kind__ === 'none') {
+      setEditingUnit('none');
+    } else if (habit.unit.__kind__ === 'reps') {
+      setEditingUnit('reps');
+    } else if (habit.unit.__kind__ === 'time') {
+      setEditingUnit('time');
+    } else if (habit.unit.__kind__ === 'custom' && habit.unit.custom === 'km') {
+      setEditingUnit('km');
+    } else {
+      setEditingUnit('none');
+    }
+
+    // Set default amount
+    if (habit.defaultAmount !== null) {
+      if (isTimeUnit(habit.unit)) {
+        setEditingDefaultAmount(formatDuration(Number(habit.defaultAmount)));
       } else {
-        setEditingDefaultAmount(String(amountNum));
+        setEditingDefaultAmount(habit.defaultAmount.toString());
       }
     } else {
       setEditingDefaultAmount('');
@@ -126,332 +129,249 @@ export function HabitManager() {
   const cancelEditing = () => {
     setEditingHabitId(null);
     setEditingName('');
-    setEditingWeeklyTarget('');
-    setEditingUnit('reps');
+    setEditingTarget('');
+    setEditingUnit('none');
     setEditingDefaultAmount('');
   };
 
-  const handleUpdateHabit = async (habitId: string, currentName: string, currentUnit: HabitUnit, currentDefaultAmount: bigint | null) => {
-    if (!editingName.trim()) {
-      toast.error('Habit name cannot be empty');
-      return;
-    }
-
-    const target = parseInt(editingWeeklyTarget);
-    if (isNaN(target) || target < 1 || target > 7) {
-      toast.error('Weekly target must be between 1 and 7');
-      return;
-    }
-
-    // Validate default amount if provided and unit is not 'none'
-    let newAmountValue: number | null = null;
-    if (editingUnit !== 'none' && editingDefaultAmount.trim() !== '') {
-      if (editingUnit === 'time') {
-        // Parse duration for Time habits
-        const parsedSeconds = parseDuration(editingDefaultAmount);
-        if (parsedSeconds === null || parsedSeconds < 0) {
-          toast.error('Invalid duration format. Try "1 min 15 sec", "75 sec", or "1:15"');
-          return;
-        }
-        newAmountValue = parsedSeconds;
-      } else {
-        // Parse as integer for non-Time habits (reps, km)
-        const parsedAmount = parseInt(editingDefaultAmount);
-        if (isNaN(parsedAmount) || parsedAmount < 0 || !Number.isInteger(parsedAmount)) {
-          toast.error('Default amount must be a non-negative integer');
-          return;
-        }
-        newAmountValue = parsedAmount;
-      }
-    }
-
+  const saveEditing = async (habitId: string) => {
     try {
-      // Check if name changed
-      const nameChanged = currentName !== editingName.trim();
-
-      // Check if unit changed
-      const currentUnitType = habitUnitToSelectValue(currentUnit);
-      const unitChanged = currentUnitType !== editingUnit;
-
-      // Check if default amount changed
-      const currentAmountValue = currentDefaultAmount !== null ? Number(currentDefaultAmount) : null;
-      const defaultAmountChanged = currentAmountValue !== newAmountValue;
-
       // Update name if changed
-      if (nameChanged) {
+      const habit = habits.find(h => h.id === habitId);
+      if (!habit) return;
+
+      if (editingName.trim() !== habit.name) {
         await updateName.mutateAsync({ habitId, newName: editingName.trim() });
       }
 
-      // Update weekly target
-      await updateWeeklyTarget.mutateAsync({ habitId, newWeeklyTarget: target });
+      // Update weekly target if changed
+      const target = parseInt(editingTarget);
+      if (!isNaN(target) && target >= 1 && target <= 7 && BigInt(target) !== habit.weeklyTarget) {
+        await updateWeeklyTarget.mutateAsync({ habitId, newWeeklyTarget: BigInt(target) });
+      }
 
       // Update unit if changed
-      if (unitChanged) {
-        const newUnit = createHabitUnit(editingUnit);
+      const newUnit = createHabitUnit(editingUnit);
+      const currentUnitKind = habit.unit.__kind__;
+      const newUnitKind = newUnit.__kind__;
+      
+      let unitsMatch = currentUnitKind === newUnitKind;
+      if (unitsMatch && currentUnitKind === 'custom' && newUnitKind === 'custom') {
+        // Both are custom, check the custom value
+        unitsMatch = habit.unit.custom === newUnit.custom;
+      }
+      
+      if (!unitsMatch) {
         await updateUnit.mutateAsync({ habitId, newUnit });
       }
 
-      // Update default amount if changed or if switching to/from no-unit
-      if (defaultAmountChanged || (unitChanged && (editingUnit === 'none' || currentUnitType === 'none'))) {
-        // Clear default amount when switching to no-unit
-        const finalAmount = editingUnit === 'none' ? null : newAmountValue;
-        await updateDefaultAmount.mutateAsync({ habitId, newDefaultAmount: finalAmount });
-      }
-
-      setEditingHabitId(null);
-      setEditingName('');
-      setEditingWeeklyTarget('');
-      setEditingUnit('reps');
-      setEditingDefaultAmount('');
-
-      const changes: string[] = [];
-      if (nameChanged) {
-        changes.push(`renamed to "${editingName.trim()}"`);
-      }
-      changes.push(`${target}x per week`);
-      if (unitChanged) {
-        changes.push(`unit changed to ${editingUnit === 'none' ? 'done/not-done' : editingUnit}`);
-      }
-      if (defaultAmountChanged && editingUnit !== 'none') {
-        if (newAmountValue !== null) {
-          const displayValue = editingUnit === 'time' ? formatDuration(newAmountValue) : newAmountValue;
-          changes.push(`default amount set to ${displayValue}`);
-        } else {
-          changes.push('default amount cleared');
+      // Update default amount if changed
+      if (editingDefaultAmount.trim() !== '') {
+        let finalAmount: bigint | null = null;
+        if (editingUnit === 'time') {
+          const parsedSeconds = parseDuration(editingDefaultAmount.trim());
+          if (parsedSeconds !== null && parsedSeconds >= 0) {
+            finalAmount = BigInt(parsedSeconds);
+          }
+        } else if (editingUnit !== 'none') {
+          const parsedAmount = parseInt(editingDefaultAmount.trim());
+          if (!isNaN(parsedAmount) && parsedAmount >= 0) {
+            finalAmount = BigInt(parsedAmount);
+          }
         }
+        
+        if (finalAmount !== habit.defaultAmount) {
+          await updateDefaultAmount.mutateAsync({ habitId, newDefaultAmount: finalAmount });
+        }
+      } else if (habit.defaultAmount !== null) {
+        // Clear default amount if now empty
+        await updateDefaultAmount.mutateAsync({ habitId, newDefaultAmount: null });
       }
 
-      toast.success(`Habit updated: ${changes.join(', ')}`);
-    } catch (error: any) {
-      const errorMessage = error?.message || 'Failed to update habit';
-      toast.error(errorMessage);
-      console.error(error);
+      cancelEditing();
+      toast.success('Habit updated successfully');
+    } catch (error) {
+      console.error('Failed to update habit:', error);
+      toast.error('Failed to update habit');
     }
   };
-
-  const isUnitNone = selectedUnit === 'none';
-  const isEditingUnitNone = editingUnit === 'none';
-  const isUnitTime = selectedUnit === 'time';
-  const isEditingUnitTime = editingUnit === 'time';
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Manage Habits</CardTitle>
-        <CardDescription>Add or remove habits to track with weekly targets and units</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <form onSubmit={handleCreateHabit} className="space-y-4">
+      <CardContent className="space-y-6">
+        {/* Create New Habit Form */}
+        <div className="space-y-4 p-4 border rounded-lg">
+          <h3 className="font-medium">Add New Habit</h3>
+          
           <div className="space-y-2">
             <Label htmlFor="habit-name">Habit Name</Label>
             <Input
               id="habit-name"
-              placeholder="e.g., Press-ups, Running, Reading"
               value={newHabitName}
               onChange={(e) => setNewHabitName(e.target.value)}
+              placeholder="e.g., Morning Run"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="weekly-target">Weekly Target</Label>
-              <Input
-                id="weekly-target"
-                type="number"
-                min="1"
-                max="7"
-                value={weeklyTarget}
-                onChange={(e) => setWeeklyTarget(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">Times per week</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="unit">Unit</Label>
-              <Select value={selectedUnit} onValueChange={(value) => {
-                setSelectedUnit(value as 'reps' | 'time' | 'km' | 'none');
-                if (value === 'none') {
-                  setDefaultAmount('');
-                }
-              }}>
-                <SelectTrigger id="unit">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="reps">Reps</SelectItem>
-                  <SelectItem value="time">Time</SelectItem>
-                  <SelectItem value="km">km</SelectItem>
-                  <SelectItem value="none">No unit (done/not-done)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="weekly-target">Weekly Target (1-7 days)</Label>
+            <Input
+              id="weekly-target"
+              type="number"
+              min="1"
+              max="7"
+              value={weeklyTarget}
+              onChange={(e) => setWeeklyTarget(e.target.value)}
+            />
           </div>
-          {!isUnitNone && (
+
+          <div className="space-y-2">
+            <Label htmlFor="unit">Unit</Label>
+            <Select value={selectedUnit} onValueChange={(value) => setSelectedUnit(value as UnitSelection)}>
+              <SelectTrigger id="unit">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None (Done/Not Done)</SelectItem>
+                <SelectItem value="reps">Reps</SelectItem>
+                <SelectItem value="time">Time</SelectItem>
+                <SelectItem value="km">Kilometers</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedUnit !== 'none' && (
             <div className="space-y-2">
-              <Label htmlFor="default-amount">Default Amount (optional)</Label>
+              <Label htmlFor="default-amount">
+                Default Amount (optional)
+                {selectedUnit === 'time' && <span className="text-xs text-muted-foreground ml-2">e.g., "1 min 30 sec"</span>}
+              </Label>
               <Input
                 id="default-amount"
-                type={isUnitTime ? 'text' : 'number'}
-                min={isUnitTime ? undefined : '0'}
-                placeholder={isUnitTime ? 'e.g., 1 min 15 sec, 75 sec, 1:15' : 'Leave blank if not applicable'}
                 value={defaultAmount}
                 onChange={(e) => setDefaultAmount(e.target.value)}
+                placeholder={selectedUnit === 'time' ? 'e.g., 1 min 30 sec' : 'Enter amount'}
               />
-              <p className="text-xs text-muted-foreground">
-                {isUnitTime ? 'Enter duration in any format (e.g., "1 min 15 sec", "75 sec", "1:15")' : 'Optional default value when marking complete'}
-              </p>
             </div>
           )}
-          <Button type="submit" disabled={createHabit.isPending} className="w-full">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Habit
-          </Button>
-        </form>
 
+          <Button onClick={handleCreateHabit} disabled={createHabit.isPending} className="w-full">
+            {createHabit.isPending ? 'Creating...' : 'Create Habit'}
+          </Button>
+        </div>
+
+        {/* Existing Habits List */}
         {habits.length > 0 && (
           <div className="space-y-2">
-            <p className="text-sm font-medium">Your Habits ({habits.length})</p>
+            <h3 className="font-medium">Your Habits</h3>
             <div className="space-y-2">
-              {habits.map((habit) => {
-                const habitIsNoUnit = isNoUnit(habit.unit);
-                const habitIsTime = isTimeUnit(habit.unit);
-                return (
-                  <div
-                    key={habit.id}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
-                  >
-                    <div className="flex flex-col flex-1">
-                      {editingHabitId === habit.id ? (
-                        <Input
-                          type="text"
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          className="font-medium mb-2"
-                          autoFocus
-                        />
-                      ) : (
-                        <span className="font-medium">{habit.name}</span>
+              {habits.map((habit) => (
+                <div key={habit.id} className="flex items-center gap-2 p-3 border rounded-lg">
+                  {editingHabitId === habit.id ? (
+                    <div className="flex-1 space-y-3">
+                      <Input
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        placeholder="Habit name"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">Weekly Target</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            max="7"
+                            value={editingTarget}
+                            onChange={(e) => setEditingTarget(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Unit</Label>
+                          <Select value={editingUnit} onValueChange={(value) => setEditingUnit(value as UnitSelection)}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              <SelectItem value="reps">Reps</SelectItem>
+                              <SelectItem value="time">Time</SelectItem>
+                              <SelectItem value="km">Kilometers</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      {editingUnit !== 'none' && (
+                        <div>
+                          <Label className="text-xs">Default Amount</Label>
+                          <Input
+                            value={editingDefaultAmount}
+                            onChange={(e) => setEditingDefaultAmount(e.target.value)}
+                            placeholder={editingUnit === 'time' ? 'e.g., 1 min 30 sec' : 'Enter amount'}
+                          />
+                        </div>
                       )}
-                      {editingHabitId === habit.id ? (
-                        <div className="flex items-center gap-2 mt-2 flex-wrap">
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="number"
-                              min="1"
-                              max="7"
-                              value={editingWeeklyTarget}
-                              onChange={(e) => setEditingWeeklyTarget(e.target.value)}
-                              className="h-8 w-16"
-                            />
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">times/week</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Select value={editingUnit} onValueChange={(value) => {
-                              setEditingUnit(value as 'reps' | 'time' | 'km' | 'none');
-                              if (value === 'none') {
-                                setEditingDefaultAmount('');
-                              }
-                            }}>
-                              <SelectTrigger className="h-8 w-40">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="reps">Reps</SelectItem>
-                                <SelectItem value="time">Time</SelectItem>
-                                <SelectItem value="km">km</SelectItem>
-                                <SelectItem value="none">Done/not-done</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          {!isEditingUnitNone && (
-                            <div className="flex items-center gap-2">
-                              <Input
-                                type={isEditingUnitTime ? 'text' : 'number'}
-                                min={isEditingUnitTime ? undefined : '0'}
-                                placeholder={isEditingUnitTime ? 'e.g., 1:15' : 'Default'}
-                                value={editingDefaultAmount}
-                                onChange={(e) => setEditingDefaultAmount(e.target.value)}
-                                className="h-8 w-24"
-                              />
-                              <span className="text-xs text-muted-foreground whitespace-nowrap">default</span>
-                            </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => saveEditing(habit.id)}>
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={cancelEditing}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex-1">
+                        <div className="font-medium">{habit.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {habit.weeklyTarget.toString()}× per week • {getHabitUnitLabel(habit.unit)}
+                          {habit.defaultAmount !== null && (
+                            <span>
+                              {' '}• Default: {isTimeUnit(habit.unit) ? formatDuration(Number(habit.defaultAmount)) : habit.defaultAmount.toString()}
+                            </span>
                           )}
                         </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          Target: {Number(habit.weeklyTarget)}x per week
-                          {!habitIsNoUnit && ` · Unit: ${getHabitUnitLabel(habit.unit)}`}
-                          {!habitIsNoUnit && habit.defaultAmount !== null && (
-                            ` · Default: ${habitIsTime ? formatDuration(Number(habit.defaultAmount)) : Number(habit.defaultAmount)}`
-                          )}
-                          {habitIsNoUnit && ' · Done/not-done'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {editingHabitId === habit.id ? (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleUpdateHabit(habit.id, habit.name, habit.unit, habit.defaultAmount)}
-                            disabled={updateName.isPending || updateWeeklyTarget.isPending || updateUnit.isPending || updateDefaultAmount.isPending}
-                          >
-                            <Check className="h-4 w-4 text-green-600" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={cancelEditing}
-                            disabled={updateName.isPending || updateWeeklyTarget.isPending || updateUnit.isPending || updateDefaultAmount.isPending}
-                          >
-                            <X className="h-4 w-4 text-muted-foreground" />
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => startEditing(habit.id, habit.name, habit.weeklyTarget, habit.unit, habit.defaultAmount)}
-                          >
-                            <Pencil className="h-4 w-4 text-muted-foreground" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Habit</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete "{habit.name}"? This will remove all
-                                  associated tracking data and cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDeleteHabit(habit.id, habit.name)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => startEditing(habit)}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setHabitToDelete(habit.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!habitToDelete} onOpenChange={(open) => !open && setHabitToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Habit</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this habit? This action cannot be undone and will remove all associated records.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteHabit}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );

@@ -9,6 +9,8 @@ import { ProgressCharts } from './ProgressCharts';
 import { CollapsibleHabitManagerPanel } from './CollapsibleHabitManagerPanel';
 import { MonthlyTargetsEditor } from './MonthlyTargetsEditor';
 import { InvestmentsPage } from './InvestmentsPage';
+import { DiaryPage } from './DiaryPage';
+import { ExportDataPage } from './ExportDataPage';
 import { useGetHabits, useGetMonthlyRecords } from '../hooks/useQueries';
 
 interface TrackerDashboardProps {
@@ -34,7 +36,7 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
   const [selectedYear] = useState(currentDate.getFullYear());
-  const [currentView, setCurrentView] = useState<'tracker' | 'investments'>('tracker');
+  const [currentView, setCurrentView] = useState<'tracker' | 'investments' | 'diary' | 'export'>('tracker');
 
   const { data: habits = [], isLoading: habitsLoading } = useGetHabits();
   const { 
@@ -78,9 +80,13 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
         onViewChange={setCurrentView}
       />
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
+      <main className="mx-auto w-full max-w-screen-sm px-4 py-6 space-y-6">
         {currentView === 'investments' ? (
           <InvestmentsPage />
+        ) : currentView === 'diary' ? (
+          <DiaryPage habits={safeHabits} />
+        ) : currentView === 'export' ? (
+          <ExportDataPage />
         ) : isInitialLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
@@ -89,24 +95,24 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col lg:flex-row gap-6">
-            <div className="flex-1 space-y-6">
-              <CollapsibleHabitManagerPanel />
+          <div className="space-y-6">
+            <CollapsibleHabitManagerPanel />
 
-              <MonthlyTargetsEditor 
+            <MonthlyTargetsEditor 
+              selectedMonth={selectedMonth}
+              selectedYear={selectedYear}
+              habits={safeHabits}
+              records={filteredRecords}
+            />
+
+            <div className="space-y-4" data-testid="tracker-month-and-grid-section">
+              <MonthTabs
+                months={MONTHS}
                 selectedMonth={selectedMonth}
-                selectedYear={selectedYear}
-                habits={safeHabits}
-                records={filteredRecords}
+                onMonthChange={setSelectedMonth}
               />
 
-              <div className="space-y-4">
-                <MonthTabs
-                  months={MONTHS}
-                  selectedMonth={selectedMonth}
-                  onMonthChange={setSelectedMonth}
-                />
-
+              <div data-testid="habit-grid-container">
                 <HabitGrid
                   habits={safeHabits}
                   records={filteredRecords}
@@ -117,20 +123,18 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
               </div>
             </div>
 
-            <div className="lg:w-96">
-              <ProgressCharts
-                habits={safeHabits}
-                records={filteredRecords}
-                selectedMonth={selectedMonth}
-                selectedYear={selectedYear}
-              />
-            </div>
+            <ProgressCharts
+              habits={safeHabits}
+              records={filteredRecords}
+              selectedMonth={selectedMonth}
+              selectedYear={selectedYear}
+            />
           </div>
         )}
       </main>
 
       <footer className="border-t mt-12 py-6">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+        <div className="mx-auto w-full max-w-screen-sm px-4 text-center text-sm text-muted-foreground">
           © 2026. Built with love using{' '}
           <a
             href="https://caffeine.ai"

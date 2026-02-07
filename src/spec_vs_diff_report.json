@@ -1,81 +1,95 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-07T00:11:46.097Z",
-  "summary": "The diff adds some scaffolding for investments (types, utilities, a new InvestmentsPage, and a new 'Investment goals' navigation tab), plus backend type/state additions. However, the core required functionality is largely missing: backend CRUD APIs and access-controlled per-user persistence for diary/goals are not evidenced; frontend React Query hooks for goals (and full diary CRUD) are not evidenced; and the Investments UI is explicitly marked as \"in development\" and does not implement goal editing, manual entry selection, or per-goal progress bars.",
+  "generatedAt": "2026-02-07T15:00:20.522Z",
+  "summary": "The diff introduces substantial frontend and backend code changes (healthCheck endpoint, simplified App initialization gating, and many feature modules like diary/export/investments/habit units). However, there is no evidence that this is an exact rollback to Version 35, and the diff appears to add/modify functionality beyond a strict restore. Verification of end-to-end initialization is not evidenced beyond code changes.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Backend CRUD support for Investment Diary entries (create/list/update/delete) with per-user scoping and access control (trap when caller not authorized).",
-      "reason": "backend/main.mo shows only type definitions (DiaryEntry, InvestmentDiary) and a per-user map (investmentDiaries), but the diff summary does not show any exposed query/update methods for creating/listing/updating/deleting diary entries or enforcing authorization for those diary operations.",
+      "requirement": "Restore and redeploy the full application (frontend and backend) to the exact code and configuration of Version 35, replacing the currently deployed Version 36.",
+      "reason": "The diff shows active development changes and multiple feature additions/adjustments, but provides no evidence of pinning the code/configuration to Version 35 or removing Version 36. No version identifiers, release tags, or deployment/config rollback artifacts are shown.",
       "evidence": [
         "backend/main.mo",
-        "frontend-file-summaries.txt (mentions \"investment diary entries (list/create only)\")"
+        "frontend/src/App.tsx",
+        "frontend-file-summaries.txt",
+        "project_state.json"
       ]
     },
     {
       "id": "REQ-2",
-      "requirement": "Backend CRUD support for Investment Goals (create/list/update/delete) per user, with persisted manual selection of diary entry IDs and a required fixed deadline of Dec 31, 2026 (not user-editable), and authorization traps for non-users.",
-      "reason": "backend/main.mo adds InvestmentGoal types but the diff summary does not show any backend methods to create/list/update/delete goals, nor any method to update linked entry IDs. Also no evidence that the deadline is enforced as fixed to Dec 31, 2026 at the backend API level.",
+      "requirement": "After restoring Version 35, verify end-to-end initialization works for an authenticated user (II login, backend actor available, proceeds to Profile Setup/Dashboard without timeout/loading watchdog).",
+      "reason": "While App.tsx shows simplified authenticated gating and the backend adds a healthCheck method, the diff contains no explicit verification artifacts (e.g., test, script, documented verification steps, or instrumentation proving the end-to-end flow). The requirement explicitly includes verification after restore.",
       "evidence": [
-        "backend/main.mo",
-        "frontend-file-summaries.txt (mentions \"placeholder hooks for goal operations that await backend implementation\")"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "requirement": "Frontend React Query hooks for Investment Diary and Investment Goals (queries + mutations for create/update/delete, and updating goal selected entry IDs), integrated with existing actor/auth flow and invalidating queries on mutation success.",
-      "reason": "The diff evidence indicates only diary list/create hooks exist and goal hooks are placeholders; there is no evidence of update/delete diary hooks, nor any goal query/mutation hooks (including updating linked entry IDs) with invalidation.",
-      "evidence": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend-file-summaries.txt"
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "requirement": "Investments module UI: diary entry form + list; goal creation/editing; manual multi-select of diary entries per goal persisted via backend; per-goal progress bar computed from linked entries; show fixed deadline text 'Dec 31, 2026'.",
-      "reason": "InvestmentsPage is truncated but clearly displays an alert stating goal tracking is \"currently in development\" and \"will be available soon,\" which indicates missing goal tracking UI, including manual entry selection, progress bars, numeric progress summary, and deadline display. Also only add-goal mutation is referenced; no listing/editing goals or linking entries is evidenced.",
-      "evidence": [
-        "frontend/src/components/InvestmentsPage.tsx",
-        "frontend-file-summaries.txt"
+        "frontend/src/App.tsx",
+        "backend/main.mo"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Loading watchdog / timeout fallback, extensive diagnostic logging for identity/actor/profile initialization, and a force-login override capability.",
-      "reason": "Not requested by the BuildRequest (no requirements around watchdog timers, diagnostic logging, or force-login overrides).",
+      "description": "Added/expanded backend diagnostic logging and an admin-only getLogs endpoint.",
+      "reason": "Not requested; the BuildRequest explicitly calls for a strict rollback with no new features or fixes beyond restore.",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/src/App.tsx summary)"
+        "backend/main.mo"
       ]
     },
     {
-      "description": "Investments UI message stating the feature is \"currently in development\" and that goal tracking will be available soon.",
-      "reason": "The BuildRequest requires implementing the Investments module (diary + goals + progress tracking) rather than presenting it as incomplete/coming soon.",
+      "description": "Diary module UI and related analytics/charting (e.g., Daily Reflection fields and DiaryAnalyticsChart usage).",
+      "reason": "Not requested as part of the Version 35 restore; constitutes feature work beyond a rollback.",
       "evidence": [
-        "frontend/src/components/InvestmentsPage.tsx"
+        "frontend/src/components/DiaryPage.tsx"
       ]
     },
     {
-      "description": "Added backend migration wrapper module and upgrade migration plumbing.",
-      "reason": "The BuildRequest did not ask for state migration changes; this may be useful engineering work but is not a specified requirement.",
+      "description": "Export data UI and functionality including XLSX/PDF export workflows and date range picker/preview sections.",
+      "reason": "Not requested; constitutes additional functionality beyond a strict restore.",
       "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo (\"Handle persistent state migrations on upgrades\")"
+        "frontend/src/components/ExportDataPage.tsx",
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "description": "Investment goals/diary data structures added to backend export data model.",
+      "reason": "Not requested; adds new domain concepts beyond rollback.",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    },
+    {
+      "description": "Habit unit expansion and UI support including a built-in \"km\" option, default amounts, and amount editors in the habit grid.",
+      "reason": "Not requested; represents feature expansion/UI changes beyond rollback.",
+      "evidence": [
+        "frontend/src/components/HabitManager.tsx",
+        "frontend/src/components/HabitGrid.tsx",
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "description": "UI/layout redesign claims (mobile-like centered layout, new header tab navigation, month tabs overflow changes).",
+      "reason": "BuildRequest non-goal disallows redesign; these changes are not part of an exact restore request.",
+      "evidence": [
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "description": "Collapsible habit manager panel component.",
+      "reason": "Not requested; adds new UI behavior beyond rollback.",
+      "evidence": [
+        "frontend/src/components/CollapsibleHabitManagerPanel.tsx"
       ]
     }
   ],
   "confidence": 0.74,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/Header.tsx",
-    "frontend/src/components/InvestmentsPage.tsx",
-    "frontend/src/components/TrackerDashboard.tsx",
+    "frontend/src/App.tsx",
+    "frontend/src/components/CollapsibleHabitManagerPanel.tsx",
+    "frontend/src/components/DiaryPage.tsx",
+    "frontend/src/components/ExportDataPage.tsx",
+    "frontend/src/components/HabitGrid.tsx",
+    "frontend/src/components/HabitManager.tsx",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/types/investments.ts",
-    "frontend/src/utils/investments.ts",
     "project_state.json"
   ]
 }

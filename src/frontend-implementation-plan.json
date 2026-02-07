@@ -1,86 +1,101 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Investment Diary + Multi-goal Investment Goals (frontend)",
+  "title": "Rollback frontend behavior to Version 35 and confirm authenticated initialization flow",
   "requirements": [
     {
-      "id": "REQ-3",
-      "summary": "Add React Query hooks for Investment Diary and Investment Goals integrated with the existing actor/auth flow.",
+      "id": "REQ-1",
+      "summary": "Restore the frontend code/configuration to match Version 35 so Version 36 is no longer served.",
       "acceptanceCriteria": [
-        "Frontend includes new query hooks to fetch the caller’s investment diary entries and investment goals.",
-        "Frontend includes mutations to create/update/delete diary entries and goals, and to update a goal’s selected entry IDs.",
-        "Queries are enabled only when an authenticated actor is available (consistent with existing hooks).",
-        "Mutations invalidate the relevant queries so UI reflects updates without a hard refresh."
+        "The deployed app corresponds to Version 35 (both frontend assets and backend canister code).",
+        "Version 36 is no longer served to users after deployment."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/backend.d.ts",
+          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Update the typed backend interface to include Investment Goals CRUD + listing and DiaryEntry CRUD methods/types required by the new React Query hooks (to match backend capabilities once implemented)."
+          "description": "Revert App initialization, routing, and watchdog/timeout behavior to the exact Version 35 implementation (no new flows). Ensure the authenticated gating logic matches Version 35. Verify the authorization component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useActor.ts",
+          "operation": "modify",
+          "description": "Revert actor creation and authenticated initialization behavior to the exact Version 35 implementation, including any access-control bootstrap sequencing used in Version 35. Verify the authorization component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useInternetIdentity.ts",
+          "operation": "modify",
+          "description": "Revert Internet Identity session loading, login status transitions, and identity persistence behavior to the exact Version 35 implementation to ensure Version 35 auth lifecycle semantics. Verify the authorization component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Add React Query hooks for Investment Diary (list + create/update/delete) and Investment Goals (list + create/update/delete + update selected diary entry IDs), following existing patterns (actor/identity-enabled queries, BigInt conversions, and query invalidation). Use the selected authorization component’s frontend guidance to ensure queries are enabled only when identity+actor are available and cached data is cleared on logout. Verify the component's usage instructions before implementing."
+          "description": "Revert React Query enablement/loading semantics for profile and other authenticated queries to match Version 35 (including any safeguards against premature profile fetch before actor readiness). Verify the authorization component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/utils/investments.ts",
-          "operation": "create",
-          "description": "Add small shared helpers for Investments module (e.g., BigInt/number parsing, date formatting to English, and progress computation inputs) to keep hooks/components consistent and avoid duplicating conversion logic."
+          "path": "frontend/src/components/LoadingTimeoutFallback.tsx",
+          "operation": "modify",
+          "description": "Revert the loading-timeout fallback UI/logic to the exact Version 35 implementation (copy, actions, and reachability messaging) so behavior matches Version 35. Verify the authorization component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/AuthenticatedInitFallback.tsx",
+          "operation": "modify",
+          "description": "Revert authenticated initialization recovery UI/logic to the exact Version 35 implementation so authenticated failures present the Version 35 recovery experience. Verify the authorization component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useBackendReachability.ts",
+          "operation": "modify",
+          "description": "Revert backend reachability check behavior to the exact Version 35 implementation to ensure the same health-check timing/behavior as the last working build. Verify the authorization component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/utils/diagnostics.ts",
+          "operation": "modify",
+          "description": "Revert diagnostics recording/formatting to the exact Version 35 implementation so troubleshooting output matches Version 35. Verify the authorization component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/main.tsx",
+          "operation": "modify",
+          "description": "Revert the React app bootstrap/provider wiring to the exact Version 35 implementation (QueryClientProvider + InternetIdentityProvider order and configuration) to match Version 35 runtime behavior. Verify the authorization component's usage instructions before implementing."
         }
       ]
     },
     {
-      "id": "REQ-4",
-      "summary": "Add a new navigation control labeled exactly 'Investment goals' to switch between the existing dashboard and the new Investments view with consistent styling.",
+      "id": "REQ-2",
+      "summary": "Ensure the authenticated initialization path (II login → actor available → profile routing) proceeds to Profile Setup or Dashboard without getting stuck on timeout screens (as in Version 35).",
       "acceptanceCriteria": [
-        "The app provides an obvious navigation control labeled 'Investment goals'.",
-        "Switching to 'Investment goals' shows the Investments module (investment diary + goals) without breaking existing tracker functionality.",
-        "Visual styling is consistent with the existing UI (layout, spacing, typography, and component feel)."
+        "A user can log in with Internet Identity and reach the app’s main flow (no persistent 'initializing' state).",
+        "The app does not show 'Loading Timeout' during normal startup under typical conditions.",
+        "Backend reachability (healthCheck) succeeds and the UI continues to load after the check."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/Header.tsx",
+          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Extend the header to include a navigation control labeled exactly 'Investment goals' (and an option to return to the existing tracker view), styled consistently with current header UI. Prefer existing shadcn-ui components already present in frontend/src/components/ui/* (do not modify them). Verify the component's usage instructions before implementing."
+          "description": "Align the authenticated initialization state machine with Version 35 so the app reliably transitions from identity readiness to actor availability to profile routing (ProfileSetup for new users, TrackerDashboard for existing users) without entering an indefinite initializing state. Verify the authorization component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/TrackerDashboard.tsx",
+          "path": "frontend/src/hooks/useActor.ts",
           "operation": "modify",
-          "description": "Wire the new Investments view into the existing authenticated app flow by adding a view switch (tracker vs investments) controlled by the new 'Investment goals' navigation, while keeping existing tracker dashboard behavior intact when not in the Investments view."
+          "description": "Ensure actor readiness semantics match Version 35 so dependent queries only run once the authenticated actor is usable, preventing initialization deadlocks that can trigger timeout fallbacks. Verify the authorization component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/InvestmentsPage.tsx",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Implement the Investments view container component rendered when 'Investment goals' is selected. Use existing shadcn-ui building blocks for layout and consistent aesthetic. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Build Investments module UI: diary entry form/list, multi-goal creation/editing, manual entry selection per goal, and per-goal progress display with fixed deadline Dec 31, 2026.",
-      "acceptanceCriteria": [
-        "Investment Diary UI allows creating entries with Date, Asset Name, Amount Invested, and Notes, and displays an entries list.",
-        "Investment Goals UI supports multiple goals and allows creating/editing goals with Asset Name and Portfolio Target amount.",
-        "For each goal, the user can manually select which diary entries count toward that goal (multi-select UI persisted via backend).",
-        "Each goal displays a progress bar based on sum(selectedEntry.amountInvested) / portfolioTarget (capped at 100% visually), plus a numeric summary (e.g., 'X / Target').",
-        "Each goal displays the fixed deadline 'Dec 31, 2026' (read-only) in English."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/InvestmentsPage.tsx",
-          "operation": "modify",
-          "description": "Build the Investments module UI: (1) Investment Diary entry form (date/asset/amount/notes) and entries list with edit/delete controls; (2) Investment Goals list with create/edit controls; (3) integrate React Query hooks from frontend/src/hooks/useQueries.ts and keep all user-facing text in English. Prefer existing shadcn-ui components (forms, cards, dialogs, inputs, buttons, tabs, etc.) without modifying frontend/src/components/ui/*. Verify the component's usage instructions before implementing."
+          "description": "Ensure the current-user profile query gating/loading flags match Version 35 so the UI does not get stuck waiting on profile fetch states and avoids triggering timeout fallbacks under typical startup conditions. Verify the authorization component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/InvestmentGoalCard.tsx",
+          "path": "frontend/src/hooks/useInternetIdentity.ts",
           "operation": "modify",
-          "description": "Implement a goal card component that renders: asset name, portfolio target, fixed deadline 'Dec 31, 2026' (read-only), a progress bar capped at 100% visually, and a numeric progress summary 'X / Target'. Include a manual multi-select UI for choosing diary entries that count toward the goal, and wire selection changes to the appropriate mutation hook. Prefer existing shadcn-ui components (Card, Progress, Checkbox/Select/Popover patterns as available) without editing frontend/src/components/ui/*. Verify the component's usage instructions before implementing."
+          "description": "Ensure Version 35 identity initialization/login status behavior so authenticated users do not remain in an initializing state and the UI can proceed to the main flow. Verify the authorization component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/utils/investments.ts",
+          "path": "frontend/src/hooks/useBackendReachability.ts",
           "operation": "modify",
-          "description": "Add/extend progress calculation utilities used by InvestmentGoalCard/InvestmentsPage to compute sum(selectedEntry.amount) and percentage (capped) and to format the fixed deadline string 'Dec 31, 2026' in English consistently across the module."
+          "description": "Ensure backend health-check behavior matches Version 35 so reachability succeeds under normal conditions and any status reporting does not block continuing to the main UI. Verify the authorization component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/LoadingTimeoutFallback.tsx",
+          "operation": "modify",
+          "description": "Ensure Version 35 timeout fallback behavior and messaging so it is not shown during normal startup and remains purely a recovery UI when initialization genuinely exceeds Version 35 thresholds. Verify the authorization component's usage instructions before implementing."
         }
       ]
     }

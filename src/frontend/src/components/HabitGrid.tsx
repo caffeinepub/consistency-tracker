@@ -86,18 +86,18 @@ export function HabitGrid({
         // Toggling off: clear amount
         await toggleCompletion.mutateAsync({
           habitId,
-          day,
-          month: selectedMonth,
-          year: selectedYear,
+          day: BigInt(day),
+          month: BigInt(selectedMonth),
+          year: BigInt(selectedYear),
           amount: null,
         });
       } else {
         // Toggling on: mark as done without amount
         await toggleCompletion.mutateAsync({
           habitId,
-          day,
-          month: selectedMonth,
-          year: selectedYear,
+          day: BigInt(day),
+          month: BigInt(selectedMonth),
+          year: BigInt(selectedYear),
           amount: null,
         });
       }
@@ -108,7 +108,7 @@ export function HabitGrid({
 
   const handleAmountSave = async (habitId: string, day: number, isTime: boolean) => {
     const trimmedInput = editAmount.trim();
-    let amount: number | null = null;
+    let amount: bigint | null = null;
 
     if (trimmedInput !== '') {
       if (isTime) {
@@ -118,7 +118,7 @@ export function HabitGrid({
           toast.error('Invalid duration format. Try "1 min 15 sec", "75 sec", or "1:15"');
           return;
         }
-        amount = parsedSeconds;
+        amount = BigInt(parsedSeconds);
       } else {
         // Parse as integer for non-Time habits (reps, km)
         const parsedAmount = parseInt(trimmedInput);
@@ -126,16 +126,16 @@ export function HabitGrid({
           toast.error('Amount must be a non-negative number');
           return;
         }
-        amount = parsedAmount;
+        amount = BigInt(parsedAmount);
       }
     }
 
     try {
       await toggleCompletion.mutateAsync({
         habitId,
-        day,
-        month: selectedMonth,
-        year: selectedYear,
+        day: BigInt(day),
+        month: BigInt(selectedMonth),
+        year: BigInt(selectedYear),
         amount,
       });
       setEditingCell(null);
@@ -150,26 +150,23 @@ export function HabitGrid({
     const key = `${habitId}-${day}-${selectedMonth}-${selectedYear}`;
     setEditingCell(key);
     if (currentAmount !== undefined) {
-      // Format Time amounts as duration, others as plain number
-      setEditAmount(isTime ? formatDuration(currentAmount) : String(currentAmount));
+      if (isTime) {
+        setEditAmount(formatDuration(currentAmount));
+      } else {
+        setEditAmount(currentAmount.toString());
+      }
     } else {
       setEditAmount('');
     }
   };
 
-  // Show loading only for month switching, not for background refetches
-  if (isLoading && habits.length === 0) {
+  if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Daily Tracking</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
-              <p className="text-sm text-muted-foreground">Loading...</p>
-            </div>
+        <CardContent className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
+            <p className="text-muted-foreground">Loading habits...</p>
           </div>
         </CardContent>
       </Card>
@@ -179,154 +176,138 @@ export function HabitGrid({
   if (habits.length === 0) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>No Habits Yet</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-center py-8">
-            Add your first habit above to start tracking!
-          </p>
+        <CardContent className="flex items-center justify-center py-12">
+          <p className="text-muted-foreground">No habits yet. Create your first habit to get started!</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
+    <Card data-testid="habit-grid-card">
       <CardHeader>
         <CardTitle>Daily Tracking</CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="w-full" ref={scrollViewportRef}>
-          <div className="min-w-max">
-            <div className="grid gap-2" style={{ gridTemplateColumns: `200px repeat(${daysInMonth}, 40px)` }}>
-              {/* Header Row */}
-              <div className="font-semibold text-sm sticky left-0 bg-card z-10 p-2">Habit</div>
-              {days.map((day) => (
-                <div key={day} className="text-center text-sm font-medium p-2">
-                  {day}
-                </div>
-              ))}
-
-              {/* Habit Rows */}
+        <div className="overflow-x-auto" ref={scrollViewportRef}>
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className="sticky left-0 z-10 bg-card border-b border-r p-2 text-left font-medium min-w-[120px]">
+                  Habit
+                </th>
+                {days.map((day) => (
+                  <th key={day} className="border-b p-2 text-center font-medium min-w-[40px]">
+                    {day}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
               {habits.map((habit) => {
-                const habitHasNoUnit = isNoUnit(habit.unit);
                 const habitIsTime = isTimeUnit(habit.unit);
-                
+                const habitIsNoUnit = isNoUnit(habit.unit);
+                const unitLabel = getHabitUnitShortLabel(habit.unit);
+
                 return (
-                  <div key={habit.id} style={{ display: 'contents' }}>
-                    <div
-                      className="font-medium text-sm sticky left-0 bg-card z-10 p-2 border-r flex flex-col justify-center"
-                    >
-                      <div>{habit.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {Number(habit.weeklyTarget)}x/week
-                        {!habitHasNoUnit && ` · ${getHabitUnitShortLabel(habit.unit)}`}
+                  <tr key={habit.id} data-habit-id={habit.id}>
+                    <td className="sticky left-0 z-10 bg-card border-b border-r p-2 font-medium min-w-[120px]">
+                      <div className="flex flex-col">
+                        <span className="text-sm">{habit.name}</span>
+                        {unitLabel && (
+                          <span className="text-xs text-muted-foreground">{unitLabel}</span>
+                        )}
                       </div>
-                    </div>
+                    </td>
                     {days.map((day) => {
                       const key = `${habit.id}-${day}-${selectedMonth}-${selectedYear}`;
                       const recordData = recordMap.get(key);
-                      const isCompleted = recordData?.isCompleted || false;
+                      const isCompleted = recordData?.isCompleted ?? false;
                       const amount = recordData?.amount;
-                      const recordUnit = recordData?.unit || habit.unit;
-                      const recordHasNoUnit = isNoUnit(recordUnit);
-                      const recordIsTime = isTimeUnit(recordUnit);
-                      const isEditing = editingCell === key;
 
                       return (
-                        <div
-                          key={`${habit.id}-${day}`}
-                          className="flex items-center justify-center p-2 border-l border-b hover:bg-accent/5 transition-colors"
-                        >
-                          {isCompleted ? (
-                            recordHasNoUnit ? (
-                              // No-unit habit: just show checkbox, no popover
-                              <Checkbox
-                                checked={true}
-                                onCheckedChange={() => handleToggle(habit.id, day, true)}
-                                className="h-5 w-5"
-                              />
-                            ) : (
-                              // Has unit: show popover for amount editing
-                              <Popover open={isEditing} onOpenChange={(open) => {
-                                if (!open) {
-                                  setEditingCell(null);
-                                  setEditAmount('');
-                                }
-                              }}>
+                        <td key={day} className="border-b p-2 text-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <Checkbox
+                              checked={isCompleted}
+                              onCheckedChange={() => handleToggle(habit.id, day, isCompleted)}
+                              disabled={toggleCompletion.isPending}
+                            />
+                            {isCompleted && !habitIsNoUnit && (
+                              <Popover
+                                open={editingCell === key}
+                                onOpenChange={(open) => {
+                                  if (!open) {
+                                    setEditingCell(null);
+                                    setEditAmount('');
+                                  }
+                                }}
+                              >
                                 <PopoverTrigger asChild>
                                   <button
-                                    className="flex flex-col items-center gap-0.5 cursor-pointer"
-                                    onClick={() => openAmountEditor(habit.id, day, amount, recordIsTime)}
+                                    className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                                    onClick={() => openAmountEditor(habit.id, day, amount, habitIsTime)}
                                   >
-                                    <Checkbox
-                                      checked={true}
-                                      onCheckedChange={() => handleToggle(habit.id, day, true)}
-                                      className="h-5 w-5"
-                                      onClick={(e) => e.stopPropagation()}
-                                    />
-                                    {amount !== undefined && (
-                                      <span className="text-[10px] text-muted-foreground font-medium">
-                                        {recordIsTime ? formatDuration(amount) : amount}
-                                      </span>
-                                    )}
+                                    {amount !== undefined
+                                      ? habitIsTime
+                                        ? formatDuration(amount)
+                                        : amount.toString()
+                                      : '+'}
                                   </button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-48" align="center">
+                                <PopoverContent className="w-64">
                                   <div className="space-y-3">
-                                    <div className="space-y-2">
-                                      <Label htmlFor={`amount-${key}`} className="text-xs">
-                                        {recordIsTime ? 'Duration' : `Amount (${getHabitUnitShortLabel(recordUnit)})`}
-                                      </Label>
-                                      <Input
-                                        id={`amount-${key}`}
-                                        type="text"
-                                        placeholder={recordIsTime ? 'e.g., 1:15' : 'Optional'}
-                                        value={editAmount}
-                                        onChange={(e) => setEditAmount(e.target.value)}
-                                        className="h-8"
-                                        autoFocus
-                                        onKeyDown={(e) => {
-                                          if (e.key === 'Enter') {
-                                            handleAmountSave(habit.id, day, recordIsTime);
-                                          }
+                                    <Label htmlFor={`amount-${key}`}>
+                                      {habitIsTime ? 'Duration' : 'Amount'}
+                                    </Label>
+                                    <Input
+                                      id={`amount-${key}`}
+                                      value={editAmount}
+                                      onChange={(e) => setEditAmount(e.target.value)}
+                                      placeholder={
+                                        habitIsTime
+                                          ? 'e.g., 1 min 15 sec'
+                                          : 'Enter amount'
+                                      }
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          handleAmountSave(habit.id, day, habitIsTime);
+                                        }
+                                      }}
+                                    />
+                                    <div className="flex gap-2">
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleAmountSave(habit.id, day, habitIsTime)}
+                                        disabled={toggleCompletion.isPending}
+                                      >
+                                        Save
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          setEditingCell(null);
+                                          setEditAmount('');
                                         }}
-                                      />
-                                      {recordIsTime && (
-                                        <p className="text-[10px] text-muted-foreground">
-                                          e.g., "1 min 15 sec", "75 sec", "1:15"
-                                        </p>
-                                      )}
+                                      >
+                                        Cancel
+                                      </Button>
                                     </div>
-                                    <Button
-                                      size="sm"
-                                      className="w-full"
-                                      onClick={() => handleAmountSave(habit.id, day, recordIsTime)}
-                                    >
-                                      Save
-                                    </Button>
                                   </div>
                                 </PopoverContent>
                               </Popover>
-                            )
-                          ) : (
-                            <Checkbox
-                              checked={false}
-                              onCheckedChange={() => handleToggle(habit.id, day, false)}
-                              className="h-5 w-5"
-                            />
-                          )}
-                        </div>
+                            )}
+                          </div>
+                        </td>
                       );
                     })}
-                  </div>
+                  </tr>
                 );
               })}
-            </div>
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+            </tbody>
+          </table>
+        </div>
       </CardContent>
     </Card>
   );

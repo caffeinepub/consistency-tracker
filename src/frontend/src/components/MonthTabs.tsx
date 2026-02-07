@@ -1,5 +1,4 @@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 interface MonthTabsProps {
   months: string[];
@@ -18,7 +17,7 @@ export function MonthTabs({ months, selectedMonth, onMonthChange }: MonthTabsPro
   };
 
   return (
-    <ScrollArea className="w-full">
+    <div className="w-full overflow-x-auto" data-testid="month-tabs-container">
       <Tabs value={selectedMonth.toString()} onValueChange={handleMonthChange}>
         <TabsList className="inline-flex h-11 w-auto">
           {months.map((month, index) => (
@@ -28,7 +27,6 @@ export function MonthTabs({ months, selectedMonth, onMonthChange }: MonthTabsPro
           ))}
         </TabsList>
       </Tabs>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
+    </div>
   );
 }

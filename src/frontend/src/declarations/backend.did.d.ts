@@ -12,16 +12,13 @@ import type { Principal } from '@icp-sdk/core/principal';
 
 export type DefaultAmount = [] | [bigint];
 export interface DiagnosticLog { 'message' : string, 'timestamp' : Time }
-export interface DiaryEntry {
-  'id' : bigint,
-  'asset' : string,
-  'date' : bigint,
-  'notes' : string,
-  'amount' : bigint,
-}
+export interface DiaryEntry { 'title' : string, 'content' : string }
 export interface ExportData {
-  'records' : Array<HabitRecord>,
   'monthlyTargets' : Array<MonthlyTarget>,
+  'investmentDiaryEntries' : Array<InvestmentDiaryEntry>,
+  'habitRecords' : Array<HabitRecord>,
+  'diaryEntries' : Array<[string, DiaryEntry]>,
+  'investmentGoals' : Array<InvestmentGoal>,
   'habits' : Array<Habit>,
   'profile' : [] | [UserProfile],
 }
@@ -47,13 +44,35 @@ export type HabitUnit = { 'custom' : string } |
   { 'none' : null } |
   { 'reps' : null } |
   { 'time' : null };
+export interface InvestmentDiaryEntry {
+  'id' : bigint,
+  'asset' : string,
+  'date' : bigint,
+  'notes' : string,
+  'amount' : bigint,
+}
+export interface InvestmentGoal {
+  'id' : bigint,
+  'asset' : string,
+  'target' : bigint,
+  'currentlyHeld' : bigint,
+}
 export interface MonthlyTarget {
   'month' : bigint,
   'year' : bigint,
   'habitId' : string,
   'amount' : bigint,
 }
+export interface NewInvestmentGoal {
+  'asset' : string,
+  'target' : bigint,
+  'currentlyHeld' : bigint,
+}
 export type Time = bigint;
+export interface UpdateInvestmentGoal {
+  'target' : bigint,
+  'currentlyHeld' : bigint,
+}
 export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
@@ -61,25 +80,26 @@ export type UserRole = { 'admin' : null } |
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addDiaryEntry' : ActorMethod<[bigint, string, bigint, string], bigint>,
-  'addInvestmentGoal' : ActorMethod<[string, bigint], bigint>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'createHabit' : ActorMethod<
     [string, bigint, HabitUnit, DefaultAmount],
     string
   >,
+  'createInvestmentGoal' : ActorMethod<[NewInvestmentGoal], bigint>,
   'deleteHabit' : ActorMethod<[string], undefined>,
+  'deleteInvestmentGoal' : ActorMethod<[bigint], undefined>,
   'exportAllData' : ActorMethod<
     [bigint, bigint, bigint, bigint, bigint, bigint],
     ExportData
   >,
-  'exportSelectedHabitsData' : ActorMethod<
-    [Array<string>, bigint, bigint, bigint, bigint, bigint, bigint],
-    ExportData
-  >,
+  'getAllDiaryEntries' : ActorMethod<[], Array<[string, DiaryEntry]>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
-  'getDiaryEntries' : ActorMethod<[], Array<DiaryEntry>>,
+  'getDiaryEntries' : ActorMethod<[], Array<InvestmentDiaryEntry>>,
+  'getDiaryEntry' : ActorMethod<[string], [] | [DiaryEntry]>,
+  'getGoalProgress' : ActorMethod<[bigint], [] | [bigint]>,
   'getHabits' : ActorMethod<[], Array<Habit>>,
+  'getInvestmentGoals' : ActorMethod<[], Array<InvestmentGoal>>,
   'getLifetimeTotal' : ActorMethod<[string], bigint>,
   'getLogs' : ActorMethod<[], Array<DiagnosticLog>>,
   'getMonthlyRecords' : ActorMethod<[bigint, bigint], Array<HabitRecord>>,
@@ -87,10 +107,12 @@ export interface _SERVICE {
     [string, bigint, bigint],
     [] | [MonthlyTarget]
   >,
+  'getTotalGoalsProgress' : ActorMethod<[], bigint>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'healthCheck' : ActorMethod<[], string>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'linkDiaryEntryToGoal' : ActorMethod<[bigint, bigint], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'saveDiaryEntry' : ActorMethod<[string, string, string], undefined>,
   'testLog' : ActorMethod<[string], string>,
   'toggleHabitCompletion' : ActorMethod<
     [string, bigint, bigint, bigint, DefaultAmount],
@@ -100,6 +122,10 @@ export interface _SERVICE {
   'updateHabitName' : ActorMethod<[string, string], undefined>,
   'updateHabitUnit' : ActorMethod<[string, HabitUnit], undefined>,
   'updateHabitWeeklyTarget' : ActorMethod<[string, bigint], undefined>,
+  'updateInvestmentGoal' : ActorMethod<
+    [bigint, UpdateInvestmentGoal],
+    undefined
+  >,
   'updateMonthlyTarget' : ActorMethod<
     [string, bigint, bigint, bigint],
     undefined

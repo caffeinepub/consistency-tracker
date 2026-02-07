@@ -90,8 +90,11 @@ export class ExternalBlob {
     }
 }
 export interface ExportData {
-    records: Array<HabitRecord>;
     monthlyTargets: Array<MonthlyTarget>;
+    investmentDiaryEntries: Array<InvestmentDiaryEntry>;
+    habitRecords: Array<HabitRecord>;
+    diaryEntries: Array<[string, DiaryEntry]>;
+    investmentGoals: Array<InvestmentGoal>;
     habits: Array<Habit>;
     profile?: UserProfile;
 }
@@ -110,11 +113,38 @@ export type HabitUnit = {
     time: null;
 };
 export interface DiaryEntry {
+    title: string;
+    content: string;
+}
+export interface MonthlyTarget {
+    month: bigint;
+    year: bigint;
+    habitId: string;
+    amount: bigint;
+}
+export interface UpdateInvestmentGoal {
+    target: bigint;
+    currentlyHeld: bigint;
+}
+export interface Habit {
+    id: string;
+    name: string;
+    createdAt: Time;
+    unit: HabitUnit;
+    defaultAmount: DefaultAmount;
+    weeklyTarget: bigint;
+}
+export type DefaultAmount = bigint | null;
+export interface NewInvestmentGoal {
+    asset: string;
+    target: bigint;
+    currentlyHeld: bigint;
+}
+export interface InvestmentGoal {
     id: bigint;
     asset: string;
-    date: bigint;
-    notes: string;
-    amount: bigint;
+    target: bigint;
+    currentlyHeld: bigint;
 }
 export interface HabitRecord {
     day: bigint;
@@ -126,25 +156,17 @@ export interface HabitRecord {
     habitId: string;
     amount?: bigint;
 }
-export interface Habit {
-    id: string;
-    name: string;
-    createdAt: Time;
-    unit: HabitUnit;
-    defaultAmount: DefaultAmount;
-    weeklyTarget: bigint;
-}
-export interface MonthlyTarget {
-    month: bigint;
-    year: bigint;
-    habitId: string;
-    amount: bigint;
-}
 export interface DiagnosticLog {
     message: string;
     timestamp: Time;
 }
-export type DefaultAmount = bigint | null;
+export interface InvestmentDiaryEntry {
+    id: bigint;
+    asset: string;
+    date: bigint;
+    notes: string;
+    amount: bigint;
+}
 export interface UserProfile {
     name: string;
 }
@@ -156,33 +178,40 @@ export enum UserRole {
 export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
     addDiaryEntry(date: bigint, asset: string, amount: bigint, notes: string): Promise<bigint>;
-    addInvestmentGoal(asset: string, targetAmount: bigint): Promise<bigint>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createHabit(name: string, weeklyTarget: bigint, unit: HabitUnit, defaultAmount: DefaultAmount): Promise<string>;
+    createInvestmentGoal(newGoal: NewInvestmentGoal): Promise<bigint>;
     deleteHabit(habitId: string): Promise<void>;
+    deleteInvestmentGoal(goalId: bigint): Promise<void>;
     exportAllData(startDay: bigint, startMonth: bigint, startYear: bigint, endDay: bigint, endMonth: bigint, endYear: bigint): Promise<ExportData>;
-    exportSelectedHabitsData(habitIds: Array<string>, startDay: bigint, startMonth: bigint, startYear: bigint, endDay: bigint, endMonth: bigint, endYear: bigint): Promise<ExportData>;
+    getAllDiaryEntries(): Promise<Array<[string, DiaryEntry]>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
-    getDiaryEntries(): Promise<Array<DiaryEntry>>;
+    getDiaryEntries(): Promise<Array<InvestmentDiaryEntry>>;
+    getDiaryEntry(date: string): Promise<DiaryEntry | null>;
+    getGoalProgress(goalId: bigint): Promise<bigint | null>;
     getHabits(): Promise<Array<Habit>>;
+    getInvestmentGoals(): Promise<Array<InvestmentGoal>>;
     getLifetimeTotal(habitId: string): Promise<bigint>;
     getLogs(): Promise<Array<DiagnosticLog>>;
     getMonthlyRecords(month: bigint, year: bigint): Promise<Array<HabitRecord>>;
     getMonthlyTarget(habitId: string, month: bigint, year: bigint): Promise<MonthlyTarget | null>;
+    getTotalGoalsProgress(): Promise<bigint>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    healthCheck(): Promise<string>;
     isCallerAdmin(): Promise<boolean>;
-    linkDiaryEntryToGoal(entryId: bigint, goalId: bigint): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    saveDiaryEntry(date: string, title: string, content: string): Promise<void>;
     testLog(_message: string): Promise<string>;
     toggleHabitCompletion(habitId: string, day: bigint, month: bigint, year: bigint, amount: DefaultAmount): Promise<void>;
     updateHabitDefaultAmount(habitId: string, newDefaultAmount: DefaultAmount): Promise<void>;
     updateHabitName(habitId: string, newName: string): Promise<void>;
     updateHabitUnit(habitId: string, newUnit: HabitUnit): Promise<void>;
     updateHabitWeeklyTarget(habitId: string, newWeeklyTarget: bigint): Promise<void>;
+    updateInvestmentGoal(goalId: bigint, updates: UpdateInvestmentGoal): Promise<void>;
     updateMonthlyTarget(habitId: string, amount: bigint, month: bigint, year: bigint): Promise<void>;
 }
-import type { DefaultAmount as _DefaultAmount, ExportData as _ExportData, Habit as _Habit, HabitRecord as _HabitRecord, HabitUnit as _HabitUnit, MonthlyTarget as _MonthlyTarget, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
+import type { DefaultAmount as _DefaultAmount, DiaryEntry as _DiaryEntry, ExportData as _ExportData, Habit as _Habit, HabitRecord as _HabitRecord, HabitUnit as _HabitUnit, InvestmentDiaryEntry as _InvestmentDiaryEntry, InvestmentGoal as _InvestmentGoal, MonthlyTarget as _MonthlyTarget, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
@@ -210,20 +239,6 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.addDiaryEntry(arg0, arg1, arg2, arg3);
-            return result;
-        }
-    }
-    async addInvestmentGoal(arg0: string, arg1: bigint): Promise<bigint> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.addInvestmentGoal(arg0, arg1);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.addInvestmentGoal(arg0, arg1);
             return result;
         }
     }
@@ -255,6 +270,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async createInvestmentGoal(arg0: NewInvestmentGoal): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createInvestmentGoal(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createInvestmentGoal(arg0);
+            return result;
+        }
+    }
     async deleteHabit(arg0: string): Promise<void> {
         if (this.processError) {
             try {
@@ -266,6 +295,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.deleteHabit(arg0);
+            return result;
+        }
+    }
+    async deleteInvestmentGoal(arg0: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteInvestmentGoal(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteInvestmentGoal(arg0);
             return result;
         }
     }
@@ -283,18 +326,18 @@ export class Backend implements backendInterface {
             return from_candid_ExportData_n7(this._uploadFile, this._downloadFile, result);
         }
     }
-    async exportSelectedHabitsData(arg0: Array<string>, arg1: bigint, arg2: bigint, arg3: bigint, arg4: bigint, arg5: bigint, arg6: bigint): Promise<ExportData> {
+    async getAllDiaryEntries(): Promise<Array<[string, DiaryEntry]>> {
         if (this.processError) {
             try {
-                const result = await this.actor.exportSelectedHabitsData(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
-                return from_candid_ExportData_n7(this._uploadFile, this._downloadFile, result);
+                const result = await this.actor.getAllDiaryEntries();
+                return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.exportSelectedHabitsData(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
-            return from_candid_ExportData_n7(this._uploadFile, this._downloadFile, result);
+            const result = await this.actor.getAllDiaryEntries();
+            return result;
         }
     }
     async getCallerUserProfile(): Promise<UserProfile | null> {
@@ -325,7 +368,7 @@ export class Backend implements backendInterface {
             return from_candid_UserRole_n21(this._uploadFile, this._downloadFile, result);
         }
     }
-    async getDiaryEntries(): Promise<Array<DiaryEntry>> {
+    async getDiaryEntries(): Promise<Array<InvestmentDiaryEntry>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getDiaryEntries();
@@ -337,6 +380,34 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getDiaryEntries();
             return result;
+        }
+    }
+    async getDiaryEntry(arg0: string): Promise<DiaryEntry | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getDiaryEntry(arg0);
+                return from_candid_opt_n23(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getDiaryEntry(arg0);
+            return from_candid_opt_n23(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getGoalProgress(arg0: bigint): Promise<bigint | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getGoalProgress(arg0);
+                return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getGoalProgress(arg0);
+            return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
         }
     }
     async getHabits(): Promise<Array<Habit>> {
@@ -351,6 +422,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getHabits();
             return from_candid_vec_n16(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getInvestmentGoals(): Promise<Array<InvestmentGoal>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getInvestmentGoals();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getInvestmentGoals();
+            return result;
         }
     }
     async getLifetimeTotal(arg0: string): Promise<bigint> {
@@ -399,14 +484,28 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getMonthlyTarget(arg0, arg1, arg2);
-                return from_candid_opt_n23(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n24(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getMonthlyTarget(arg0, arg1, arg2);
-            return from_candid_opt_n23(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n24(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getTotalGoalsProgress(): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getTotalGoalsProgress();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getTotalGoalsProgress();
+            return result;
         }
     }
     async getUserProfile(arg0: Principal): Promise<UserProfile | null> {
@@ -423,6 +522,20 @@ export class Backend implements backendInterface {
             return from_candid_opt_n20(this._uploadFile, this._downloadFile, result);
         }
     }
+    async healthCheck(): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.healthCheck();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.healthCheck();
+            return result;
+        }
+    }
     async isCallerAdmin(): Promise<boolean> {
         if (this.processError) {
             try {
@@ -437,20 +550,6 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async linkDiaryEntryToGoal(arg0: bigint, arg1: bigint): Promise<void> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.linkDiaryEntryToGoal(arg0, arg1);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.linkDiaryEntryToGoal(arg0, arg1);
-            return result;
-        }
-    }
     async saveCallerUserProfile(arg0: UserProfile): Promise<void> {
         if (this.processError) {
             try {
@@ -462,6 +561,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.saveCallerUserProfile(arg0);
+            return result;
+        }
+    }
+    async saveDiaryEntry(arg0: string, arg1: string, arg2: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.saveDiaryEntry(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.saveDiaryEntry(arg0, arg1, arg2);
             return result;
         }
     }
@@ -549,6 +662,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async updateInvestmentGoal(arg0: bigint, arg1: UpdateInvestmentGoal): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateInvestmentGoal(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateInvestmentGoal(arg0, arg1);
+            return result;
+        }
+    }
     async updateMonthlyTarget(arg0: string, arg1: bigint, arg2: bigint, arg3: bigint): Promise<void> {
         if (this.processError) {
             try {
@@ -591,7 +718,10 @@ function from_candid_opt_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
 function from_candid_opt_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n23(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_MonthlyTarget]): MonthlyTarget | null {
+function from_candid_opt_n23(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_DiaryEntry]): DiaryEntry | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n24(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_MonthlyTarget]): MonthlyTarget | null {
     return value.length === 0 ? null : value[0];
 }
 function from_candid_record_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
@@ -649,19 +779,28 @@ function from_candid_record_n18(_uploadFile: (file: ExternalBlob) => Promise<Uin
     };
 }
 function from_candid_record_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    records: Array<_HabitRecord>;
     monthlyTargets: Array<_MonthlyTarget>;
+    investmentDiaryEntries: Array<_InvestmentDiaryEntry>;
+    habitRecords: Array<_HabitRecord>;
+    diaryEntries: Array<[string, _DiaryEntry]>;
+    investmentGoals: Array<_InvestmentGoal>;
     habits: Array<_Habit>;
     profile: [] | [_UserProfile];
 }): {
-    records: Array<HabitRecord>;
     monthlyTargets: Array<MonthlyTarget>;
+    investmentDiaryEntries: Array<InvestmentDiaryEntry>;
+    habitRecords: Array<HabitRecord>;
+    diaryEntries: Array<[string, DiaryEntry]>;
+    investmentGoals: Array<InvestmentGoal>;
     habits: Array<Habit>;
     profile?: UserProfile;
 } {
     return {
-        records: from_candid_vec_n9(_uploadFile, _downloadFile, value.records),
         monthlyTargets: value.monthlyTargets,
+        investmentDiaryEntries: value.investmentDiaryEntries,
+        habitRecords: from_candid_vec_n9(_uploadFile, _downloadFile, value.habitRecords),
+        diaryEntries: value.diaryEntries,
+        investmentGoals: value.investmentGoals,
         habits: from_candid_vec_n16(_uploadFile, _downloadFile, value.habits),
         profile: record_opt_to_undefined(from_candid_opt_n20(_uploadFile, _downloadFile, value.profile))
     };

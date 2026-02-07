@@ -1,13 +1,10 @@
 # Specification
 
 ## Summary
-**Goal:** Add an Investments module with an Investment Diary and multi-goal Investment Goals tracking (with a fixed deadline of Dec 31, 2026), including per-user persistence and progress computed from manually selected diary entries.
+**Goal:** Roll back the deployed application from Version 36 to the last known working Version 35 (frontend and backend) and confirm startup/login completes successfully.
 
 **Planned changes:**
-- Backend: Add per-user CRUD storage and access control for Investment Diary entries (date, asset name, amount invested, notes).
-- Backend: Add per-user CRUD storage and access control for Investment Goals (asset name, portfolio target, fixed deadline Dec 31, 2026, and persisted list of selected diary entry IDs).
-- Frontend: Add React Query hooks and mutations for diary entries and goals (including updating a goal’s selected entry IDs), integrated with existing auth/actor flow and query invalidation.
-- Frontend: Add navigation labeled exactly “Investment goals” to switch between the existing tracker dashboard and the new Investments view.
-- Frontend: Build Investments UI including (1) diary entry form + entries list, (2) goal create/edit and multi-goal display, (3) per-goal manual selection of diary entries, and (4) per-goal progress bar + numeric progress summary and read-only deadline display (“Dec 31, 2026”).
+- Restore and redeploy the full app (frontend assets and backend canister/actor code) to the exact Version 35 code and configuration, replacing Version 36.
+- Verify end-to-end initialization for an authenticated user: Internet Identity login completes, backend actor is available, healthCheck succeeds, and the app proceeds to Profile Setup (new users) or Dashboard (existing users) without hitting loading timeout.
 
-**User-visible outcome:** Users can open a new “Investment goals” area to log investment diary entries, create and manage multiple investment goals due Dec 31, 2026, manually choose which entries count toward each goal, and see progress bars and totals that update as entries/goals change.
+**User-visible outcome:** Users are served Version 35 and can log in with Internet Identity and reach the normal app UI without getting stuck on initialization or seeing a “Loading Timeout” during typical startup.
