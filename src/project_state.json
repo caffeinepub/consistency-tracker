@@ -1,44 +1,38 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
+  "summary": "Consistency Tracker app: implement mandatory Internet Identity sign-in on launch, connect to Motoko backend canister, and load each user’s previously stored data automatically; remove the current Connection Issue banner/retry UI.",
   "architectural_notes": [
-    "Month selector UI should support horizontal scrolling with partial tab visibility; initial position defaults to current month."
+    "Use Internet Identity to create an authenticated canister actor; all backend reads/writes must be per-user based on the authenticated principal.",
+    "App startup flow: block app UI behind mandatory Internet Identity login, then initialize authenticated actor and fetch all persisted data.",
+    "On backend connection failure: avoid showing the old Connection Issue UI; retry silently (per confirmed behavior)."
   ],
   "known_issues": [
-    "Month selector cannot currently scroll to months before May; users are unable to access earlier months."
+    "Current build shows a 'can’t connect to the backend' / Connection Issue banner; likely due to missing authenticated actor/II login integration."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-update-the-month-selector-in-frontend-src-components-monthtabs-tsx-so-users-can-horizontally-scroll-to-reach-all-months-january-december-including-months-before-may-on-both-desktop-mouse-trackpad-and-mobile-touch-swipe",
-      "title": "Update the month selector in `frontend/src/components/MonthTabs.tsx` so users can horizontally scroll to reach all months (January–December), including months before May, on both desktop (mouse/trackpad) and mobile (touch swipe).",
+      "id": "feature-require-internet-identity-authentication-before-rendering-any-consistency-tracker-ui-no-dashboard-header-or-pages-visible-until-the-user-is-signed-in-and-after-sign-in-load-the-user-s-previously-stored-data-profile-habits-records-diary-investments-tied-to-their-internet-identity-principal",
+      "title": "Require Internet Identity authentication before rendering any Consistency Tracker UI (no dashboard, header, or pages visible until the user is signed in) and, after sign-in, load the user’s previously stored data (profile, habits, records, diary, investments) tied to their Internet Identity principal.",
       "reqIds": [
-        "REQ-1"
+        "REQ-5"
       ],
       "version": 1
     },
     {
-      "id": "feature-ensure-the-month-selector-allows-partial-month-visibility-while-scrolling-i-e-tabs-can-be-partially-visible-at-the-left-right-edges-rather-than-forcing-full-tab-snapping-or-fitting-all-tabs-into-the-available-width",
-      "title": "Ensure the month selector allows partial month visibility while scrolling (i.e., tabs can be partially visible at the left/right edges), rather than forcing full-tab snapping or fitting all tabs into the available width.",
+      "id": "feature-remove-the-in-app-connection-issue-banner-and-its-retry-connection-button-from-the-dashboard-experience-and-do-not-present-backend-initialization-failures-as-blocking-ui-backend-failures-should-retry-silently-in-the-background",
+      "title": "Remove the in-app “Connection Issue” banner and its “Retry Connection” button from the dashboard experience, and do not present backend/initialization failures as blocking UI. Backend failures should retry silently in the background.",
       "reqIds": [
-        "REQ-2"
+        "REQ-6"
       ],
       "version": 1
     },
     {
-      "id": "feature-keep-the-default-visible-selected-month-as-the-current-month-on-initial-load-and-ensure-the-selected-month-tab-is-brought-into-view-within-the-scrollable-month-selector-if-it-would-otherwise-be-off-screen",
-      "title": "Keep the default visible/selected month as the current month on initial load, and ensure the selected month tab is brought into view within the scrollable month selector if it would otherwise be off-screen.",
+      "id": "feature-adjust-frontend-query-retry-behavior-so-authenticated-data-loading-is-resilient-initialization-data-queries-should-retry-automatically-with-a-non-aggressive-delay-strategy-without-requiring-user-interaction",
+      "title": "Adjust frontend query/retry behavior so authenticated data loading is resilient: initialization/data queries should retry automatically with a non-aggressive delay strategy, without requiring user interaction.",
       "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-extend-frontend-tests-to-cover-the-month-selector-scrollability-regression-months-before-may-must-remain-reachable",
-      "title": "Add/extend frontend tests to cover the month selector scrollability regression (months before May must remain reachable).",
-      "reqIds": [
-        "REQ-4"
+        "REQ-7"
       ],
       "version": 1
     }
@@ -46,12 +40,30 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Make the month selector horizontally scrollable so users can scroll through all months (Jan–Dec), allowing partial month visibility, with default visible month remaining the current month.",
+      "summary": "Connect frontend to Motoko backend canister using authenticated actor after Internet Identity login",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Require Internet Identity sign-in on app launch (no UI before login)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "After login, automatically load all previously stored user-specific data from backend",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Remove the 'Connection Issue' banner and retry button UI; handle backend failures by retrying silently",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Fix MonthTabs horizontal scrolling to access all months (Jan–Dec)",
+  "projectName": "Force Internet Identity login on launch and silently retry backend initialization (remove Connection Issue banner)",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

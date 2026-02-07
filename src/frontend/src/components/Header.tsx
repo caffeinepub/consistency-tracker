@@ -10,16 +10,25 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface HeaderProps {
-  userProfile: UserProfile;
+  userProfile: UserProfile | null;
   onLogout: () => void;
   currentView: 'tracker' | 'investments' | 'diary' | 'export';
   onViewChange: (view: 'tracker' | 'investments' | 'diary' | 'export') => void;
+  isProfileLoading?: boolean;
 }
 
-export function Header({ userProfile, onLogout, currentView, onViewChange }: HeaderProps) {
-  // Defensive: ensure userProfile and name exist with safe fallbacks
-  const userName = userProfile?.name?.trim() || 'User';
-  const userInitial = userName.charAt(0).toUpperCase();
+export function Header({ 
+  userProfile, 
+  onLogout, 
+  currentView, 
+  onViewChange,
+  isProfileLoading = false 
+}: HeaderProps) {
+  // Defensive: handle loading and missing profile states
+  const userName = isProfileLoading 
+    ? 'Loading...' 
+    : userProfile?.name?.trim() || 'User';
+  const userInitial = isProfileLoading ? '...' : userName.charAt(0).toUpperCase();
 
   const getIcon = () => {
     switch (currentView) {
@@ -64,13 +73,15 @@ export function Header({ userProfile, onLogout, currentView, onViewChange }: Hea
                 <h1 className="text-xl font-bold">
                   {getTitle()}
                 </h1>
-                <p className="text-sm text-muted-foreground">Welcome back, {userName}</p>
+                <p className="text-sm text-muted-foreground">
+                  {isProfileLoading ? 'Loading profile...' : `Welcome back, ${userName}`}
+                </p>
               </div>
             </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" disabled={isProfileLoading}>
                   <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-semibold">
                     {userInitial}
                   </div>

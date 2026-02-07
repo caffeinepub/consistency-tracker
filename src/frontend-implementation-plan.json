@@ -1,76 +1,78 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix MonthTabs horizontal scrolling for all months (Jan–Dec)",
+  "title": "Force Internet Identity login gating and silent backend retry (remove Connection Issue UI)",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Make the MonthTabs strip reliably horizontally scrollable for all months on desktop and mobile, with the overflow region owned by the month tabs container.",
+      "id": "REQ-5",
+      "summary": "Gate all Consistency Tracker UI behind Internet Identity login and load the signed-in principal’s existing data after authentication.",
       "acceptanceCriteria": [
-        "On a narrow viewport, the month tabs row is horizontally scrollable and allows reaching January–April and November–December.",
-        "Horizontal scrolling works via touch swipe on mobile devices and via trackpad/mouse wheel/drag on desktop.",
-        "Scrolling is not blocked by a parent element; the month tabs container provides the horizontal overflow region."
+        "On a fresh load while signed out, the app renders only the login screen and no tracker/dashboard content.",
+        "After successful Internet Identity login, the app creates an authenticated backend actor (non-anonymous identity) and React Query data loads are enabled for the signed-in principal.",
+        "If the signed-in user already has stored data in the backend, that data appears in the UI without manual steps (e.g., existing habits and records load)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/MonthTabs.tsx",
+          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Update the MonthTabs DOM structure and Tailwind classes so the tabs remain in a single horizontal strip with a dedicated scroll container (e.g., overflow-x-auto, overflow-y-hidden, whitespace-nowrap/flex-nowrap) and add desktop-friendly interactions (pointer drag-to-scroll and/or wheel-to-horizontal translation) while preserving existing Shadcn Tabs composition. Verify the component's usage instructions before implementing."
+          "description": "Ensure the signed-out state renders only <LoginScreen /> (no header/dashboard/pages). After authentication, enable data-loading flows using the authenticated actor, and keep profile setup as the only pre-dashboard UI for first-time principals. Use the authorization selected component guidance to keep app data hidden until authenticated (Verify the component's usage instructions before implementing.)"
         },
         {
-          "path": "frontend/src/hooks/useHorizontalDragScroll.ts",
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Tighten React Query hook enablement to require a non-anonymous Internet Identity principal (not just a truthy identity) before running any profile/habits/records/diary/investments queries, ensuring data loads are always tied to the signed-in principal. Align with the authorization selected component expectations for authenticated data access (Verify the component's usage instructions before implementing.)"
+        }
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "summary": "Remove the “Connection Issue” banner and “Retry Connection” button and avoid blocking UI on backend/initialization failures.",
+      "acceptanceCriteria": [
+        "The “Connection Issue” alert (title and description) is no longer rendered in the dashboard.",
+        "The “Retry Connection” button is no longer present anywhere in the app UI.",
+        "When backend queries fail transiently, the app does not show a blocking error screen or connection banner; it continues to display the signed-in app shell and retries in the background."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/TrackerDashboard.tsx",
+          "operation": "modify",
+          "description": "Remove rendering of the in-dashboard initialization status UI so the dashboard never shows a connection banner or retry button; keep the signed-in shell visible regardless of transient backend failures."
+        },
+        {
+          "path": "frontend/src/components/InAppInitStatus.tsx",
+          "operation": "delete",
+          "description": "Delete the component that renders the “Connection Issue” banner and “Retry Connection” button to ensure it cannot appear anywhere in the UI."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Remove any remaining init-error plumbing (e.g., hasInitError/onRetryInit) that exists solely to drive the Connection Issue banner, and ensure the signed-in app shell remains non-blocking even if initialization/data queries temporarily fail."
+        }
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "summary": "Make authenticated data loading resilient by adding bounded, non-aggressive automatic retries and silent re-initialization attempts without user interaction.",
+      "acceptanceCriteria": [
+        "When the backend is temporarily unavailable after login, the app does not require the user to click any retry UI to recover.",
+        "Once the backend becomes available again, the user’s data loads automatically without a page refresh.",
+        "Retry behavior is bounded and does not spam requests continuously (uses React Query retry + retryDelay or an equivalent backoff)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Update the React Query QueryClient defaultOptions to use bounded retries with a non-aggressive retryDelay/backoff for queries, so transient backend failures recover automatically without user action."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Adjust key authenticated queries (profile, habits, records, diary, investments) to use bounded retry behavior consistent with app-wide defaults (avoid retry:false for core bootstrap queries), and ensure failures do not trigger blocking UI states."
+        },
+        {
+          "path": "frontend/src/hooks/useSilentActorRetry.ts",
           "operation": "create",
-          "description": "Add a small React hook to enable pointer-based drag scrolling for a horizontal overflow container (mouse/trackpad-friendly) and expose the necessary handlers/refs for MonthTabs to attach. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Ensure MonthTabs scrolling permits partial tab visibility at edges, with no wrapping and no forced snapping behavior.",
-      "acceptanceCriteria": [
-        "While scrolling the month tab strip, tabs can be partially visible at the edges (no forced snapping to whole tabs).",
-        "Tabs do not wrap to multiple lines; the row remains a single horizontal strip."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/MonthTabs.tsx",
-          "operation": "modify",
-          "description": "Ensure no scroll-snap behavior is applied and avoid any layout classes that force full-tab fitting; keep a single-line non-wrapping strip (e.g., whitespace-nowrap + flex-nowrap) so tabs can be partially visible at the left/right edges during scroll. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Preserve current-month default selection and auto-scroll the selected month tab into view on load and when selection changes.",
-      "acceptanceCriteria": [
-        "On initial load, the selected month remains the current month (existing behavior preserved).",
-        "If the selected month tab is not fully visible, the month selector auto-scrolls so the selected tab is visible without requiring manual scrolling."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/MonthTabs.tsx",
-          "operation": "modify",
-          "description": "Add selected-tab focusing/visibility behavior (e.g., measure container + selected trigger and scroll as needed, or use scrollIntoView with nearest/inline options) so the selected month is brought into view on mount and on selectedMonth changes, without changing how TrackerDashboard sets the initial selectedMonth. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Add automated regression tests to ensure MonthTabs renders all months and remains horizontally scrollable and non-wrapping.",
-      "acceptanceCriteria": [
-        "At least one automated test asserts the MonthTabs renders all 12 month triggers and the container is configured for horizontal overflow (e.g., via classnames/attributes expected by the implementation).",
-        "Tests fail if MonthTabs is changed in a way that removes horizontal scrolling or wraps tabs."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/__tests__/tracker-spacing.regression.test.tsx",
-          "operation": "modify",
-          "description": "Implement a regression test for MonthTabs using the existing test placeholder: render MonthTabs with 12 months, assert all triggers are present, and assert the scroll container/list includes the specific non-wrapping + horizontal overflow signals introduced by the implementation (classnames and/or data attributes). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/MonthTabs.tsx",
-          "operation": "modify",
-          "description": "Add stable test hooks (e.g., data-testid/data attributes on the scroll container and tab strip) that the regression test can assert to detect loss of horizontal overflow or introduction of wrapping. Verify the component's usage instructions before implementing."
+          "description": "Create a small hook that, when authenticated and the backend actor is not yet available, schedules silent background re-attempts by invalidating the actor query with bounded exponential backoff (no user-facing UI)."
         }
       ]
     }

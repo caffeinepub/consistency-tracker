@@ -1,12 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Fix the MonthTabs month selector so users can horizontally scroll to reach all months (Jan–Dec) on desktop and mobile.
+**Goal:** Force Internet Identity login before any Consistency Tracker UI is shown, and make backend initialization/data loading retry silently without showing a connection error banner.
 
 **Planned changes:**
-- Update `frontend/src/components/MonthTabs.tsx` to render a single-line, horizontally scrollable month tab strip with overflow handling that is not blocked by parent elements.
-- Ensure scrolling allows partial tab visibility at the edges (no forced snapping; no wrapping into multiple rows).
-- Preserve default selected month as the current month on initial load and auto-scroll the strip so the selected month is brought into view if off-screen.
-- Add/extend frontend tests to assert all 12 month tabs render and that MonthTabs is configured for horizontal overflow (regression coverage for months before May being reachable).
+- Gate all app UI (dashboard/header/pages) behind Internet Identity authentication so signed-out users see only the login screen.
+- After successful login, initialize an authenticated (non-anonymous) backend actor and enable authenticated React Query loading for the signed-in principal.
+- Load any previously stored user data (profile, habits, records, diary, investments) automatically after login.
+- Remove the “Connection Issue” banner and the “Retry Connection” button from the UI.
+- Adjust query/initialization retry behavior to automatically retry with a non-aggressive delay strategy in the background, without requiring user interaction.
 
-**User-visible outcome:** Users can swipe/scroll the month tabs left/right to access every month from January through December, and the current/selected month is automatically visible on load.
+**User-visible outcome:** On launch, users must sign in with Internet Identity before seeing any tracker UI; after sign-in their existing data loads automatically, and transient backend issues recover silently without any connection warning banner or retry button.

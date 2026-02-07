@@ -2,11 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-month-selector-in-frontend-src-components-monthtabs-tsx-so-users-can-horizontally-scroll-to-reach-all-months-january-december-including-months-before-may-on-both-desktop-mouse-trackpad-and-mobile-touch-swipe",
-      "featureTitle": "Update the month selector in `frontend/src/components/MonthTabs.tsx` so users can horizontally scroll to reach all months (January–December), including months before May, on both desktop (mouse/trackpad) and mobile (touch swipe).",
+      "featureId": "feature-require-internet-identity-authentication-before-rendering-any-consistency-tracker-ui-no-dashboard-header-or-pages-visible-until-the-user-is-signed-in-and-after-sign-in-load-the-user-s-previously-stored-data-profile-habits-records-diary-investments-tied-to-their-internet-identity-principal",
+      "featureTitle": "Require Internet Identity authentication before rendering any Consistency Tracker UI (no dashboard, header, or pages visible until the user is signed in) and, after sign-in, load the user’s previously stored data (profile, habits, records, diary, investments) tied to their Internet Identity principal.",
       "files": [
-        "frontend/src/components/MonthTabs.tsx",
-        "frontend/src/hooks/useHorizontalDragScroll.ts"
+        "frontend/src/App.tsx",
+        "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -17,15 +17,17 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-1"
+        "REQ-5"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-ensure-the-month-selector-allows-partial-month-visibility-while-scrolling-i-e-tabs-can-be-partially-visible-at-the-left-right-edges-rather-than-forcing-full-tab-snapping-or-fitting-all-tabs-into-the-available-width",
-      "featureTitle": "Ensure the month selector allows partial month visibility while scrolling (i.e., tabs can be partially visible at the left/right edges), rather than forcing full-tab snapping or fitting all tabs into the available width.",
+      "featureId": "feature-remove-the-in-app-connection-issue-banner-and-its-retry-connection-button-from-the-dashboard-experience-and-do-not-present-backend-initialization-failures-as-blocking-ui-backend-failures-should-retry-silently-in-the-background",
+      "featureTitle": "Remove the in-app “Connection Issue” banner and its “Retry Connection” button from the dashboard experience, and do not present backend/initialization failures as blocking UI. Backend failures should retry silently in the background.",
       "files": [
-        "frontend/src/components/MonthTabs.tsx"
+        "frontend/src/App.tsx",
+        "frontend/src/components/InAppInitStatus.tsx",
+        "frontend/src/components/TrackerDashboard.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -36,15 +38,17 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-2"
+        "REQ-6"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-keep-the-default-visible-selected-month-as-the-current-month-on-initial-load-and-ensure-the-selected-month-tab-is-brought-into-view-within-the-scrollable-month-selector-if-it-would-otherwise-be-off-screen",
-      "featureTitle": "Keep the default visible/selected month as the current month on initial load, and ensure the selected month tab is brought into view within the scrollable month selector if it would otherwise be off-screen.",
+      "featureId": "feature-adjust-frontend-query-retry-behavior-so-authenticated-data-loading-is-resilient-initialization-data-queries-should-retry-automatically-with-a-non-aggressive-delay-strategy-without-requiring-user-interaction",
+      "featureTitle": "Adjust frontend query/retry behavior so authenticated data loading is resilient: initialization/data queries should retry automatically with a non-aggressive delay strategy, without requiring user interaction.",
       "files": [
-        "frontend/src/components/MonthTabs.tsx"
+        "frontend/src/App.tsx",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/hooks/useSilentActorRetry.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -55,26 +59,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-extend-frontend-tests-to-cover-the-month-selector-scrollability-regression-months-before-may-must-remain-reachable",
-      "featureTitle": "Add/extend frontend tests to cover the month selector scrollability regression (months before May must remain reachable).",
-      "files": [
-        "frontend/src/components/MonthTabs.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
+        "REQ-7"
       ],
       "confidence": "high"
     }

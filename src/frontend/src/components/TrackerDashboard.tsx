@@ -14,7 +14,8 @@ import { ExportDataPage } from './ExportDataPage';
 import { useGetHabits, useGetMonthlyRecords } from '../hooks/useQueries';
 
 interface TrackerDashboardProps {
-  userProfile: UserProfile;
+  userProfile: UserProfile | null;
+  isProfileLoading?: boolean;
 }
 
 const MONTHS = [
@@ -32,7 +33,10 @@ const MONTHS = [
   'December',
 ];
 
-export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
+export function TrackerDashboard({ 
+  userProfile, 
+  isProfileLoading = false 
+}: TrackerDashboardProps) {
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
   const [selectedYear] = useState(currentDate.getFullYear());
@@ -59,7 +63,7 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
   // Show loading state only for initial data load
   const isInitialLoading = habitsLoading || recordsLoading;
   
-  // For month switching, pass a loading flag but don't block the entire dashboard
+  // For month switching, pass a loading flag to HabitGrid
   const isMonthSwitching = recordsFetching && !recordsLoading;
 
   // Defensive: only pass valid data to child components
@@ -72,12 +76,13 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" data-testid="tracker-dashboard">
       <Header
         userProfile={userProfile}
         onLogout={handleLogout}
         currentView={currentView}
         onViewChange={setCurrentView}
+        isProfileLoading={isProfileLoading}
       />
 
       <main className="mx-auto w-full max-w-screen-sm px-4 py-6 space-y-6">
@@ -112,15 +117,13 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
                 onMonthChange={setSelectedMonth}
               />
 
-              <div data-testid="habit-grid-container">
-                <HabitGrid
-                  habits={safeHabits}
-                  records={filteredRecords}
-                  selectedMonth={selectedMonth}
-                  selectedYear={selectedYear}
-                  isLoading={isMonthSwitching}
-                />
-              </div>
+              <HabitGrid
+                habits={safeHabits}
+                records={filteredRecords}
+                selectedMonth={selectedMonth}
+                selectedYear={selectedYear}
+                isLoading={isMonthSwitching}
+              />
             </div>
 
             <ProgressCharts
@@ -132,20 +135,6 @@ export function TrackerDashboard({ userProfile }: TrackerDashboardProps) {
           </div>
         )}
       </main>
-
-      <footer className="border-t mt-12 py-6">
-        <div className="mx-auto w-full max-w-screen-sm px-4 text-center text-sm text-muted-foreground">
-          © 2026. Built with love using{' '}
-          <a
-            href="https://caffeine.ai"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-foreground"
-          >
-            caffeine.ai
-          </a>
-        </div>
-      </footer>
     </div>
   );
 }

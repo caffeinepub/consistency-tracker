@@ -1,60 +1,56 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-07T15:10:36.317Z",
+  "generatedAt": "2026-02-07T16:55:03.196Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 4,
+    "total": 3,
+    "implemented": 3,
     "items": [
       {
-        "id": "REQ-1",
-        "summary": "Update the month selector in `frontend/src/components/MonthTabs.tsx` so users can horizontally scroll to reach all months (January–December), including months before May, on both desktop (mouse/trackpad) and mobile (touch swipe).",
+        "id": "REQ-5",
+        "summary": "Require Internet Identity authentication before rendering any Consistency Tracker UI (no dashboard, header, or pages visible until the user is signed in) and, after sign-in, load the user’s previously stored data (profile, habits, records, diary, investments) tied to their Internet Identity principal.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/MonthTabs.tsx",
-          "frontend/src/hooks/useHorizontalDragScroll.ts"
+          "frontend/src/App.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ],
         "matchedFiles": [
-          "frontend/src/components/MonthTabs.tsx",
-          "frontend/src/hooks/useHorizontalDragScroll.ts"
+          "frontend/src/App.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ]
       },
       {
-        "id": "REQ-2",
-        "summary": "Ensure the month selector allows partial month visibility while scrolling (i.e., tabs can be partially visible at the left/right edges), rather than forcing full-tab snapping or fitting all tabs into the available width.",
+        "id": "REQ-6",
+        "summary": "Remove the in-app “Connection Issue” banner and its “Retry Connection” button from the dashboard experience, and do not present backend/initialization failures as blocking UI. Backend failures should retry silently in the background.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/MonthTabs.tsx"
+          "frontend/src/components/TrackerDashboard.tsx",
+          "frontend/src/components/InAppInitStatus.tsx",
+          "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/MonthTabs.tsx"
+          "frontend/src/components/TrackerDashboard.tsx",
+          "frontend/src/components/InAppInitStatus.tsx",
+          "frontend/src/App.tsx"
         ]
       },
       {
-        "id": "REQ-3",
-        "summary": "Keep the default visible/selected month as the current month on initial load, and ensure the selected month tab is brought into view within the scrollable month selector if it would otherwise be off-screen.",
+        "id": "REQ-7",
+        "summary": "Adjust frontend query/retry behavior so authenticated data loading is resilient: initialization/data queries should retry automatically with a non-aggressive delay strategy, without requiring user interaction.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/MonthTabs.tsx"
+          "frontend/src/App.tsx",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/hooks/useSilentActorRetry.ts"
         ],
         "matchedFiles": [
-          "frontend/src/components/MonthTabs.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Add/extend frontend tests to cover the month selector scrollability regression (months before May must remain reachable).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/__tests__/tracker-spacing.regression.test.tsx",
-          "frontend/src/components/MonthTabs.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/MonthTabs.tsx"
+          "frontend/src/App.tsx",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/hooks/useSilentActorRetry.ts"
         ]
       }
     ]
@@ -64,8 +60,11 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/MonthTabs.tsx",
-    "frontend/src/hooks/useHorizontalDragScroll.ts",
+    "frontend/src/App.tsx",
+    "frontend/src/components/InAppInitStatus.tsx",
+    "frontend/src/components/TrackerDashboard.tsx",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/hooks/useSilentActorRetry.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

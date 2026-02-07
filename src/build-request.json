@@ -1,89 +1,76 @@
 {
   "kind": "build_request",
-  "title": "Fix MonthTabs horizontal scrolling to access all months (Jan–Dec)",
+  "title": "Force Internet Identity login on launch and silently retry backend initialization (remove Connection Issue banner)",
   "priority": "high",
   "requirements": [
     {
-      "id": "REQ-1",
-      "text": "Update the month selector in `frontend/src/components/MonthTabs.tsx` so users can horizontally scroll to reach all months (January–December), including months before May, on both desktop (mouse/trackpad) and mobile (touch swipe).",
+      "id": "REQ-5",
+      "text": "Require Internet Identity authentication before rendering any Consistency Tracker UI (no dashboard, header, or pages visible until the user is signed in) and, after sign-in, load the user’s previously stored data (profile, habits, records, diary, investments) tied to their Internet Identity principal.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "I can’t scroll to the months before May as shown in the image attached. Can you make it so I can scroll through all months?"
+          "Connect it to backend Ask for internet identity sign in and load into previous data",
+          "1 yes 2 yes",
+          "Yes all information."
         ]
       },
       "acceptanceCriteria": [
-        "On a narrow viewport, the month tabs row is horizontally scrollable and allows reaching January–April and November–December.",
-        "Horizontal scrolling works via touch swipe on mobile devices and via trackpad/mouse wheel/drag on desktop.",
-        "Scrolling is not blocked by a parent element; the month tabs container provides the horizontal overflow region."
+        "On a fresh load while signed out, the app renders only the login screen and no tracker/dashboard content.",
+        "After successful Internet Identity login, the app creates an authenticated backend actor (non-anonymous identity) and React Query data loads are enabled for the signed-in principal.",
+        "If the signed-in user already has stored data in the backend, that data appears in the UI without manual steps (e.g., existing habits and records load)."
       ]
     },
     {
-      "id": "REQ-2",
-      "text": "Ensure the month selector allows partial month visibility while scrolling (i.e., tabs can be partially visible at the left/right edges), rather than forcing full-tab snapping or fitting all tabs into the available width.",
+      "id": "REQ-6",
+      "text": "Remove the in-app “Connection Issue” banner and its “Retry Connection” button from the dashboard experience, and do not present backend/initialization failures as blocking UI. Backend failures should retry silently in the background.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "Do you want the scroll bar to show partial months (like April in your screenshot), or should all month tabs be fully visible as you scroll?",
-          "2. Yes"
+          "Should I completely remove the current “Connection Issue” banner and retry button from the UI since login will always occur first?",
+          "Confirmed"
         ]
       },
       "acceptanceCriteria": [
-        "While scrolling the month tab strip, tabs can be partially visible at the edges (no forced snapping to whole tabs).",
-        "Tabs do not wrap to multiple lines; the row remains a single horizontal strip."
+        "The “Connection Issue” alert (title and description) is no longer rendered in the dashboard.",
+        "The “Retry Connection” button is no longer present anywhere in the app UI.",
+        "When backend queries fail transiently, the app does not show a blocking error screen or connection banner; it continues to display the signed-in app shell and retries in the background."
       ]
     },
     {
-      "id": "REQ-3",
-      "text": "Keep the default visible/selected month as the current month on initial load, and ensure the selected month tab is brought into view within the scrollable month selector if it would otherwise be off-screen.",
+      "id": "REQ-7",
+      "text": "Adjust frontend query/retry behavior so authenticated data loading is resilient: initialization/data queries should retry automatically with a non-aggressive delay strategy, without requiring user interaction.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "Should the default visible month remain the current month, or change to something else?",
-          "3. Yes"
+          "If the backend fails: show nothing, just retry silently.",
+          "Resolve issues"
         ]
       },
       "acceptanceCriteria": [
-        "On initial load, the selected month remains the current month (existing behavior preserved).",
-        "If the selected month tab is not fully visible, the month selector auto-scrolls so the selected tab is visible without requiring manual scrolling."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Add/extend frontend tests to cover the month selector scrollability regression (months before May must remain reachable).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "Can you make it so I can scroll through all months?"
-        ]
-      },
-      "acceptanceCriteria": [
-        "At least one automated test asserts the MonthTabs renders all 12 month triggers and the container is configured for horizontal overflow (e.g., via classnames/attributes expected by the implementation).",
-        "Tests fail if MonthTabs is changed in a way that removes horizontal scrolling or wraps tabs."
+        "When the backend is temporarily unavailable after login, the app does not require the user to click any retry UI to recover.",
+        "Once the backend becomes available again, the user’s data loads automatically without a page refresh.",
+        "Retry behavior is bounded and does not spam requests continuously (uses React Query retry + retryDelay or an equivalent backoff)."
       ]
     }
   ],
   "constraints": [
-    "Do not modify files under `frontend/src/components/ui` (read-only Shadcn components); compose them from app components instead.",
-    "Keep all changes within the existing React + TypeScript + Tailwind stack; no new frameworks.",
-    "Backend changes are not required for this fix; do not alter Motoko state or APIs."
+    "Do not edit files under frontend/src/components/ui (shadcn components must be composed, not modified).",
+    "Do not modify immutable frontend paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx.",
+    "Backend must remain a single Motoko actor in backend/main.mo; create backend/migration.mo only if existing stable state requires migration."
   ],
   "nonGoals": [
-    "Redesigning the dashboard layout beyond the month tab scrolling behavior.",
-    "Changing how months/years are calculated or fetched in the backend.",
-    "Adding new calendar features (year switching, date pickers, etc.)."
+    "Adding new product features beyond login/startup flow and backend connectivity (e.g., new tracking modules, new pages).",
+    "Implementing third-party authentication providers (only Internet Identity is supported).",
+    "Introducing external databases or non-Motoko backend services."
   ],
   "imageRequirements": {
     "required": [],

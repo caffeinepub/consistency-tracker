@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import { useInternetIdentity } from './useInternetIdentity';
 import type { Habit, HabitRecord, UserProfile, HabitUnit, DefaultAmount, MonthlyTarget, InvestmentDiaryEntry, InvestmentGoal, NewInvestmentGoal, UpdateInvestmentGoal, ExportData } from '../backend';
@@ -7,6 +7,9 @@ export function useGetCallerUserProfile() {
   const { actor, isFetching: actorFetching } = useActor();
   const { identity } = useInternetIdentity();
 
+  // Only enable if authenticated with non-anonymous identity
+  const isAuthenticated = !!identity && !identity.getPrincipal().isAnonymous();
+
   const query = useQuery<UserProfile | null>({
     queryKey: ['currentUserProfile'],
     queryFn: async () => {
@@ -14,15 +17,14 @@ export function useGetCallerUserProfile() {
       const profile = await actor.getCallerUserProfile();
       return profile;
     },
-    enabled: !!actor && !!identity && !actorFetching,
-    retry: false,
+    enabled: !!actor && isAuthenticated && !actorFetching,
     staleTime: 5 * 60 * 1000,
   });
 
   return {
     ...query,
     isLoading: actorFetching || query.isLoading,
-    isFetched: !!actor && !!identity && query.isFetched,
+    isFetched: !!actor && isAuthenticated && query.isFetched,
   };
 }
 
@@ -45,6 +47,8 @@ export function useGetHabits() {
   const { actor, isFetching: actorFetching } = useActor();
   const { identity } = useInternetIdentity();
 
+  const isAuthenticated = !!identity && !identity.getPrincipal().isAnonymous();
+
   return useQuery<Habit[]>({
     queryKey: ['habits'],
     queryFn: async () => {
@@ -52,7 +56,7 @@ export function useGetHabits() {
       const habits = await actor.getHabits();
       return habits;
     },
-    enabled: !!actor && !!identity && !actorFetching,
+    enabled: !!actor && isAuthenticated && !actorFetching,
   });
 }
 
@@ -162,6 +166,8 @@ export function useGetMonthlyRecords(month: number, year: number) {
   const { actor, isFetching: actorFetching } = useActor();
   const { identity } = useInternetIdentity();
 
+  const isAuthenticated = !!identity && !identity.getPrincipal().isAnonymous();
+
   return useQuery<HabitRecord[]>({
     queryKey: ['monthlyRecords', month, year],
     queryFn: async () => {
@@ -169,7 +175,7 @@ export function useGetMonthlyRecords(month: number, year: number) {
       const records = await actor.getMonthlyRecords(BigInt(month), BigInt(year));
       return records;
     },
-    enabled: !!actor && !!identity && !actorFetching,
+    enabled: !!actor && isAuthenticated && !actorFetching,
   });
 }
 
@@ -208,6 +214,8 @@ export function useGetMonthlyTarget(habitId: string, month: number, year: number
   const { actor, isFetching: actorFetching } = useActor();
   const { identity } = useInternetIdentity();
 
+  const isAuthenticated = !!identity && !identity.getPrincipal().isAnonymous();
+
   return useQuery<MonthlyTarget | null>({
     queryKey: ['monthlyTarget', habitId, month, year],
     queryFn: async () => {
@@ -215,13 +223,15 @@ export function useGetMonthlyTarget(habitId: string, month: number, year: number
       const target = await actor.getMonthlyTarget(habitId, BigInt(month), BigInt(year));
       return target;
     },
-    enabled: !!actor && !!identity && !actorFetching && !!habitId,
+    enabled: !!actor && isAuthenticated && !actorFetching && !!habitId,
   });
 }
 
 export function useGetLifetimeTotal(habitId: string) {
   const { actor, isFetching: actorFetching } = useActor();
   const { identity } = useInternetIdentity();
+
+  const isAuthenticated = !!identity && !identity.getPrincipal().isAnonymous();
 
   return useQuery<bigint>({
     queryKey: ['lifetimeTotal', habitId],
@@ -230,7 +240,7 @@ export function useGetLifetimeTotal(habitId: string) {
       const total = await actor.getLifetimeTotal(habitId);
       return total;
     },
-    enabled: !!actor && !!identity && !actorFetching && !!habitId,
+    enabled: !!actor && isAuthenticated && !actorFetching && !!habitId,
   });
 }
 
@@ -254,6 +264,8 @@ export function useGetDiaryEntry(date: string) {
   const { actor, isFetching: actorFetching } = useActor();
   const { identity } = useInternetIdentity();
 
+  const isAuthenticated = !!identity && !identity.getPrincipal().isAnonymous();
+
   return useQuery({
     queryKey: ['diaryEntry', date],
     queryFn: async () => {
@@ -261,13 +273,15 @@ export function useGetDiaryEntry(date: string) {
       const entry = await actor.getDiaryEntry(date);
       return entry;
     },
-    enabled: !!actor && !!identity && !actorFetching && !!date,
+    enabled: !!actor && isAuthenticated && !actorFetching && !!date,
   });
 }
 
 export function useGetAllDiaryEntries() {
   const { actor, isFetching: actorFetching } = useActor();
   const { identity } = useInternetIdentity();
+
+  const isAuthenticated = !!identity && !identity.getPrincipal().isAnonymous();
 
   return useQuery({
     queryKey: ['allDiaryEntries'],
@@ -276,7 +290,7 @@ export function useGetAllDiaryEntries() {
       const entries = await actor.getAllDiaryEntries();
       return entries;
     },
-    enabled: !!actor && !!identity && !actorFetching,
+    enabled: !!actor && isAuthenticated && !actorFetching,
   });
 }
 
@@ -329,6 +343,8 @@ export function useGetInvestmentGoals() {
   const { actor, isFetching: actorFetching } = useActor();
   const { identity } = useInternetIdentity();
 
+  const isAuthenticated = !!identity && !identity.getPrincipal().isAnonymous();
+
   return useQuery<InvestmentGoal[]>({
     queryKey: ['investmentGoals'],
     queryFn: async () => {
@@ -336,7 +352,7 @@ export function useGetInvestmentGoals() {
       const goals = await actor.getInvestmentGoals();
       return goals;
     },
-    enabled: !!actor && !!identity && !actorFetching,
+    enabled: !!actor && isAuthenticated && !actorFetching,
   });
 }
 
