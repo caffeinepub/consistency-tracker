@@ -1,36 +1,57 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Personal consistency tracker web app with monthly tabs and daily habit checkboxes, progress charts, habit weekly frequency goals, optional numeric volume logging with units (time/reps/km/none), editable habit names/units/frequency, diary reflections module, investments goals module, and export data (XLSX/PDF) — using Internet Identity for cross-device persistence.",
+  "summary": "New project",
   "architectural_notes": [
-    "Auth uses Internet Identity; user data should persist across logouts/devices/upgrades via stable on-chain storage keyed by principal.",
-    "Actor initialization should not require a URL-provided adminToken/secret (remove _initializeAccessControlWithSecret(adminToken)) to avoid startup/init failures."
+    "Month selector UI should support horizontal scrolling with partial tab visibility; initial position defaults to current month."
   ],
   "known_issues": [
-    "Production/draft deployments intermittently fail with generic 'Deployment error' and no detailed logs available to user.",
-    "App can get stuck on initialization/authenticated init due to backend actor initialization failures (e.g., 'Authenticated init problem detected', backend reachability check hanging)."
+    "Month selector cannot currently scroll to months before May; users are unable to access earlier months."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-restore-and-redeploy-the-full-application-frontend-and-backend-to-the-exact-code-and-configuration-of-version-35-replacing-the-currently-deployed-version-36",
-      "title": "Restore and redeploy the full application (frontend and backend) to the exact code and configuration of Version 35, replacing the currently deployed Version 36.",
+      "id": "feature-update-the-month-selector-in-frontend-src-components-monthtabs-tsx-so-users-can-horizontally-scroll-to-reach-all-months-january-december-including-months-before-may-on-both-desktop-mouse-trackpad-and-mobile-touch-swipe",
+      "title": "Update the month selector in `frontend/src/components/MonthTabs.tsx` so users can horizontally scroll to reach all months (January–December), including months before May, on both desktop (mouse/trackpad) and mobile (touch swipe).",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-after-restoring-version-35-verify-end-to-end-initialization-works-for-an-authenticated-user-internet-identity-login-completes-the-backend-actor-becomes-available-and-the-app-proceeds-past-initialization-to-the-normal-ui-profile-setup-for-new-users-or-the-dashboard-for-existing-users-without-getting-stuck-on-the-loading-watchdog-timeout-screen",
-      "title": "After restoring Version 35, verify end-to-end initialization works for an authenticated user: Internet Identity login completes, the backend actor becomes available, and the app proceeds past initialization to the normal UI (Profile Setup for new users or the Dashboard for existing users) without getting stuck on the loading watchdog/timeout screen.",
+      "id": "feature-ensure-the-month-selector-allows-partial-month-visibility-while-scrolling-i-e-tabs-can-be-partially-visible-at-the-left-right-edges-rather-than-forcing-full-tab-snapping-or-fitting-all-tabs-into-the-available-width",
+      "title": "Ensure the month selector allows partial month visibility while scrolling (i.e., tabs can be partially visible at the left/right edges), rather than forcing full-tab snapping or fitting all tabs into the available width.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-keep-the-default-visible-selected-month-as-the-current-month-on-initial-load-and-ensure-the-selected-month-tab-is-brought-into-view-within-the-scrollable-month-selector-if-it-would-otherwise-be-off-screen",
+      "title": "Keep the default visible/selected month as the current month on initial load, and ensure the selected month tab is brought into view within the scrollable month selector if it would otherwise be off-screen.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-extend-frontend-tests-to-cover-the-month-selector-scrollability-regression-months-before-may-must-remain-reachable",
+      "title": "Add/extend frontend tests to cover the month selector scrollability regression (months before May must remain reachable).",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
     }
   ],
-  "new_feature_requests": [],
-  "projectName": "Restore app to Version 35 (last working build)",
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Make the month selector horizontally scrollable so users can scroll through all months (Jan–Dec), allowing partial month visibility, with default visible month remaining the current month.",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "projectName": "Fix MonthTabs horizontal scrolling to access all months (Jan–Dec)",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

@@ -1,10 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Roll back the deployed application from Version 36 to the last known working Version 35 (frontend and backend) and confirm startup/login completes successfully.
+**Goal:** Fix the MonthTabs month selector so users can horizontally scroll to reach all months (Jan–Dec) on desktop and mobile.
 
 **Planned changes:**
-- Restore and redeploy the full app (frontend assets and backend canister/actor code) to the exact Version 35 code and configuration, replacing Version 36.
-- Verify end-to-end initialization for an authenticated user: Internet Identity login completes, backend actor is available, healthCheck succeeds, and the app proceeds to Profile Setup (new users) or Dashboard (existing users) without hitting loading timeout.
+- Update `frontend/src/components/MonthTabs.tsx` to render a single-line, horizontally scrollable month tab strip with overflow handling that is not blocked by parent elements.
+- Ensure scrolling allows partial tab visibility at the edges (no forced snapping; no wrapping into multiple rows).
+- Preserve default selected month as the current month on initial load and auto-scroll the strip so the selected month is brought into view if off-screen.
+- Add/extend frontend tests to assert all 12 month tabs render and that MonthTabs is configured for horizontal overflow (regression coverage for months before May being reachable).
 
-**User-visible outcome:** Users are served Version 35 and can log in with Internet Identity and reach the normal app UI without getting stuck on initialization or seeing a “Loading Timeout” during typical startup.
+**User-visible outcome:** Users can swipe/scroll the month tabs left/right to access every month from January through December, and the current/selected month is automatically visible on load.

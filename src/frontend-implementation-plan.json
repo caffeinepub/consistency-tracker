@@ -1,101 +1,76 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Rollback frontend behavior to Version 35 and confirm authenticated initialization flow",
+  "title": "Fix MonthTabs horizontal scrolling for all months (Jan–Dec)",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Restore the frontend code/configuration to match Version 35 so Version 36 is no longer served.",
+      "summary": "Make the MonthTabs strip reliably horizontally scrollable for all months on desktop and mobile, with the overflow region owned by the month tabs container.",
       "acceptanceCriteria": [
-        "The deployed app corresponds to Version 35 (both frontend assets and backend canister code).",
-        "Version 36 is no longer served to users after deployment."
+        "On a narrow viewport, the month tabs row is horizontally scrollable and allows reaching January–April and November–December.",
+        "Horizontal scrolling works via touch swipe on mobile devices and via trackpad/mouse wheel/drag on desktop.",
+        "Scrolling is not blocked by a parent element; the month tabs container provides the horizontal overflow region."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/components/MonthTabs.tsx",
           "operation": "modify",
-          "description": "Revert App initialization, routing, and watchdog/timeout behavior to the exact Version 35 implementation (no new flows). Ensure the authenticated gating logic matches Version 35. Verify the authorization component's usage instructions before implementing."
+          "description": "Update the MonthTabs DOM structure and Tailwind classes so the tabs remain in a single horizontal strip with a dedicated scroll container (e.g., overflow-x-auto, overflow-y-hidden, whitespace-nowrap/flex-nowrap) and add desktop-friendly interactions (pointer drag-to-scroll and/or wheel-to-horizontal translation) while preserving existing Shadcn Tabs composition. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/hooks/useActor.ts",
-          "operation": "modify",
-          "description": "Revert actor creation and authenticated initialization behavior to the exact Version 35 implementation, including any access-control bootstrap sequencing used in Version 35. Verify the authorization component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useInternetIdentity.ts",
-          "operation": "modify",
-          "description": "Revert Internet Identity session loading, login status transitions, and identity persistence behavior to the exact Version 35 implementation to ensure Version 35 auth lifecycle semantics. Verify the authorization component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Revert React Query enablement/loading semantics for profile and other authenticated queries to match Version 35 (including any safeguards against premature profile fetch before actor readiness). Verify the authorization component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/LoadingTimeoutFallback.tsx",
-          "operation": "modify",
-          "description": "Revert the loading-timeout fallback UI/logic to the exact Version 35 implementation (copy, actions, and reachability messaging) so behavior matches Version 35. Verify the authorization component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/AuthenticatedInitFallback.tsx",
-          "operation": "modify",
-          "description": "Revert authenticated initialization recovery UI/logic to the exact Version 35 implementation so authenticated failures present the Version 35 recovery experience. Verify the authorization component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useBackendReachability.ts",
-          "operation": "modify",
-          "description": "Revert backend reachability check behavior to the exact Version 35 implementation to ensure the same health-check timing/behavior as the last working build. Verify the authorization component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/utils/diagnostics.ts",
-          "operation": "modify",
-          "description": "Revert diagnostics recording/formatting to the exact Version 35 implementation so troubleshooting output matches Version 35. Verify the authorization component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/main.tsx",
-          "operation": "modify",
-          "description": "Revert the React app bootstrap/provider wiring to the exact Version 35 implementation (QueryClientProvider + InternetIdentityProvider order and configuration) to match Version 35 runtime behavior. Verify the authorization component's usage instructions before implementing."
+          "path": "frontend/src/hooks/useHorizontalDragScroll.ts",
+          "operation": "create",
+          "description": "Add a small React hook to enable pointer-based drag scrolling for a horizontal overflow container (mouse/trackpad-friendly) and expose the necessary handlers/refs for MonthTabs to attach. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Ensure the authenticated initialization path (II login → actor available → profile routing) proceeds to Profile Setup or Dashboard without getting stuck on timeout screens (as in Version 35).",
+      "summary": "Ensure MonthTabs scrolling permits partial tab visibility at edges, with no wrapping and no forced snapping behavior.",
       "acceptanceCriteria": [
-        "A user can log in with Internet Identity and reach the app’s main flow (no persistent 'initializing' state).",
-        "The app does not show 'Loading Timeout' during normal startup under typical conditions.",
-        "Backend reachability (healthCheck) succeeds and the UI continues to load after the check."
+        "While scrolling the month tab strip, tabs can be partially visible at the edges (no forced snapping to whole tabs).",
+        "Tabs do not wrap to multiple lines; the row remains a single horizontal strip."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/components/MonthTabs.tsx",
           "operation": "modify",
-          "description": "Align the authenticated initialization state machine with Version 35 so the app reliably transitions from identity readiness to actor availability to profile routing (ProfileSetup for new users, TrackerDashboard for existing users) without entering an indefinite initializing state. Verify the authorization component's usage instructions before implementing."
+          "description": "Ensure no scroll-snap behavior is applied and avoid any layout classes that force full-tab fitting; keep a single-line non-wrapping strip (e.g., whitespace-nowrap + flex-nowrap) so tabs can be partially visible at the left/right edges during scroll. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Preserve current-month default selection and auto-scroll the selected month tab into view on load and when selection changes.",
+      "acceptanceCriteria": [
+        "On initial load, the selected month remains the current month (existing behavior preserved).",
+        "If the selected month tab is not fully visible, the month selector auto-scrolls so the selected tab is visible without requiring manual scrolling."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/MonthTabs.tsx",
+          "operation": "modify",
+          "description": "Add selected-tab focusing/visibility behavior (e.g., measure container + selected trigger and scroll as needed, or use scrollIntoView with nearest/inline options) so the selected month is brought into view on mount and on selectedMonth changes, without changing how TrackerDashboard sets the initial selectedMonth. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Add automated regression tests to ensure MonthTabs renders all months and remains horizontally scrollable and non-wrapping.",
+      "acceptanceCriteria": [
+        "At least one automated test asserts the MonthTabs renders all 12 month triggers and the container is configured for horizontal overflow (e.g., via classnames/attributes expected by the implementation).",
+        "Tests fail if MonthTabs is changed in a way that removes horizontal scrolling or wraps tabs."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/__tests__/tracker-spacing.regression.test.tsx",
+          "operation": "modify",
+          "description": "Implement a regression test for MonthTabs using the existing test placeholder: render MonthTabs with 12 months, assert all triggers are present, and assert the scroll container/list includes the specific non-wrapping + horizontal overflow signals introduced by the implementation (classnames and/or data attributes). Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/hooks/useActor.ts",
+          "path": "frontend/src/components/MonthTabs.tsx",
           "operation": "modify",
-          "description": "Ensure actor readiness semantics match Version 35 so dependent queries only run once the authenticated actor is usable, preventing initialization deadlocks that can trigger timeout fallbacks. Verify the authorization component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Ensure the current-user profile query gating/loading flags match Version 35 so the UI does not get stuck waiting on profile fetch states and avoids triggering timeout fallbacks under typical startup conditions. Verify the authorization component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useInternetIdentity.ts",
-          "operation": "modify",
-          "description": "Ensure Version 35 identity initialization/login status behavior so authenticated users do not remain in an initializing state and the UI can proceed to the main flow. Verify the authorization component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useBackendReachability.ts",
-          "operation": "modify",
-          "description": "Ensure backend health-check behavior matches Version 35 so reachability succeeds under normal conditions and any status reporting does not block continuing to the main UI. Verify the authorization component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/LoadingTimeoutFallback.tsx",
-          "operation": "modify",
-          "description": "Ensure Version 35 timeout fallback behavior and messaging so it is not shown during normal startup and remains purely a recovery UI when initialization genuinely exceeds Version 35 thresholds. Verify the authorization component's usage instructions before implementing."
+          "description": "Add stable test hooks (e.g., data-testid/data attributes on the scroll container and tab strip) that the regression test can assert to detect loss of horizontal overflow or introduction of wrapping. Verify the component's usage instructions before implementing."
         }
       ]
     }

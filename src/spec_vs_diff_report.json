@@ -1,95 +1,24 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-07T15:00:20.522Z",
-  "summary": "The diff introduces substantial frontend and backend code changes (healthCheck endpoint, simplified App initialization gating, and many feature modules like diary/export/investments/habit units). However, there is no evidence that this is an exact rollback to Version 35, and the diff appears to add/modify functionality beyond a strict restore. Verification of end-to-end initialization is not evidenced beyond code changes.",
+  "generatedAt": "2026-02-07T15:10:36.314Z",
+  "summary": "MonthTabs was updated to use a horizontally scrollable container with non-wrapping tabs and an effect that auto-scrolls the selected month into view. However, no frontend tests were added/updated in the provided diff summary to cover the regression as required.",
   "missing_requirements": [
     {
-      "id": "REQ-1",
-      "requirement": "Restore and redeploy the full application (frontend and backend) to the exact code and configuration of Version 35, replacing the currently deployed Version 36.",
-      "reason": "The diff shows active development changes and multiple feature additions/adjustments, but provides no evidence of pinning the code/configuration to Version 35 or removing Version 36. No version identifiers, release tags, or deployment/config rollback artifacts are shown.",
+      "id": "REQ-4",
+      "requirement": "Add/extend frontend tests to cover the month selector scrollability regression (months before May must remain reachable).",
+      "reason": "The diff summary shows no test files added or modified, and only introduces a hook plus changes to MonthTabs. There is no evidence of automated tests asserting 12 triggers and horizontal overflow configuration.",
       "evidence": [
-        "backend/main.mo",
-        "frontend/src/App.tsx",
-        "frontend-file-summaries.txt",
-        "project_state.json"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "After restoring Version 35, verify end-to-end initialization works for an authenticated user (II login, backend actor available, proceeds to Profile Setup/Dashboard without timeout/loading watchdog).",
-      "reason": "While App.tsx shows simplified authenticated gating and the backend adds a healthCheck method, the diff contains no explicit verification artifacts (e.g., test, script, documented verification steps, or instrumentation proving the end-to-end flow). The requirement explicitly includes verification after restore.",
-      "evidence": [
-        "frontend/src/App.tsx",
-        "backend/main.mo"
+        "File diff summary: Added 1 (hook), Modified: MonthTabs.tsx, plus summaries/project_state.json; no test paths shown"
       ]
     }
   ],
-  "hallucinated_features": [
-    {
-      "description": "Added/expanded backend diagnostic logging and an admin-only getLogs endpoint.",
-      "reason": "Not requested; the BuildRequest explicitly calls for a strict rollback with no new features or fixes beyond restore.",
-      "evidence": [
-        "backend/main.mo"
-      ]
-    },
-    {
-      "description": "Diary module UI and related analytics/charting (e.g., Daily Reflection fields and DiaryAnalyticsChart usage).",
-      "reason": "Not requested as part of the Version 35 restore; constitutes feature work beyond a rollback.",
-      "evidence": [
-        "frontend/src/components/DiaryPage.tsx"
-      ]
-    },
-    {
-      "description": "Export data UI and functionality including XLSX/PDF export workflows and date range picker/preview sections.",
-      "reason": "Not requested; constitutes additional functionality beyond a strict restore.",
-      "evidence": [
-        "frontend/src/components/ExportDataPage.tsx",
-        "frontend-file-summaries.txt"
-      ]
-    },
-    {
-      "description": "Investment goals/diary data structures added to backend export data model.",
-      "reason": "Not requested; adds new domain concepts beyond rollback.",
-      "evidence": [
-        "backend/main.mo"
-      ]
-    },
-    {
-      "description": "Habit unit expansion and UI support including a built-in \"km\" option, default amounts, and amount editors in the habit grid.",
-      "reason": "Not requested; represents feature expansion/UI changes beyond rollback.",
-      "evidence": [
-        "frontend/src/components/HabitManager.tsx",
-        "frontend/src/components/HabitGrid.tsx",
-        "frontend-file-summaries.txt"
-      ]
-    },
-    {
-      "description": "UI/layout redesign claims (mobile-like centered layout, new header tab navigation, month tabs overflow changes).",
-      "reason": "BuildRequest non-goal disallows redesign; these changes are not part of an exact restore request.",
-      "evidence": [
-        "frontend-file-summaries.txt"
-      ]
-    },
-    {
-      "description": "Collapsible habit manager panel component.",
-      "reason": "Not requested; adds new UI behavior beyond rollback.",
-      "evidence": [
-        "frontend/src/components/CollapsibleHabitManagerPanel.tsx"
-      ]
-    }
-  ],
-  "confidence": 0.74,
+  "hallucinated_features": [],
+  "confidence": 0.72,
   "changed_files": [
-    "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/App.tsx",
-    "frontend/src/components/CollapsibleHabitManagerPanel.tsx",
-    "frontend/src/components/DiaryPage.tsx",
-    "frontend/src/components/ExportDataPage.tsx",
-    "frontend/src/components/HabitGrid.tsx",
-    "frontend/src/components/HabitManager.tsx",
-    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/components/MonthTabs.tsx",
+    "frontend/src/hooks/useHorizontalDragScroll.ts",
     "project_state.json"
   ]
 }

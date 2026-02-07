@@ -1,52 +1,89 @@
 {
   "kind": "build_request",
-  "title": "Restore app to Version 35 (last working build)",
+  "title": "Fix MonthTabs horizontal scrolling to access all months (Jan–Dec)",
   "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Restore and redeploy the full application (frontend and backend) to the exact code and configuration of Version 35, replacing the currently deployed Version 36.",
-      "target": "both",
+      "text": "Update the month selector in `frontend/src/components/MonthTabs.tsx` so users can horizontally scroll to reach all months (January–December), including months before May, on both desktop (mouse/trackpad) and mobile (touch swipe).",
+      "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "Restore to 35"
+          "I can’t scroll to the months before May as shown in the image attached. Can you make it so I can scroll through all months?"
         ]
       },
       "acceptanceCriteria": [
-        "The deployed app corresponds to Version 35 (both frontend assets and backend canister code).",
-        "Version 36 is no longer served to users after deployment."
+        "On a narrow viewport, the month tabs row is horizontally scrollable and allows reaching January–April and November–December.",
+        "Horizontal scrolling works via touch swipe on mobile devices and via trackpad/mouse wheel/drag on desktop.",
+        "Scrolling is not blocked by a parent element; the month tabs container provides the horizontal overflow region."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "After restoring Version 35, verify end-to-end initialization works for an authenticated user: Internet Identity login completes, the backend actor becomes available, and the app proceeds past initialization to the normal UI (Profile Setup for new users or the Dashboard for existing users) without getting stuck on the loading watchdog/timeout screen.",
-      "target": "both",
+      "text": "Ensure the month selector allows partial month visibility while scrolling (i.e., tabs can be partially visible at the left/right edges), rather than forcing full-tab snapping or fitting all tabs into the available width.",
+      "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "Restore to 35"
+          "Do you want the scroll bar to show partial months (like April in your screenshot), or should all month tabs be fully visible as you scroll?",
+          "2. Yes"
         ]
       },
       "acceptanceCriteria": [
-        "A user can log in with Internet Identity and reach the app’s main flow (no persistent 'initializing' state).",
-        "The app does not show 'Loading Timeout' during normal startup under typical conditions.",
-        "Backend reachability (healthCheck) succeeds and the UI continues to load after the check."
+        "While scrolling the month tab strip, tabs can be partially visible at the edges (no forced snapping to whole tabs).",
+        "Tabs do not wrap to multiple lines; the row remains a single horizontal strip."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Keep the default visible/selected month as the current month on initial load, and ensure the selected month tab is brought into view within the scrollable month selector if it would otherwise be off-screen.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Should the default visible month remain the current month, or change to something else?",
+          "3. Yes"
+        ]
+      },
+      "acceptanceCriteria": [
+        "On initial load, the selected month remains the current month (existing behavior preserved).",
+        "If the selected month tab is not fully visible, the month selector auto-scrolls so the selected tab is visible without requiring manual scrolling."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Add/extend frontend tests to cover the month selector scrollability regression (months before May must remain reachable).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Can you make it so I can scroll through all months?"
+        ]
+      },
+      "acceptanceCriteria": [
+        "At least one automated test asserts the MonthTabs renders all 12 month triggers and the container is configured for horizontal overflow (e.g., via classnames/attributes expected by the implementation).",
+        "Tests fail if MonthTabs is changed in a way that removes horizontal scrolling or wraps tabs."
       ]
     }
   ],
   "constraints": [
-    "Use English for any user-facing text.",
-    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
-    "Do not edit files under frontend/src/components/ui or any other frontend immutable paths; compose existing components instead if any UI adjustments are required as part of the restore."
+    "Do not modify files under `frontend/src/components/ui` (read-only Shadcn components); compose them from app components instead.",
+    "Keep all changes within the existing React + TypeScript + Tailwind stack; no new frameworks.",
+    "Backend changes are not required for this fix; do not alter Motoko state or APIs."
   ],
   "nonGoals": [
-    "Do not implement new features or redesign UI; this change is strictly a rollback to Version 35.",
-    "Do not attempt to diagnose or permanently fix the underlying initialization/backend deployment issue beyond restoring the last known working version."
+    "Redesigning the dashboard layout beyond the month tab scrolling behavior.",
+    "Changing how months/years are calculated or fetched in the backend.",
+    "Adding new calendar features (year switching, date pickers, etc.)."
   ],
   "imageRequirements": {
     "required": [],

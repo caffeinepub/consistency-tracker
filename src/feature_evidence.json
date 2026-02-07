@@ -2,11 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-restore-and-redeploy-the-full-application-frontend-and-backend-to-the-exact-code-and-configuration-of-version-35-replacing-the-currently-deployed-version-36",
-      "featureTitle": "Restore and redeploy the full application (frontend and backend) to the exact code and configuration of Version 35, replacing the currently deployed Version 36.",
+      "featureId": "feature-update-the-month-selector-in-frontend-src-components-monthtabs-tsx-so-users-can-horizontally-scroll-to-reach-all-months-january-december-including-months-before-may-on-both-desktop-mouse-trackpad-and-mobile-touch-swipe",
+      "featureTitle": "Update the month selector in `frontend/src/components/MonthTabs.tsx` so users can horizontally scroll to reach all months (January–December), including months before May, on both desktop (mouse/trackpad) and mobile (touch swipe).",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/components/MonthTabs.tsx",
+        "frontend/src/hooks/useHorizontalDragScroll.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -22,11 +22,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-after-restoring-version-35-verify-end-to-end-initialization-works-for-an-authenticated-user-internet-identity-login-completes-the-backend-actor-becomes-available-and-the-app-proceeds-past-initialization-to-the-normal-ui-profile-setup-for-new-users-or-the-dashboard-for-existing-users-without-getting-stuck-on-the-loading-watchdog-timeout-screen",
-      "featureTitle": "After restoring Version 35, verify end-to-end initialization works for an authenticated user: Internet Identity login completes, the backend actor becomes available, and the app proceeds past initialization to the normal UI (Profile Setup for new users or the Dashboard for existing users) without getting stuck on the loading watchdog/timeout screen.",
+      "featureId": "feature-ensure-the-month-selector-allows-partial-month-visibility-while-scrolling-i-e-tabs-can-be-partially-visible-at-the-left-right-edges-rather-than-forcing-full-tab-snapping-or-fitting-all-tabs-into-the-available-width",
+      "featureTitle": "Ensure the month selector allows partial month visibility while scrolling (i.e., tabs can be partially visible at the left/right edges), rather than forcing full-tab snapping or fitting all tabs into the available width.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/components/MonthTabs.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -38,6 +37,44 @@
       ],
       "testIds": [
         "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-keep-the-default-visible-selected-month-as-the-current-month-on-initial-load-and-ensure-the-selected-month-tab-is-brought-into-view-within-the-scrollable-month-selector-if-it-would-otherwise-be-off-screen",
+      "featureTitle": "Keep the default visible/selected month as the current month on initial load, and ensure the selected month tab is brought into view within the scrollable month selector if it would otherwise be off-screen.",
+      "files": [
+        "frontend/src/components/MonthTabs.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-extend-frontend-tests-to-cover-the-month-selector-scrollability-regression-months-before-may-must-remain-reachable",
+      "featureTitle": "Add/extend frontend tests to cover the month selector scrollability regression (months before May must remain reachable).",
+      "files": [
+        "frontend/src/components/MonthTabs.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
       ],
       "confidence": "high"
     }

@@ -1,67 +1,71 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-07T15:00:20.525Z",
+  "generatedAt": "2026-02-07T15:10:36.317Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 2,
+    "total": 4,
+    "implemented": 4,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Restore and redeploy the full application (frontend and backend) to the exact code and configuration of Version 35, replacing the currently deployed Version 36.",
+        "summary": "Update the month selector in `frontend/src/components/MonthTabs.tsx` so users can horizontally scroll to reach all months (January–December), including months before May, on both desktop (mouse/trackpad) and mobile (touch swipe).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/hooks/useActor.ts",
-          "frontend/src/hooks/useInternetIdentity.ts",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/LoadingTimeoutFallback.tsx",
-          "frontend/src/components/AuthenticatedInitFallback.tsx",
-          "frontend/src/hooks/useBackendReachability.ts",
-          "frontend/src/utils/diagnostics.ts",
-          "frontend/src/main.tsx"
+          "frontend/src/components/MonthTabs.tsx",
+          "frontend/src/hooks/useHorizontalDragScroll.ts"
         ],
         "matchedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/components/MonthTabs.tsx",
+          "frontend/src/hooks/useHorizontalDragScroll.ts"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "After restoring Version 35, verify end-to-end initialization works for an authenticated user: Internet Identity login completes, the backend actor becomes available, and the app proceeds past initialization to the normal UI (Profile Setup for new users or the Dashboard for existing users) without getting stuck on the loading watchdog/timeout screen.",
+        "summary": "Ensure the month selector allows partial month visibility while scrolling (i.e., tabs can be partially visible at the left/right edges), rather than forcing full-tab snapping or fitting all tabs into the available width.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/hooks/useActor.ts",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/hooks/useInternetIdentity.ts",
-          "frontend/src/hooks/useBackendReachability.ts",
-          "frontend/src/components/LoadingTimeoutFallback.tsx"
+          "frontend/src/components/MonthTabs.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/components/MonthTabs.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Keep the default visible/selected month as the current month on initial load, and ensure the selected month tab is brought into view within the scrollable month selector if it would otherwise be off-screen.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/MonthTabs.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/MonthTabs.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Add/extend frontend tests to cover the month selector scrollability regression (months before May must remain reachable).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/__tests__/tracker-spacing.regression.test.tsx",
+          "frontend/src/components/MonthTabs.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/MonthTabs.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
-    "frontend/src/components/CollapsibleHabitManagerPanel.tsx",
-    "frontend/src/components/DiaryPage.tsx",
-    "frontend/src/components/ExportDataPage.tsx",
-    "frontend/src/components/HabitGrid.tsx",
-    "frontend/src/components/HabitManager.tsx",
-    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/components/MonthTabs.tsx",
+    "frontend/src/hooks/useHorizontalDragScroll.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
